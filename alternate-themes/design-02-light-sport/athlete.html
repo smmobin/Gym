@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>پنل ورزشکار — Sport Dark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="demo-banner">پنل ورزشکار · داده‌های نمونه · <a href="index.html" style="color:#ecfeff">بازگشت به صفحه اصلی</a></div>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"></span>
+        <div>
+          <strong>GYM CONTROL</strong>
+          <small>پنل ورزشکار</small>
+        </div>
+      </a>
+      <nav class="nav">
+        <p class="nav-label">منو</p>
+        <a class="nav-item active" href="#dash">داشبورد</a>
+        <a class="nav-item" href="#sub">اشتراک من</a>
+        <a class="nav-item" href="#att">حضور و غیاب</a>
+        <a class="nav-item" href="#pay">پرداخت‌ها</a>
+        <a class="nav-item" href="#plan">برنامه تمرینی</a>
+        <a class="nav-item" href="#profile">پروفایل</a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="index.html">صفحه اصلی</a>
+        <a href="receptionist.html">نمایش منشی</a>
+        <a href="manager.html">نمایش مدیر</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>سلام علی، آماده یک تمرین خوب هستی؟</h1>
+          <p>شنبه ۱۸ مهر ۱۴۰۴ · وضعیت حساب نمایشی</p>
+        </div>
+        <div class="topbar-actions">
+          <div class="user-chip"><span class="avatar">ع‌ر</span><span>علی رضایی</span></div>
+        </div>
+      </header>
+
+      <section class="content" id="dash">
+        <div class="stats">
+          <article class="stat"><span class="stat-label">وضعیت اشتراک</span><strong>فعال</strong><em class="ok">قابل استفاده</em></article>
+          <article class="stat"><span class="stat-label">پایان اشتراک</span><strong>۱۸ آبان ۱۴۰۴</strong><em>۳۱ روز باقی‌مانده</em></article>
+          <article class="stat"><span class="stat-label">حضور این هفته</span><strong>۴ جلسه</strong><em>از ۶ جلسه هدف</em></article>
+          <article class="stat accent"><span class="stat-label">وضعیت پرداخت</span><strong>تسویه‌شده</strong><em class="ok">بدون بدهی</em></article>
+        </div>
+
+        <div class="grid-2">
+          <article class="panel" id="plan">
+            <header class="panel-head"><h2>برنامه تمرینی امروز</h2><span class="tag">نمونه</span></header>
+            <div class="workout"><div><h3>اسکوات</h3><p>۴ ست × ۱۰ تکرار · استراحت ۹۰ث</p></div><span class="badge ok">انجام شد</span></div>
+            <div class="workout"><div><h3>پرس سینه</h3><p>۴ ست × ۸ تکرار · استراحت ۱۲۰ث</p></div><span class="badge warn">در انتظار</span></div>
+            <div class="workout"><div><h3>زیربغل دمبل</h3><p>۳ ست × ۱۲ تکرار · استراحت ۷۵ث</p></div><span class="badge warn">در انتظار</span></div>
+            <p class="hint">توضیح مربی: امروز روی فرم حرکت تمرکز کن؛ وزن را زیاد نکن.</p>
+          </article>
+
+          <article class="panel" id="att">
+            <header class="panel-head"><h2>آخرین حضورها</h2></header>
+            <div class="list">
+              <div class="row-item"><div><h3>۱۶ مهر ۱۴۰۴</h3><p>سالن وزنه</p></div><em>۱۷:۴۰</em></div>
+              <div class="row-item"><div><h3>۱۴ مهر ۱۴۰۴</h3><p>سالن وزنه</p></div><em>۱۸:۰۵</em></div>
+              <div class="row-item"><div><h3>۱۲ مهر ۱۴۰۴</h3><p>هوازی</p></div><em>۱۶:۲۰</em></div>
+              <div class="row-item"><div><h3>۱۰ مهر ۱۴۰۴</h3><p>سالن وزنه</p></div><em>۱۹:۱۰</em></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="grid-2">
+          <article class="panel" id="pay">
+            <header class="panel-head"><h2>آخرین پرداخت‌ها</h2><button class="btn ghost small" type="button">رسید نمایشی</button></header>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>عنوان</th><th>تاریخ</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
+                <tbody>
+                  <tr><td>تمدید سه‌ماهه</td><td>۱۸ مرداد ۱۴۰۴</td><td>۳٬۵۰۰٬۰۰۰ ت</td><td><span class="badge ok">پرداخت‌شده</span></td></tr>
+                  <tr><td>ماهانه</td><td>۱۸ اردیبهشت ۱۴۰۴</td><td>۱٬۲۰۰٬۰۰۰ ت</td><td><span class="badge ok">پرداخت‌شده</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel" id="sub">
+            <header class="panel-head"><h2>اشتراک من</h2></header>
+            <div class="list">
+              <div class="row-item"><div><h3>طرح سه‌ماهه</h3><p>شروع: ۱۸ مرداد ۱۴۰۴</p></div><span class="badge ok">فعال</span></div>
+              <div class="row-item"><div><h3>روز باقی‌مانده</h3><p>تا ۱۸ آبان ۱۴۰۴</p></div><em>۳۱</em></div>
+            </div>
+            <button class="btn wide" type="button" style="margin-top:1rem">درخواست تمدید (نمایشی)</button>
+            <p class="hint">اعلان باشگاه: سالن هوازی چهارشنبه ۱۴ تا ۱۶ بسته است.</p>
+          </article>
+        </div>
+
+        <article class="panel" id="profile">
+          <header class="panel-head"><h2>پروفایل</h2><span class="tag">قابل ویرایش نمایشی</span></header>
+          <div class="form-grid">
+            <label>نام<input value="علی" /></label>
+            <label>نام خانوادگی<input value="رضایی" /></label>
+            <label>موبایل<input value="۰۹۱۲۳۴۵۶۷۸۹" /></label>
+            <label>تاریخ عضویت<input value="۱۲ فروردین ۱۴۰۳" readonly /></label>
+          </div>
+          <button class="btn" type="button" style="margin-top:1rem">ذخیره نمایشی</button>
+        </article>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
