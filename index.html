@@ -391,22 +391,46 @@
         var menu = root.querySelector(".custom-select-menu");
         if (!native || !trigger || !valueEl || !menu) return;
 
+        function placeMenu() {
+          var rect = trigger.getBoundingClientRect();
+          var gap = 6;
+          var maxHeight = Math.min(window.innerHeight * 0.5, 220);
+          var spaceBelow = window.innerHeight - rect.bottom - gap;
+          var openUp = spaceBelow < 120 && rect.top > spaceBelow;
+          menu.style.left = rect.left + "px";
+          menu.style.width = rect.width + "px";
+          menu.style.right = "auto";
+          menu.style.maxHeight = maxHeight + "px";
+          if (openUp) {
+            menu.style.top = "auto";
+            menu.style.bottom = window.innerHeight - rect.top + gap + "px";
+          } else {
+            menu.style.bottom = "auto";
+            menu.style.top = rect.bottom + gap + "px";
+          }
+        }
+
         function close() {
           root.classList.remove("is-open");
           trigger.setAttribute("aria-expanded", "false");
           menu.hidden = true;
+          menu.style.top = "";
+          menu.style.bottom = "";
+          menu.style.left = "";
+          menu.style.width = "";
         }
 
         function open() {
           root.classList.add("is-open");
           trigger.setAttribute("aria-expanded", "true");
           menu.hidden = false;
+          placeMenu();
           var selected = menu.querySelector('[aria-selected="true"]');
           if (selected) selected.focus();
         }
 
         function selectOption(option) {
-          if (!option) return;
+          if (!option || !option.getAttribute) return;
           menu.querySelectorAll('[role="option"]').forEach(function (item) {
             item.setAttribute("aria-selected", item === option ? "true" : "false");
           });
@@ -419,12 +443,15 @@
 
         trigger.addEventListener("click", function (event) {
           event.preventDefault();
+          event.stopPropagation();
           if (root.classList.contains("is-open")) close();
           else open();
         });
 
         menu.querySelectorAll('[role="option"]').forEach(function (option) {
-          option.addEventListener("click", function () {
+          option.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
             selectOption(option);
           });
         });
@@ -456,8 +483,15 @@
         });
 
         document.addEventListener("click", function (event) {
-          if (!root.contains(event.target)) close();
+          if (!root.contains(event.target) && !menu.contains(event.target)) close();
         });
+
+        window.addEventListener("resize", function () {
+          if (root.classList.contains("is-open")) placeMenu();
+        });
+        window.addEventListener("scroll", function () {
+          if (root.classList.contains("is-open")) placeMenu();
+        }, true);
       });
     })();
   </script>

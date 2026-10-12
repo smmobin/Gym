@@ -448,6 +448,10 @@ a { color: inherit; }
 /* Custom select — open menu matches Ocean Dark */
 .custom-select {
   position: relative;
+  z-index: 2;
+}
+.custom-select.is-open {
+  z-index: 20;
 }
 .custom-select-native {
   position: absolute;
@@ -510,10 +514,8 @@ a { color: inherit; }
   border-color: var(--accent);
 }
 .custom-select-menu {
-  position: absolute;
-  inset-inline: 0;
-  top: calc(100% + 0.4rem);
-  z-index: 12;
+  position: fixed;
+  z-index: 80;
   margin: 0;
   padding: 0.4rem;
   list-style: none;
@@ -523,12 +525,15 @@ a { color: inherit; }
   box-shadow: var(--shadow), 0 0 0 1px rgba(62, 199, 194, 0.06);
   display: grid;
   gap: 0.2rem;
+  box-sizing: border-box;
+  max-height: min(50vh, 220px);
+  overflow-y: auto;
   animation: selectDrop 0.16s ease both;
 }
 .custom-select-menu[hidden] { display: none; }
 @keyframes selectDrop {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
 .custom-select-menu [role="option"] {
   display: flex;
@@ -641,7 +646,7 @@ a { color: inherit; }
 }
 @keyframes riseIn {
   from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes heroDrift {
   from { transform: scale(1.04) translate3d(0, 0, 0); }
