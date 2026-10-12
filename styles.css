@@ -827,7 +827,7 @@ table {
   width: 100%;
   border-collapse: collapse;
 }
-table:not(.responsive-table) {
+table:not(.responsive-table):not(.schedule) {
   min-width: 640px;
 }
 .responsive-table {
@@ -1180,52 +1180,87 @@ td { overflow-wrap: anywhere; }
     margin-top: 2rem;
   }
 
-  /* schedule -> compact stacked cards */
+  /* schedule -> compact cards (no overflow, less vertical space) */
   .schedule-wrap {
     border: none;
     background: transparent;
     box-shadow: none;
-  }
-  .schedule,
-  .schedule tbody,
-  .schedule tr,
-  .schedule td {
-    display: block;
+    overflow: hidden;
     width: 100%;
-    min-width: 0;
+    max-width: 100%;
+  }
+  table.schedule {
+    display: block;
+    width: 100% !important;
+    max-width: 100%;
+    min-width: 0 !important;
   }
   .schedule thead { display: none; }
+  .schedule tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+  }
   .schedule tr {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 14px;
-    padding: 0.65rem 0.8rem;
-    margin-bottom: 0.5rem;
+    padding: 0.7rem 0.85rem;
     box-shadow: none;
   }
   .schedule td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.28rem 0;
-    border-bottom: 1px dashed var(--line);
-    text-align: left;
-    font-size: 0.86rem;
-  }
-  .schedule td:last-child {
-    border-bottom: none;
-    padding-top: 0.5rem;
-  }
-  .schedule td::before {
-    content: attr(data-label);
-    color: var(--muted);
-    font-size: 0.76rem;
+    border: none;
+    padding: 0;
+    min-width: 0;
+    max-width: 100%;
     text-align: right;
-    flex-shrink: 0;
+    font-size: 0.84rem;
+    vertical-align: middle;
   }
-  .schedule td:last-child::before { content: none; }
-  .schedule td:last-child .btn {
+  .schedule td::before { content: none !important; }
+
+  /* title + capacity badge on one row */
+  .schedule td:nth-child(1) {
+    display: block;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding-inline-end: 5.5rem;
+    margin-bottom: 0.3rem;
+  }
+  .schedule td:nth-child(5) {
+    position: absolute;
+    top: 0.7rem;
+    inset-inline-end: 0.85rem;
+    display: block;
+  }
+
+  /* day · time · coach on one muted line */
+  .schedule td:nth-child(2),
+  .schedule td:nth-child(3),
+  .schedule td:nth-child(4) {
+    display: inline;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+  .schedule td:nth-child(2)::after,
+  .schedule td:nth-child(3)::after {
+    content: " · ";
+    color: var(--muted);
+  }
+
+  .schedule td:nth-child(6) {
+    display: block;
+    margin-top: 0.55rem;
+  }
+  .schedule td:nth-child(6) .btn {
     width: 100%;
     text-align: center;
     padding: 0.4rem 0.7rem;
