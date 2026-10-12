@@ -390,23 +390,26 @@
         var valueEl = root.querySelector(".custom-select-value");
         var menu = root.querySelector(".custom-select-menu");
         if (!native || !trigger || !valueEl || !menu) return;
+        var home = root;
 
         function placeMenu() {
           var rect = trigger.getBoundingClientRect();
           var gap = 6;
-          var maxHeight = Math.min(window.innerHeight * 0.5, 220);
+          var maxHeight = Math.min(window.innerHeight * 0.45, 220);
           var spaceBelow = window.innerHeight - rect.bottom - gap;
-          var openUp = spaceBelow < 120 && rect.top > spaceBelow;
-          menu.style.left = rect.left + "px";
-          menu.style.width = rect.width + "px";
+          var openUp = spaceBelow < 140 && rect.top > spaceBelow;
+          menu.style.position = "fixed";
+          menu.style.zIndex = "1000";
+          menu.style.left = Math.round(rect.left) + "px";
+          menu.style.width = Math.round(rect.width) + "px";
           menu.style.right = "auto";
           menu.style.maxHeight = maxHeight + "px";
           if (openUp) {
             menu.style.top = "auto";
-            menu.style.bottom = window.innerHeight - rect.top + gap + "px";
+            menu.style.bottom = Math.round(window.innerHeight - rect.top + gap) + "px";
           } else {
             menu.style.bottom = "auto";
-            menu.style.top = rect.bottom + gap + "px";
+            menu.style.top = Math.round(rect.bottom + gap) + "px";
           }
         }
 
@@ -414,15 +417,24 @@
           root.classList.remove("is-open");
           trigger.setAttribute("aria-expanded", "false");
           menu.hidden = true;
+          if (menu.parentNode !== home) home.appendChild(menu);
           menu.style.top = "";
           menu.style.bottom = "";
           menu.style.left = "";
           menu.style.width = "";
+          menu.style.right = "";
+          menu.style.position = "";
+          menu.style.zIndex = "";
+          menu.style.maxHeight = "";
         }
 
         function open() {
+          document.querySelectorAll("[data-custom-select].is-open").forEach(function (other) {
+            if (other !== root) other.classList.remove("is-open");
+          });
           root.classList.add("is-open");
           trigger.setAttribute("aria-expanded", "true");
+          document.body.appendChild(menu);
           menu.hidden = false;
           placeMenu();
           var selected = menu.querySelector('[aria-selected="true"]');
@@ -448,12 +460,12 @@
           else open();
         });
 
-        menu.querySelectorAll('[role="option"]').forEach(function (option) {
-          option.addEventListener("click", function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            selectOption(option);
-          });
+        menu.addEventListener("click", function (event) {
+          var option = event.target.closest('[role="option"]');
+          if (!option || !menu.contains(option)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          selectOption(option);
         });
 
         trigger.addEventListener("keydown", function (event) {
@@ -483,14 +495,23 @@
         });
 
         document.addEventListener("click", function (event) {
-          if (!root.contains(event.target) && !menu.contains(event.target)) close();
+          if (!root.classList.contains("is-open")) return;
+          if (root.contains(event.target) || menu.contains(event.target)) return;
+          close();
         });
 
         window.addEventListener("resize", function () {
           if (root.classList.contains("is-open")) placeMenu();
         });
+        // Keep menu glued to the trigger; close if trigger leaves the viewport.
         window.addEventListener("scroll", function () {
-          if (root.classList.contains("is-open")) placeMenu();
+          if (!root.classList.contains("is-open")) return;
+          var rect = trigger.getBoundingClientRect();
+          if (rect.bottom < 0 || rect.top > window.innerHeight) {
+            close();
+            return;
+          }
+          placeMenu();
         }, true);
       });
     })();
