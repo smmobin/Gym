@@ -12,6 +12,7 @@
 | [adr/0002-backend-stack.md](adr/0002-backend-stack.md) | انتخاب بک‌اند (و نظر دربارهٔ پایتون) |
 | [adr/0003-database.md](adr/0003-database.md) | انتخاب دیتابیس |
 | [adr/0004-delivery-and-pwa.md](adr/0004-delivery-and-pwa.md) | سایت اول، PWA بعداً، بدون اپ اندروید بومی |
+| [guides/dev-toolchain-setup.md](guides/dev-toolchain-setup.md) | نصب Node / Python / PostgreSQL روی ویندوز |
 
 ## قرارداد نوشتن
 

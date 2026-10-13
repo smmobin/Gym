@@ -57,6 +57,7 @@ Gym/
 - [فهرست مستندات](docs/README.md)
 - [ADR چیست و تصمیم‌های معماری](docs/adr/README.md)
 - [مشخصات پروتوتایپ محصول](docs/product/gym-control-prototype.md)
+- [نصب Node / Python / PostgreSQL](docs/guides/dev-toolchain-setup.md)
 
 ---
 
