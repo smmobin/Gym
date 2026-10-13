@@ -71,58 +71,29 @@
     if (!native || !trigger || !valueEl || !menu || root.dataset.bound === "1") return;
     root.dataset.bound = "1";
 
-    var home = root;
-
-    function placeMenu() {
-      var rect = trigger.getBoundingClientRect();
-      var gap = 6;
-      var maxHeight = Math.min(window.innerHeight * 0.45, 240);
-      var spaceBelow = window.innerHeight - rect.bottom - gap;
-      var openUp = spaceBelow < 140 && rect.top > spaceBelow;
-
-      menu.style.position = "fixed";
-      menu.style.zIndex = "1000";
-      menu.style.left = Math.round(rect.left) + "px";
-      menu.style.width = Math.round(rect.width) + "px";
-      menu.style.right = "auto";
-      menu.style.maxHeight = maxHeight + "px";
-
-      if (openUp) {
-        menu.style.top = "auto";
-        menu.style.bottom = Math.round(window.innerHeight - rect.top + gap) + "px";
-      } else {
-        menu.style.bottom = "auto";
-        menu.style.top = Math.round(rect.bottom + gap) + "px";
-      }
-    }
+    // Keep menu in-flow under the field (never portaled / floating).
+    if (menu.parentNode !== root) root.appendChild(menu);
+    menu.removeAttribute("style");
 
     function close() {
       root.classList.remove("is-open");
       trigger.setAttribute("aria-expanded", "false");
       menu.hidden = true;
-      if (menu.parentNode !== home) home.appendChild(menu);
-      menu.removeAttribute("style");
     }
 
     function open() {
       document.querySelectorAll("[data-custom-select].is-open").forEach(function (other) {
         if (other === root) return;
         other.classList.remove("is-open");
-        var otherTrigger = other.querySelector(".custom-select-trigger");
         var otherMenu = other.querySelector(".custom-select-menu");
+        var otherTrigger = other.querySelector(".custom-select-trigger");
+        if (otherMenu) otherMenu.hidden = true;
         if (otherTrigger) otherTrigger.setAttribute("aria-expanded", "false");
-        if (otherMenu) {
-          otherMenu.hidden = true;
-          if (otherMenu.parentNode !== other) other.appendChild(otherMenu);
-          otherMenu.removeAttribute("style");
-        }
       });
 
       root.classList.add("is-open");
       trigger.setAttribute("aria-expanded", "true");
-      document.body.appendChild(menu);
       menu.hidden = false;
-      placeMenu();
       var selected = menu.querySelector('[aria-selected="true"]');
       if (selected) selected.focus();
     }
@@ -146,7 +117,6 @@
         }
       });
       if (!matched && native.options.length) {
-        // fallback by visible text
         Array.prototype.forEach.call(native.options, function (opt) {
           opt.selected = optionLabel(opt) === option.textContent.trim();
         });
@@ -200,22 +170,9 @@
 
     document.addEventListener("click", function (event) {
       if (!root.classList.contains("is-open")) return;
-      if (root.contains(event.target) || menu.contains(event.target)) return;
+      if (root.contains(event.target)) return;
       close();
     });
-
-    window.addEventListener("resize", function () {
-      if (root.classList.contains("is-open")) close();
-    });
-
-    // Floating menu closes on scroll so it never drifts with the page.
-    window.addEventListener(
-      "scroll",
-      function () {
-        if (root.classList.contains("is-open")) close();
-      },
-      true
-    );
   }
 
   function init() {
