@@ -288,23 +288,12 @@
         <form class="trial-form" action="#" method="get">
           <label>نام و نام خانوادگی<input type="text" placeholder="مثلاً علی رضایی" /></label>
           <label>موبایل<input type="tel" placeholder="۰۹۱۲..." /></label>
-          <label class="field-label">زمان مناسب
-            <div class="custom-select" data-custom-select>
-              <select class="custom-select-native" id="trial-time" name="trial-time" tabindex="-1" aria-hidden="true">
-                <option value="morning">صبح (۰۶:۳۰–۱۲:۰۰)</option>
-                <option value="evening" selected>عصر (۱۶:۰۰–۲۰:۰۰)</option>
-                <option value="night">شب (۲۰:۰۰–۲۲:۳۰)</option>
-              </select>
-              <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="trial-time-list">
-                <span class="custom-select-value">عصر (۱۶:۰۰–۲۰:۰۰)</span>
-                <span class="custom-select-caret" aria-hidden="true"></span>
-              </button>
-              <ul class="custom-select-menu" id="trial-time-list" role="listbox" hidden>
-                <li role="option" data-value="morning" tabindex="-1">صبح (۰۶:۳۰–۱۲:۰۰)</li>
-                <li role="option" data-value="evening" aria-selected="true" tabindex="-1">عصر (۱۶:۰۰–۲۰:۰۰)</li>
-                <li role="option" data-value="night" tabindex="-1">شب (۲۰:۰۰–۲۲:۳۰)</li>
-              </ul>
-            </div>
+          <label>زمان مناسب
+            <select id="trial-time" name="trial-time">
+              <option value="morning">صبح (۰۶:۳۰–۱۲:۰۰)</option>
+              <option value="evening" selected>عصر (۱۶:۰۰–۲۰:۰۰)</option>
+              <option value="night">شب (۲۰:۰۰–۲۲:۳۰)</option>
+            </select>
           </label>
           <button class="btn wide" type="button">ثبت درخواست نمایشی</button>
         </form>
@@ -364,119 +353,24 @@
     (function () {
       var toggle = document.getElementById("nav-toggle");
       var nav = document.querySelector(".site-links");
-      if (toggle && nav) {
-        function isMobileNav() {
-          return window.matchMedia("(max-width: 1100px)").matches;
-        }
-
-        document.querySelectorAll(".site-links a").forEach(function (link) {
-          link.addEventListener("click", function () {
-            if (isMobileNav()) toggle.checked = false;
-          });
-        });
-
-        document.addEventListener("click", function (event) {
-          if (!toggle.checked || !isMobileNav()) return;
-          if (event.target.closest(".site-links, .nav-burger, .nav-toggle, label[for='nav-toggle']")) {
-            return;
-          }
-          toggle.checked = false;
-        });
+      if (!toggle || !nav) return;
+      function isMobileNav() {
+        return window.matchMedia("(max-width: 1100px)").matches;
       }
-
-      document.querySelectorAll("[data-custom-select]").forEach(function (root) {
-        var native = root.querySelector(".custom-select-native");
-        var trigger = root.querySelector(".custom-select-trigger");
-        var valueEl = root.querySelector(".custom-select-value");
-        var menu = root.querySelector(".custom-select-menu");
-        if (!native || !trigger || !valueEl || !menu) return;
-
-        // Ensure menu stays in-flow under the field (never portaled / floating).
-        if (menu.parentNode !== root) root.appendChild(menu);
-        menu.removeAttribute("style");
-
-        function close() {
-          root.classList.remove("is-open");
-          trigger.setAttribute("aria-expanded", "false");
-          menu.hidden = true;
+      document.querySelectorAll(".site-links a").forEach(function (link) {
+        link.addEventListener("click", function () {
+          if (isMobileNav()) toggle.checked = false;
+        });
+      });
+      document.addEventListener("click", function (event) {
+        if (!toggle.checked || !isMobileNav()) return;
+        if (event.target.closest(".site-links, .nav-burger, .nav-toggle, label[for='nav-toggle']")) {
+          return;
         }
-
-        function open() {
-          document.querySelectorAll("[data-custom-select].is-open").forEach(function (other) {
-            if (other === root) return;
-            other.classList.remove("is-open");
-            var otherMenu = other.querySelector(".custom-select-menu");
-            var otherTrigger = other.querySelector(".custom-select-trigger");
-            if (otherMenu) otherMenu.hidden = true;
-            if (otherTrigger) otherTrigger.setAttribute("aria-expanded", "false");
-          });
-          root.classList.add("is-open");
-          trigger.setAttribute("aria-expanded", "true");
-          menu.hidden = false;
-          var selected = menu.querySelector('[aria-selected="true"]');
-          if (selected) selected.focus();
-        }
-
-        function selectOption(option) {
-          if (!option || !option.getAttribute) return;
-          menu.querySelectorAll('[role="option"]').forEach(function (item) {
-            item.setAttribute("aria-selected", item === option ? "true" : "false");
-          });
-          valueEl.textContent = option.textContent.trim();
-          native.value = option.getAttribute("data-value") || "";
-          native.dispatchEvent(new Event("change", { bubbles: true }));
-          close();
-          trigger.focus();
-        }
-
-        trigger.addEventListener("click", function (event) {
-          event.preventDefault();
-          event.stopPropagation();
-          if (root.classList.contains("is-open")) close();
-          else open();
-        });
-
-        menu.addEventListener("click", function (event) {
-          var option = event.target.closest('[role="option"]');
-          if (!option || !menu.contains(option)) return;
-          event.preventDefault();
-          event.stopPropagation();
-          selectOption(option);
-        });
-
-        trigger.addEventListener("keydown", function (event) {
-          if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            open();
-          }
-        });
-
-        menu.addEventListener("keydown", function (event) {
-          var options = Array.prototype.slice.call(menu.querySelectorAll('[role="option"]'));
-          var index = options.indexOf(document.activeElement);
-          if (event.key === "Escape") {
-            event.preventDefault();
-            close();
-            trigger.focus();
-          } else if (event.key === "ArrowDown") {
-            event.preventDefault();
-            options[Math.min(index + 1, options.length - 1)].focus();
-          } else if (event.key === "ArrowUp") {
-            event.preventDefault();
-            options[Math.max(index - 1, 0)].focus();
-          } else if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            selectOption(document.activeElement);
-          }
-        });
-
-        document.addEventListener("click", function (event) {
-          if (!root.classList.contains("is-open")) return;
-          if (root.contains(event.target)) return;
-          close();
-        });
+        toggle.checked = false;
       });
     })();
   </script>
+  <script src="js/custom-select.js"></script>
 </body>
 </html>
