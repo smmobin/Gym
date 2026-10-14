@@ -68,7 +68,16 @@
 - فقط اگر تست‌ها **سبز** بودند → commit و push
 - در چت بگو قابلیت کاملاً OK بوده یا نه
 
-جزئیات: [guides/testing.md](testing.md) · قانون Cursor: `.cursor/rules/testing-and-ship.mdc`
+جزئیات: [testing.md](testing.md) · قانون Cursor: `.cursor/rules/testing-and-ship.mdc`
+
+## ۷) قوانین محصول و امنیت
+
+علاوه بر این سند همکاری، این‌ها رسمی‌اند:
+
+- [project-rules.md](project-rules.md) — DoD، مرز پروتوتایپ/محصول، پول، برش عمودی، API، audit، بکاپ
+- [security.md](security.md) — اصول امنیت، OWASP، پلتفرم‌های تست امنیت
+
+قانون Cursor: `.cursor/rules/project-invariants.mdc`
 
 ---
 

@@ -16,6 +16,8 @@
 | [guides/getting-started.md](guides/getting-started.md) | اسکلت فرانت/بک و دستور اجرای توسعه |
 | [guides/collaboration.md](guides/collaboration.md) | سبک همکاری vibe coding، مستندسازی، توضیح مفاهیم |
 | [guides/testing.md](guides/testing.md) | تست خودکار؛ فقط با تست سبز commit/push |
+| [guides/project-rules.md](guides/project-rules.md) | قوانین رسمی: DoD، مرز پروتوتایپ، پول، API، audit |
+| [guides/security.md](guides/security.md) | امنیت، OWASP، ابزارها و پلتفرم‌های اسکن |
 
 ## قرارداد نوشتن
 
