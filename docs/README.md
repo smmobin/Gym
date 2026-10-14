@@ -14,6 +14,7 @@
 | [adr/0004-delivery-and-pwa.md](adr/0004-delivery-and-pwa.md) | سایت اول، PWA بعداً، بدون اپ اندروید بومی |
 | [guides/dev-toolchain-setup.md](guides/dev-toolchain-setup.md) | نصب Node / Python / PostgreSQL روی ویندوز |
 | [guides/getting-started.md](guides/getting-started.md) | اسکلت فرانت/بک و دستور اجرای توسعه |
+| [guides/collaboration.md](guides/collaboration.md) | سبک همکاری vibe coding، مستندسازی، توضیح مفاهیم |
 
 ## قرارداد نوشتن
 
