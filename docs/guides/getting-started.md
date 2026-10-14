@@ -51,6 +51,18 @@ npm run dev
 
 تم‌های جایگزین (`alternate-themes/`) فقط روی دیسک محلی می‌مانند و به گیت‌هاب پوش نمی‌شوند.
 
+## تست قبل از GitHub
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm test
+```
+
+فقط اگر هر دو سبز بودند commit/push کن. جزئیات: [testing.md](testing.md)
+
 ## مرحلهٔ بعدی پیشنهادی برای چت جدید
 
 1. مدل‌های SQLAlchemy مطابق ADR دیتابیس (`members`, `payments`, …)

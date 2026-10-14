@@ -1,0 +1,22 @@
+---
+description: Every meaningful feature needs tests; only commit/push when green; report pass quality to the user.
+alwaysApply: true
+---
+
+# Testing and ship gate (GYM CONTROL)
+
+## What is a "test"?
+Automated checks that run code and assert expected behavior (API returns ok, UI renders, etc.). Green = passed. Red = failed — do not ship.
+
+## Rules
+1. For every **important feature, module, or capability** you add or change, write automated tests covering the happy path and at least one failure/edge case when relevant.
+2. Run the relevant test suite **before** git commit/push.
+3. **Only commit and push to GitHub if tests are green.** If red, fix first (or ask the user if blocked).
+4. After shipping (or after running tests), tell the user clearly:
+   - whether the feature is **fully OK / green**, or
+   - **partial / broken**, with what failed.
+5. Document non-obvious test decisions in `docs/guides/testing.md` when the convention changes.
+6. Backend: `pytest` under `backend/tests/`. Frontend: `vitest` under `frontend/src/**/*.test.ts(x)`.
+
+## Out of scope for mandatory tests
+Pure docs-only changes, `.gitignore` tweaks, or copy edits with no behavior change — still say so briefly to the user.

@@ -15,6 +15,7 @@
 | [guides/dev-toolchain-setup.md](guides/dev-toolchain-setup.md) | نصب Node / Python / PostgreSQL روی ویندوز |
 | [guides/getting-started.md](guides/getting-started.md) | اسکلت فرانت/بک و دستور اجرای توسعه |
 | [guides/collaboration.md](guides/collaboration.md) | سبک همکاری vibe coding، مستندسازی، توضیح مفاهیم |
+| [guides/testing.md](guides/testing.md) | تست خودکار؛ فقط با تست سبز commit/push |
 
 ## قرارداد نوشتن
 

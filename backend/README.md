@@ -23,6 +23,16 @@ cd backend
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
+## Tests
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+pytest
+```
+
+قبل از commit/push باید سبز باشند. جزئیات: `docs/guides/testing.md`
+
 - API root: http://127.0.0.1:8000/
 - Docs: http://127.0.0.1:8000/docs
 - Health: http://127.0.0.1:8000/api/v1/health
