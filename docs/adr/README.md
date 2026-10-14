@@ -25,9 +25,9 @@
 
 | شماره | عنوان | وضعیت |
 |-------|--------|--------|
-| [0001](0001-frontend-stack.md) | پشتهٔ فرانت‌اند | Proposed |
-| [0002](0002-backend-stack.md) | پشتهٔ بک‌اند | Proposed |
-| [0003](0003-database.md) | دیتابیس | Proposed |
-| [0004](0004-delivery-and-pwa.md) | تحویل محصول: سایت → PWA | Proposed |
+| [0001](0001-frontend-stack.md) | پشتهٔ فرانت‌اند | Accepted |
+| [0002](0002-backend-stack.md) | پشتهٔ بک‌اند | Accepted |
+| [0003](0003-database.md) | دیتابیس | Accepted |
+| [0004](0004-delivery-and-pwa.md) | تحویل محصول: سایت → PWA | Accepted |
 
-> وضعیت فعلاً **Proposed** است تا شما انتخاب‌ها را بخوانید و تأیید کنید. بعد از تأیید، به `Accepted` تغییر می‌دهیم.
+> وضعیت به **Accepted** تغییر کرد؛ اسکلت `frontend/` و `backend/` بر اساس همین تصمیم‌ها ساخته شده است.

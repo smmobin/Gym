@@ -1,0 +1,91 @@
+:root {
+  color-scheme: dark;
+  --bg: #07131f;
+  --fg: #e8f1f7;
+  --muted: #9bb0c0;
+  --accent: #2ec4b6;
+  --ok: #3dd68c;
+  --down: #ff7b72;
+  --card: #0d1c2b;
+  font-family: Vazirmatn, system-ui, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--fg);
+  background: radial-gradient(1200px 600px at 80% -10%, #12324a 0%, transparent 55%), var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.2;
+}
+
+.lead {
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.status-list {
+  list-style: none;
+  margin: 0 0 2rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+}
+
+.status-list li + li {
+  margin-top: 0.75rem;
+}
+
+.status-list strong[data-state='ok'] {
+  color: var(--ok);
+}
+
+.status-list strong[data-state='down'] {
+  color: var(--down);
+}
+
+.status-list strong[data-state='loading'] {
+  color: var(--muted);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  color: var(--accent);
+}

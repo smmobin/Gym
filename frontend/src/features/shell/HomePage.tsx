@@ -1,0 +1,48 @@
+import { useEffect, useState } from 'react'
+
+import { apiGet } from '@/lib/api'
+import type { HealthResponse } from '@/types'
+
+export function HomePage() {
+  const [apiStatus, setApiStatus] = useState<'loading' | 'ok' | 'down'>('loading')
+  const [dbStatus, setDbStatus] = useState<'loading' | 'ok' | 'down'>('loading')
+
+  useEffect(() => {
+    apiGet<HealthResponse>('/api/v1/health')
+      .then(() => setApiStatus('ok'))
+      .catch(() => setApiStatus('down'))
+
+    apiGet<HealthResponse>('/api/v1/health/db')
+      .then(() => setDbStatus('ok'))
+      .catch(() => setDbStatus('down'))
+  }, [])
+
+  return (
+    <main className="page">
+      <p className="eyebrow">GYM CONTROL</p>
+      <h1>باشگاه آذر</h1>
+      <p className="lead">
+        اسکلت فرانت‌اند React آماده است. پروتوتایپ HTML در ریشهٔ ریپو به‌عنوان مرجع UI باقی مانده.
+      </p>
+
+      <ul className="status-list">
+        <li>
+          API: <strong data-state={apiStatus}>{label(apiStatus)}</strong>
+        </li>
+        <li>
+          Database: <strong data-state={dbStatus}>{label(dbStatus)}</strong>
+        </li>
+      </ul>
+
+      <p className="hint">
+        برای دیدن پروتوتایپ فعلی: فایل‌های <code>index.html</code> / پنل‌ها در ریشهٔ پروژه.
+      </p>
+    </main>
+  )
+}
+
+function label(state: 'loading' | 'ok' | 'down') {
+  if (state === 'loading') return 'در حال بررسی…'
+  if (state === 'ok') return 'متصل'
+  return 'قطع — بک‌اند را اجرا کنید'
+}

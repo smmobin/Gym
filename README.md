@@ -1,79 +1,64 @@
 # GYM CONTROL · باشگاه آذر
 
-پروتوتایپ نمایشی سامانهٔ مدیریت باشگاه ورزشی با رابط فارسی و راست‌چین (RTL).
+سامانهٔ مدیریت باشگاه ورزشی — پروتوتایپ HTML + اسکلت فرانت/بک برای نسخهٔ عملیاتی.
 
-**نسخهٔ زنده:** [smmobin.github.io/Gym](https://smmobin.github.io/Gym/)
-
-> این نسخه فقط ظاهر و تعاملات نمایشی است؛ بک‌اند، دیتابیس و احراز هویت واقعی هنوز پیاده‌سازی نشده‌اند.
+**نسخهٔ زنده (پروتوتایپ):** [smmobin.github.io/Gym](https://smmobin.github.io/Gym/)
 
 ---
 
-## الان پروژه چیست؟
+## شروع سریع توسعه
 
-یک سایت استاتیک (HTML / CSS / JavaScript) که سه نقش را نشان می‌دهد:
+جزئیات کامل: [docs/guides/getting-started.md](docs/guides/getting-started.md)
 
-| نقش | فایل | کار اصلی |
-|-----|------|----------|
-| ورزشکار | `athlete.html` | اشتراک، حضور، پرداخت، برنامهٔ تمرینی |
-| منشی | `receptionist.html` | اعضا، ثبت حضور، تمدید، دریافت وجه |
-| مدیر | `manager.html` | آمار، طرح‌ها، کارکنان، گزارش‌ها، تنظیمات |
+```powershell
+# ترمینال ۱ — API
+cd backend
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
-صفحهٔ اصلی (`index.html`) لندینگ برند **باشگاه آذر** است و از آنجا می‌توان وارد پنل‌ها شد.
-
-تم فعال ریشه: **Ocean Dark**. چهار تم جایگزین در `alternate-themes/` هستند.
-
----
-
-## اجرا به‌صورت محلی
-
-سرور لازم نیست؛ کافی است فایل‌ها را با مرورگر باز کنید یا یک سرور استاتیک ساده بزنید:
-
-```bash
-# مثال با Python
-python -m http.server 8080
+# ترمینال ۲ — React
+cd frontend
+npm run dev
 ```
 
-سپس بروید به `http://localhost:8080`.
+- فرانت: http://127.0.0.1:5173  
+- API docs: http://127.0.0.1:8000/docs  
 
 ---
 
-## ساختار پوشه‌ها
+## ساختار ریپو
 
 ```text
 Gym/
-├── index.html              # لندینگ باشگاه آذر
-├── athlete.html            # پنل ورزشکار
-├── receptionist.html       # پنل منشی
-├── manager.html            # پنل مدیر
-├── styles.css              # استایل تم اصلی
-├── js/                     # اسکریپت‌های مشترک UI
-├── images/                 # تصاویر لندینگ
-├── alternate-themes/       # تم‌های بصری جایگزین
-└── docs/                   # تمام مستندات پروژه (منبع حقیقت)
+├── frontend/               # React + TypeScript + Vite
+├── backend/                # FastAPI + SQLAlchemy + Alembic + Postgres
+├── docs/                   # مستندات و ADR (منبع حقیقت)
+├── index.html              # پروتوتایپ لندینگ (GitHub Pages)
+├── athlete.html            # پروتوتایپ پنل ورزشکار
+├── receptionist.html       # پروتوتایپ پنل منشی
+├── manager.html            # پروتوتایپ پنل مدیر
+├── styles.css / js / images
+└── alternate-themes/       # فقط محلی (gitignore) — روی GitHub نیست
 ```
 
-از این به بعد **همهٔ مستندات** داخل `docs/` ثبت می‌شوند. نقطهٔ شروع:
+---
+
+## پشتهٔ پیشنهادی (ADR)
+
+| لایه | انتخاب |
+|------|--------|
+| فرانت | React + TypeScript + Vite |
+| بک‌اند | Python FastAPI |
+| دیتابیس | PostgreSQL (`gym_control`) |
 
 - [فهرست مستندات](docs/README.md)
-- [ADR چیست و تصمیم‌های معماری](docs/adr/README.md)
-- [مشخصات پروتوتایپ محصول](docs/product/gym-control-prototype.md)
-- [نصب Node / Python / PostgreSQL](docs/guides/dev-toolchain-setup.md)
+- [راهنمای شروع](docs/guides/getting-started.md)
+- [نصب ابزارها](docs/guides/dev-toolchain-setup.md)
+- [ADRها](docs/adr/README.md)
 
 ---
 
-## وضعیت فعلی در برابر نسخهٔ عملیاتی
+## نکات امنیتی / گیت
 
-| الان (پروتوتایپ) | بعداً (نسخهٔ واقعی) |
-|------------------|---------------------|
-| دادهٔ نمونه در مرورگر | دیتابیس و API |
-| تعویض نقش نمایشی | ورود واقعی + کنترل دسترسی سمت سرور |
-| بدون پرداخت/پیامک واقعی | درگاه و سرویس‌های بیرونی در صورت نیاز |
-| سایت استاتیک | سایت + در آینده احتمالاً PWA (نه اپ اندروید بومی) |
-
-تصمیم‌های پیشنهادی برای فرانت، بک‌اند و دیتابیس در [مستندات ADR](docs/adr/README.md) آمده‌اند.
-
----
-
-## لایسنس
-
-پروژهٔ شخصی / نمایشی. در صورت نیاز به لایسنس رسمی، بعداً اضافه می‌شود.
+- `.env`، `.venv`، `node_modules`، لاگ‌ها و رمزها در `.gitignore` هستند.
+- `alternate-themes/` روی دستگاه می‌ماند ولی به GitHub پوش نمی‌شود.
