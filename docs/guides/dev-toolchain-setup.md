@@ -2,11 +2,13 @@
 
 این راهنما پشتهٔ پیشنهادی ADRها را پوشش می‌دهد:
 
-| لایه | ابزار | وضعیت روی سیستم شما (بررسی ۲۰۲۶-۱۰-۱۳) |
+| لایه | ابزار | وضعیت روی سیستم شما (بررسی ۲۰۲۶-۱۰-۱۴) |
 |------|--------|----------------------------------------|
 | فرانت | Node.js + npm + Vite + TypeScript | **نصب است** (Node v24، npm 11؛ `typescript` و `vite` سراسری هم نصب شد) |
-| بک‌اند | Python 3.12 + FastAPI و وابستگی‌ها | **Python و پکیج‌ها آماده‌اند**؛ دستور `python` هنوز به خاطر alias ویندوز خراب است |
-| دیتابیس | PostgreSQL 16+ | **نصب نیست** — نیاز به Administrator دارد |
+| بک‌اند | Python 3.12 + FastAPI و وابستگی‌ها | **آماده** — `python` به 3.12 وصل است؛ پکیج‌های FastAPI نصب‌اند |
+| دیتابیس | PostgreSQL 17.11 | **آماده** — سرویس `postgresql-x64-17` در حال اجرا؛ دیتابیس `gym_control` ساخته شده |
+
+رمز کاربر `postgres` در فایل محلی `C:\Users\tabat\.gym-dev\postgres.env` ذخیره شده (این فایل در گیت نیست).
 
 ---
 
@@ -61,27 +63,14 @@ npm -v
 py -3.12 -c "import fastapi, uvicorn, sqlalchemy, alembic, psycopg; print('OK')"
 ```
 
-### مشکل مهم: دستور `python` کار نمی‌کند
+### دستور `python`
 
-ویندوز یک میانبر تقلبی در Microsoft Store دارد. فعلاً همیشه از این استفاده کنید:
-
-```powershell
-py -3.12
-py -3.12 -m pip ...
-```
-
-### رفع کامل (پیشنهادی — خودتان انجام دهید)
-
-1. بروید به:  
-   **Settings → Apps → Advanced app settings → App execution aliases**
-2. برای **`python.exe`** و **`python3.exe`** گزینه را **Off** کنید.
-3. یک ترمینال جدید باز کنید و بزنید:
+روی این ماشین alias استور حذف شده و `python` / `python3` به **Python 3.12.2** وصل‌اند. اگر در ترمینال قدیمی هنوز خطا دیدید، یک ترمینال جدید باز کنید:
 
 ```powershell
 python --version
+py -3.12 --version
 ```
-
-باید چیزی شبیه `Python 3.12.2` ببینید (چون مسیر 3.12 به User PATH اضافه شده).
 
 ### اگر Python اصلاً نبود
 
@@ -100,78 +89,42 @@ py -3.12 -m pip install "fastapi" "uvicorn[standard]" "sqlalchemy" "alembic" "ps
 
 ---
 
-## ۳) دیتابیس — PostgreSQL (نیاز به Admin)
+## ۳) دیتابیس — PostgreSQL
 
-نصب از این محیط Cursor به‌خاطر نبود دسترسی Administrator و کندی دانلود EnterpriseDB کامل نشد. باید **خودتان یک‌بار با Run as Administrator** نصب کنید.
+### وضعیت فعلی (نصب‌شده)
 
-### روش الف — winget (ساده‌ترین)
+- نسخه: **PostgreSQL 17.11**
+- سرویس ویندوز: `postgresql-x64-17` → Running
+- پورت: `5432`
+- دیتابیس پروژه: `gym_control`
+- مسیر ابزار: `C:\Program Files\PostgreSQL\17\bin`
+- رمز `postgres`: فایل `C:\Users\tabat\.gym-dev\postgres.env`
 
-1. منوی استارت → **Windows PowerShell** یا **Terminal** → راست‌کلیک → **Run as administrator**
-2. این دستور:
+تأیید سریع:
+
+```powershell
+psql --version
+Get-Service postgresql-x64-17
+# رمز را از postgres.env بخوانید، سپس:
+$env:PGPASSWORD = 'YOUR_PASSWORD'
+psql -U postgres -h localhost -d gym_control -c "SELECT current_database();"
+```
+
+### اگر روی ماشین دیگری نصب می‌کنید
+
+روش ترجیحی: دانلود نصب‌کننده از EnterpriseDB و اجرای unattended، یا:
 
 ```powershell
 winget install --id PostgreSQL.PostgreSQL.17 -e --accept-package-agreements --accept-source-agreements
 ```
 
-3. در ویزارد نصب:
-   - رمز کاربر `postgres` را یادداشت کنید (مثلاً یک رمز قوی محلی)
-   - پورت پیش‌فرض: **5432**
-   - نصب **Command Line Tools** و در صورت تمایل **pgAdmin 4** را فعال بگذارید
-4. همهٔ ترمینال‌ها را ببندید و دوباره باز کنید.
-
-### روش ب — Chocolatey (اگر Admin دارید)
-
-در PowerShell با Administrator:
-
-```powershell
-choco install postgresql17 -y --params "/Password:YOUR_STRONG_PASSWORD"
-```
-
-رمز را با مقدار واقعی عوض کنید و جایی امن نگه دارید.
-
-### روش ج — نصب‌کنندهٔ رسمی
-
-1. از صفحهٔ رسمی دانلود کنید:  
-   [https://www.enterprisedb.com/downloads/postgres-postgresql-downloads](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)  
-   نسخهٔ **Windows x86-64** برای PostgreSQL 17 (یا 16).
-2. فایل `.exe` را Run as administrator اجرا کنید.
-3. همان تنظیمات پورت 5432 و رمز `postgres` را انجام دهید.
-4. در پایان، مسیر زیر را به PATH اضافه کنید اگر `psql` شناخته نشد:
-
-```text
-C:\Program Files\PostgreSQL\17\bin
-```
-
-(Settings → System → About → Advanced system settings → Environment Variables → Path)
-
-### بعد از نصب — تأیید
-
-```powershell
-psql --version
-Get-Service *postgres*
-```
-
-سرویس باید **Running** باشد.
-
-ساخت دیتابیس پروژه:
+سپس:
 
 ```powershell
 psql -U postgres -c "CREATE DATABASE gym_control;"
 ```
 
-اگر رمز خواست، همان رمز نصب را بزنید.
-
-اتصال تستی:
-
-```powershell
-psql -U postgres -d gym_control -c "SELECT version();"
-```
-
-### کلاینت گرافیکی (اختیاری)
-
-- **pgAdmin 4** معمولاً با نصب‌کنندهٔ EDB می‌آید  
-- یا: `winget install PostgreSQL.pgAdmin`  
-- یا DBeaver Community
+کلاینت گرافیکی اختیاری: pgAdmin 4 یا DBeaver.
 
 ---
 
@@ -207,6 +160,6 @@ Get-Service *postgres*
 
 ---
 
-## ۶) اگر نصب Postgres را تمام کردید
+## ۶) مرحلهٔ بعد
 
-در چت بگویید «Postgres نصب شد» تا با هم سرویس، ساخت `gym_control`، و در صورت تمایل پذیرش ADR دیتابیس را جلو ببریم.
+ابزارها آماده‌اند. مرحلهٔ بعدی می‌تواند پذیرش ADRها و شروع اسکلت بک‌اند FastAPI + اتصال به `gym_control` باشد.
