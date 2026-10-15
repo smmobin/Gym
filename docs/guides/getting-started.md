@@ -103,3 +103,5 @@ cd backend
 1. احراز هویت کارکنان (موبایل + رمز) + نقش سمت سرور
 2. برش عمودی «لیست/ثبت عضو» API + حداقل UI در `frontend/`
 3. حضور ورود/خروج و سپس تمدید + پرداخت + audit
+
+وضعیت زنده و پرامپت کپی‌کردنی: `docs/product/roadmap-status.md` و `docs/prompts/next-coding-prompt.md`.
