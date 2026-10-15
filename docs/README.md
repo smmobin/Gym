@@ -7,6 +7,7 @@
 | مسیر | موضوع |
 |------|--------|
 | [product/gym-control-prototype.md](product/gym-control-prototype.md) | مشخصات کامل پروتوتایپ محصول (نقش‌ها، صفحات، مدل دادهٔ نمونه) |
+| [product/business-rules.md](product/business-rules.md) | قوانین کسب‌وکار نسخهٔ عملیاتی (منبع حقیقت رفتار؛ مقدم بر پروتوتایپ) |
 | [adr/README.md](adr/README.md) | ADR چیست + فهرست تصمیم‌های معماری |
 | [adr/0001-frontend-stack.md](adr/0001-frontend-stack.md) | انتخاب فرانت‌اند |
 | [adr/0002-backend-stack.md](adr/0002-backend-stack.md) | انتخاب بک‌اند (و نظر دربارهٔ پایتون) |
