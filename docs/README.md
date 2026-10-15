@@ -9,6 +9,7 @@
 | [product/gym-control-prototype.md](product/gym-control-prototype.md) | مشخصات کامل پروتوتایپ محصول (نقش‌ها، صفحات، مدل دادهٔ نمونه) |
 | [product/business-rules.md](product/business-rules.md) | قوانین کسب‌وکار نسخهٔ عملیاتی (منبع حقیقت رفتار؛ مقدم بر پروتوتایپ) |
 | [product/roadmap-status.md](product/roadmap-status.md) | الان کجاییم و مرحلهٔ بعد چیست (سند زندهٔ مدیر محصول) |
+| [product/schema-todos.md](product/schema-todos.md) | TODOهای باز مدل داده (قفل پرونده، خروج خودکار، …) |
 | [prompts/next-coding-prompt.md](prompts/next-coding-prompt.md) | پرامپت آماده برای چت سازنده |
 | [guides/product-manager.md](guides/product-manager.md) | چطور چت مدیر محصول را راه بیندازی |
 | [adr/README.md](adr/README.md) | ADR چیست + فهرست تصمیم‌های معماری |

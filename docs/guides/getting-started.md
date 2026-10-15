@@ -63,15 +63,43 @@ npm test
 
 فقط اگر هر دو سبز بودند commit/push کن. جزئیات: [testing.md](testing.md)
 
+## Migration (ساخت جدول‌ها)
+
+بعد از پر کردن `backend/.env` با `DATABASE_URL` واقعی:
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+alembic upgrade head
+```
+
+این دستور جدول‌های نسخهٔ اول را روی Postgres `gym_control` می‌سازد (یا به آخرین نسخه می‌رساند).
+
 ## دادهٔ فیک (Seed)
 
-طبق `docs/guides/project-rules.md` بخش ۵٫۱: بعد از آماده شدن مدل‌ها، اسکریپت seed اضافه می‌شود تا اعضا/پرداخت/حضور نمونه در دیتابیس دیده شوند.  
-تا آن موقع پروتوتایپ HTML هنوز دادهٔ نمایشی خودش را دارد.
+اسکریپت seed داده‌های **ساختگی** می‌ریزد (حدود ۹ عضو، چند طرح، عضویت، پرداخت، حضور، کمد، کلاس، مربی، هزینه، صف آزمایشی).  
+هر بار اجرا، داده‌های دامنه را پاک و دوباره پر می‌کند — فقط برای محیط توسعه.
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+python -m app.db.seed
+```
+
+یا بدون activate:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.db.seed
+```
+
+بعد از seed می‌توانی با `psql` یا هر کلاینت Postgres جدول‌هایی مثل `members` / `payments` را ببینی.  
+پروتوتایپ HTML ریشه هنوز دادهٔ نمایشی خودش را دارد و به این seed وصل نیست.
+
+جزئیات TODOهای باز مدل: [schema-todos.md](../product/schema-todos.md)
 
 ## مرحلهٔ بعدی پیشنهادی برای چت جدید
 
-1. مدل‌های SQLAlchemy مطابق ADR دیتابیس (`members`, `payments`, …)
-2. اولین migration با Alembic
-3. اسکریپت seed با دادهٔ فیک سازگار (حداقل ~۸ عضو + طرح/حضور/پرداخت)
-4. مهاجرت تدریجی پنل‌های HTML به `frontend/src/features/*`
-5. احراز هویت واقعی + نقش‌ها
+1. احراز هویت کارکنان (موبایل + رمز) + نقش سمت سرور
+2. برش عمودی «لیست/ثبت عضو» API + حداقل UI در `frontend/`
+3. حضور ورود/خروج و سپس تمدید + پرداخت + audit

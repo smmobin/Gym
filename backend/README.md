@@ -15,6 +15,17 @@ copy .env.example .env
 Edit `.env` and set `DATABASE_URL` with your local Postgres password  
 (from `C:\Users\tabat\.gym-dev\postgres.env` on this machine).
 
+## Migration + seed
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+alembic upgrade head
+python -m app.db.seed
+```
+
+Seed فقط دادهٔ ساختگی توسعه است و جدول‌های دامنه را دوباره پر می‌کند. جزئیات: `docs/guides/getting-started.md`
+
 ## Run
 
 ```powershell
@@ -45,9 +56,10 @@ backend/
 ├── app/
 │   ├── api/v1/       # route modules
 │   ├── core/         # settings, db
+│   ├── db/           # seed
 │   ├── models/       # SQLAlchemy models
 │   ├── schemas/      # Pydantic schemas
-│   ├── services/     # business logic
+│   ├── services/     # debt, booking capacity, …
 │   └── main.py
 ├── alembic/          # migrations
 ├── requirements.txt

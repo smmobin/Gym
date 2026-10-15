@@ -1,1 +1,1 @@
-# Domain services / business logic will live here.
+"""Domain services (debt, booking capacity, ...)."""
