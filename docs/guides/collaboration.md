@@ -93,6 +93,7 @@
 
 - [project-rules.md](project-rules.md) — DoD، مرز پروتوتایپ/محصول، پول، برش عمودی، API، audit، بکاپ
 - [security.md](security.md) — اصول امنیت، OWASP، پلتفرم‌های تست امنیت
+- [product-manager.md](product-manager.md) — چت جدا برای مدیر محصول: مرحلهٔ بعد + پرامپت سازنده + به‌روز کردن docs
 
 قانون Cursor: `.cursor/rules/project-invariants.mdc`
 
@@ -108,4 +109,4 @@
 | PostgreSQL `gym_control` | نصب و دیتابیس ساخته شده |
 | منطق واقعی (اعضا/پرداخت/ورود) | **هنوز پیاده‌سازی نشده** — منتظر تأیید برای مرحلهٔ بعد |
 
-**قدم بعدی پیشنهادی (نیاز به تأیید):** ساخت مدل‌های دیتابیس + اولین migration با Alembic.
+**قدم بعدی زنده:** [roadmap-status.md](../product/roadmap-status.md) (نه این جدول قدیمی).

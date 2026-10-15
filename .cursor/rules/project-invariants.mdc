@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Project invariants
 
-Follow `docs/guides/project-rules.md`, `docs/guides/security.md`, and `docs/guides/collaboration.md`.
+Follow `docs/guides/project-rules.md`, `docs/guides/security.md`, `docs/guides/collaboration.md`, and product behavior in `docs/product/business-rules.md`.
 Discover docs and structure yourself — do not require the user to paste paths or GitHub URLs into prompts.
 
 ## Must remember
