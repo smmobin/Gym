@@ -14,3 +14,4 @@ Follow `docs/guides/project-rules.md` and `docs/guides/security.md`.
 - **Product constants:** Persian RTL UI, Toman amounts, Jalali dates in UI.
 - **Money:** changing plan price must not rewrite past payments/memberships; income ≠ debt.
 - **Delivery:** vertical slices; API under `/api/v1`; audit log for financial/membership/role changes; Postgres backups before real member data.
+- **Fake/seed data:** every meaningful data feature must ship with realistic fake seed data so the owner can see the system working; never put real member PII in seed or git.
