@@ -5,7 +5,8 @@ alwaysApply: true
 
 # Project invariants
 
-Follow `docs/guides/project-rules.md` and `docs/guides/security.md`.
+Follow `docs/guides/project-rules.md`, `docs/guides/security.md`, and `docs/guides/collaboration.md`.
+Discover docs and structure yourself — do not require the user to paste paths or GitHub URLs into prompts.
 
 ## Must remember
 - **DoD:** feature is not done without green tests, no secrets in git, and a clear OK/not-OK report to the user.
