@@ -52,3 +52,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   return apiRequest<T>(path, { method: 'POST', body })
 }
+
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  return apiRequest<T>(path, { method: 'PATCH', body })
+}

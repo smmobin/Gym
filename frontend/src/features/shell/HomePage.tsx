@@ -38,6 +38,8 @@ export function HomePage() {
       <p className="hint">
         <Link to="/login">ورود کارکنان</Link>
         {' · '}
+        <Link to="/members">اعضا</Link>
+        {' · '}
         پروتوتایپ HTML: فایل‌های <code>index.html</code> در ریشهٔ پروژه.
       </p>
     </main>

@@ -74,6 +74,9 @@ export function LoginPage() {
             نقش: <strong>{ROLE_LABEL[user.role] ?? user.role}</strong>
           </p>
           <p className="hint">موبایل: {user.mobile}</p>
+          <p className="hint">
+            <Link to="/members">رفتن به لیست اعضا</Link>
+          </p>
           <button type="button" className="btn" onClick={onLogout} disabled={busy}>
             خروج
           </button>
