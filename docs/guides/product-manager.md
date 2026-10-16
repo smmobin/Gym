@@ -45,3 +45,7 @@
 - رفتار محصول: `docs/product/business-rules.md`
 - الان کجاییم و بعد چه: `docs/product/roadmap-status.md`
 - پرامپت آماده: `docs/prompts/next-coding-prompt.md`
+
+## الگوی پروژه‌های بعدی
+
+ترتیب کار اصولی (قابل کپی برای پروژهٔ جدید): [principled-project-playbook.md](principled-project-playbook.md)

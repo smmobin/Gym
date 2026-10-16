@@ -12,6 +12,7 @@
 | [product/schema-todos.md](product/schema-todos.md) | TODOهای باز مدل داده (قفل پرونده، خروج خودکار، …) |
 | [prompts/next-coding-prompt.md](prompts/next-coding-prompt.md) | پرامپت آماده برای چت سازنده |
 | [guides/product-manager.md](guides/product-manager.md) | چطور چت مدیر محصول را راه بیندازی |
+| [guides/principled-project-playbook.md](guides/principled-project-playbook.md) | الگوی ۱۰مرحله‌ای قابل‌تکرار برای پروژه‌های بعدی |
 | [adr/README.md](adr/README.md) | ADR چیست + فهرست تصمیم‌های معماری |
 | [adr/0001-frontend-stack.md](adr/0001-frontend-stack.md) | انتخاب فرانت‌اند |
 | [adr/0002-backend-stack.md](adr/0002-backend-stack.md) | انتخاب بک‌اند (و نظر دربارهٔ پایتون) |
