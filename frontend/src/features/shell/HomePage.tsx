@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { apiGet } from '@/lib/api'
 import type { HealthResponse } from '@/types'
@@ -35,7 +36,9 @@ export function HomePage() {
       </ul>
 
       <p className="hint">
-        برای دیدن پروتوتایپ فعلی: فایل‌های <code>index.html</code> / پنل‌ها در ریشهٔ پروژه.
+        <Link to="/login">ورود کارکنان</Link>
+        {' · '}
+        پروتوتایپ HTML: فایل‌های <code>index.html</code> در ریشهٔ پروژه.
       </p>
     </main>
   )

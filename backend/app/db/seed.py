@@ -10,13 +10,13 @@ Never put real member PII here.
 
 from __future__ import annotations
 
-import hashlib
 from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.db import SessionLocal, engine
+from app.core.security import hash_password
 from app.models import (
     Attendance,
     AttendanceType,
@@ -39,6 +39,7 @@ from app.models import (
     PaymentMethod,
     PaymentStatus,
     StaffRole,
+    StaffSession,
     TrainerMemberAssignment,
     TrialLead,
     TrialLeadStatus,
@@ -49,12 +50,8 @@ from app.services.debt import member_debt
 
 UTC = timezone.utc
 
-
-def _hash_password(plain: str) -> str:
-    """Dev-only hash placeholder until real auth lands (not for production login)."""
-    salt = b"gym-control-dev-seed"
-    digest = hashlib.pbkdf2_hmac("sha256", plain.encode("utf-8"), salt, 120_000)
-    return f"pbkdf2_sha256$120000${salt.hex()}${digest.hex()}"
+# Dev-only shared password for seed staff accounts (NOT a real gym password).
+DEV_STAFF_PASSWORD = "ChangeMe123"
 
 
 def _clear_domain(session: Session) -> None:
@@ -73,6 +70,7 @@ def _clear_domain(session: Session) -> None:
         Expense,
         TrialLead,
         AuditLog,
+        StaffSession,
         Member,
         GymSettings,
         User,
@@ -89,27 +87,28 @@ def seed(session: Session | None = None) -> dict[str, int]:
         today = date.today()
         now = datetime.now(tz=UTC)
 
+        staff_password_hash = hash_password(DEV_STAFF_PASSWORD)
         manager = User(
             mobile="09120000001",
-            password_hash=_hash_password("ChangeMe123"),
+            password_hash=staff_password_hash,
             full_name="مدیر نمونه",
             role=StaffRole.MANAGER.value,
         )
         receptionist = User(
             mobile="09120000002",
-            password_hash=_hash_password("ChangeMe123"),
+            password_hash=staff_password_hash,
             full_name="منشی نمونه",
             role=StaffRole.RECEPTIONIST.value,
         )
         trainer1 = User(
             mobile="09120000003",
-            password_hash=_hash_password("ChangeMe123"),
+            password_hash=staff_password_hash,
             full_name="مربی یک",
             role=StaffRole.TRAINER.value,
         )
         trainer2 = User(
             mobile="09120000004",
-            password_hash=_hash_password("ChangeMe123"),
+            password_hash=staff_password_hash,
             full_name="مربی دو",
             role=StaffRole.TRAINER.value,
         )

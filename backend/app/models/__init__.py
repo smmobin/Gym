@@ -21,6 +21,7 @@ from app.models.locker import Locker, LockerAssignment
 from app.models.member import Member
 from app.models.membership import Membership, MembershipPlan
 from app.models.payment import Payment
+from app.models.session import StaffSession
 from app.models.trainer import TrainerMemberAssignment
 from app.models.trial_lead import TrialLead
 from app.models.user import User
@@ -48,6 +49,7 @@ __all__ = [
     "PaymentMethod",
     "PaymentStatus",
     "StaffRole",
+    "StaffSession",
     "TrainerMemberAssignment",
     "TrialLead",
     "TrialLeadStatus",
