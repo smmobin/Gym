@@ -177,6 +177,8 @@ function MembersContent({ user }: { user: StaffUser }) {
       )}
 
       <p className="hint">
+        <Link to="/attendance">حضور</Link>
+        {' · '}
         <Link to="/login">حساب کاربری</Link>
         {' · '}
         <Link to="/">خانه</Link>

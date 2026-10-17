@@ -40,6 +40,8 @@ export function HomePage() {
         {' · '}
         <Link to="/members">اعضا</Link>
         {' · '}
+        <Link to="/attendance">حضور</Link>
+        {' · '}
         پروتوتایپ HTML: فایل‌های <code>index.html</code> در ریشهٔ پروژه.
       </p>
     </main>

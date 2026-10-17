@@ -75,7 +75,9 @@ export function LoginPage() {
           </p>
           <p className="hint">موبایل: {user.mobile}</p>
           <p className="hint">
-            <Link to="/members">رفتن به لیست اعضا</Link>
+            <Link to="/members">اعضا</Link>
+            {' · '}
+            <Link to="/attendance">حضور</Link>
           </p>
           <button type="button" className="btn" onClick={onLogout} disabled={busy}>
             خروج

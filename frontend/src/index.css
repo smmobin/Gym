@@ -144,6 +144,22 @@ a {
   color: var(--down);
 }
 
+.form-ok {
+  margin: 0 0 1rem;
+  color: var(--ok);
+}
+
+.auth-form select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #081521;
+  color: var(--fg);
+  font: inherit;
+}
+
+
 .form-title {
   margin: 0;
   font-size: 1.15rem;

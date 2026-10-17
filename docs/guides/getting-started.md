@@ -129,10 +129,22 @@ cd backend
 
 API: `GET/POST /api/v1/members` ، `GET/PATCH /api/v1/members/{id}` ، `POST /api/v1/members/{id}/archive`
 
+## حضور و غیاب
+
+1. لاگین کنید، سپس http://127.0.0.1:5173/attendance
+2. عضو را جستجو/انتخاب کنید → نوع ورود (سالن / کلاس / جلسه مربی) → ثبت ورود یا خروج
+3. اگر «ورود دوم امروز» خواست، دکمهٔ تأیید ظاهر می‌شود
+
+API: `POST /api/v1/attendances/check-in` ، `POST /api/v1/attendances/{id}/check-out` ، `GET /api/v1/attendances/today`
+
+**روز تقویمی:** `Asia/Tehran`.  
+**انتخاب عضویت:** اگر `membership_id` ندهید — برای `gym` اولویت با بستهٔ مدت‌دار (بدون session)، برای `class`/`pt` بستهٔ جلسه‌ای با `sessions_remaining > 0`.  
+**خروج خودکار:** کرون جدا نیست؛ هنگام check-in و لیست امروز، حضور باز روز قبل (یا بعد از `day_end_time` تنظیمات) بسته می‌شود.
+
 ## مرحلهٔ بعدی پیشنهادی برای چت جدید
 
-1. حضور ورود/خروج (API + UI پشت لاگین) — **همین حالا**
-2. تمدید + پرداخت + audit
-3. کلاس / کمد / مربی به‌ترتیب ارزش روزانه
+1. تمدید + پرداخت + audit
+2. کلاس / کمد / مربی به‌ترتیب ارزش روزانه
+3. پنل ورزشکار وقتی کارکنان پایدار شد
 
 وضعیت زنده و پرامپت کپی‌کردنی: `docs/product/roadmap-status.md` و `docs/prompts/next-coding-prompt.md`.
