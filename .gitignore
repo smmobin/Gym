@@ -52,10 +52,13 @@ backend/.venv/
 htmlcov/
 *.cover
 
-# Database / local dumps
+# Database / local dumps / backups (never commit real DB dumps)
 *.sqlite3
 *.db
 dumps/
+backups/
+*.dump
+*.sql.gz
 
 # Local-only design variants (kept on disk, not on GitHub)
 alternate-themes/

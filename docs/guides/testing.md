@@ -57,6 +57,13 @@ npm test
 
 ---
 
+## استقرار / اسکریپت‌ها
+
+- منطق جدید در `backend/scripts/` (پارس `DATABASE_URL`، dry-run بکاپ/restore) → تست در `backend/tests/test_backup_scripts.py`
+- فلگ‌های production در `Settings` (`cookie_secure`، `secret_key_is_weak`) → `test_config_prod.py`
+- مسدودسازی seed در prod → `test_seed_guard.py`
+- تغییر فقط-مستندات در `docs/guides/deploy.md` / `backup.md` → تست اجباری نیست؛ در گزارش بگو docs
+
 ## گزارش به صاحب پروژه (قالب)
 
 بعد از هر قابلیت مهم، در چت چیزی شبیه این بگو:

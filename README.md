@@ -53,6 +53,8 @@ Gym/
 
 - [فهرست مستندات](docs/README.md)
 - [راهنمای شروع](docs/guides/getting-started.md)
+- [استقرار (لیارا / VPS)](docs/guides/deploy.md)
+- [بکاپ Postgres](docs/guides/backup.md)
 - [نصب ابزارها](docs/guides/dev-toolchain-setup.md)
 - [ADRها](docs/adr/README.md)
 

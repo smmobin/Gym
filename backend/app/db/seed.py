@@ -695,6 +695,16 @@ def seed(session: Session | None = None) -> dict[str, int]:
 
 
 def main() -> None:
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    if settings.is_production_like and not settings.allow_destructive_seed:
+        raise SystemExit(
+            "Refuse seed: APP_ENV is production-like. "
+            "Seed wipes domain tables. Never run on real member data. "
+            "For a throwaway staging DB only, set ALLOW_DESTRUCTIVE_SEED=true."
+        )
+
     # Ensure DB is reachable
     with engine.connect() as conn:
         conn.exec_driver_sql("SELECT 1")

@@ -20,6 +20,8 @@
 | [adr/0004-delivery-and-pwa.md](adr/0004-delivery-and-pwa.md) | سایت اول، PWA بعداً، بدون اپ اندروید بومی |
 | [guides/dev-toolchain-setup.md](guides/dev-toolchain-setup.md) | نصب Node / Python / PostgreSQL روی ویندوز |
 | [guides/getting-started.md](guides/getting-started.md) | اسکلت فرانت/بک و دستور اجرای توسعه |
+| [guides/deploy.md](guides/deploy.md) | استقرار واقعی: لیارا / VPS، HTTPS، env، چک‌لیست prod |
+| [guides/backup.md](guides/backup.md) | بکاپ و restore Postgres (هفتگی + تمرین یک‌بار) |
 | [guides/collaboration.md](guides/collaboration.md) | سبک همکاری vibe coding، مستندسازی، توضیح مفاهیم |
 | [guides/testing.md](guides/testing.md) | تست خودکار؛ فقط با تست سبز commit/push |
 | [guides/project-rules.md](guides/project-rules.md) | قوانین رسمی: DoD، مرز پروتوتایپ، پول، API، audit |
