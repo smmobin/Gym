@@ -1,6 +1,10 @@
-"""Pydantic schemas for staff auth."""
+"""Pydantic schemas for unified / staff auth."""
+
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
+
+from app.schemas.athlete import AthleteOut
 
 
 class LoginRequest(BaseModel):
@@ -24,7 +28,12 @@ class UserOut(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    user: UserOut
+    """Unified login: staff first, then athlete. Cookie matches kind."""
+
+    kind: Literal["staff", "athlete"]
+    role: str
+    user: Optional[UserOut] = None
+    member: Optional[AthleteOut] = None
 
 
 class MeResponse(BaseModel):

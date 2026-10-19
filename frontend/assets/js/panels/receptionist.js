@@ -13,15 +13,11 @@ import { mountWorkouts } from '../workouts.js'
 import { initStaffShell } from './shell.js'
 
 async function main() {
-  const user = await requireStaff()
+  // Desk only — trainers use /trainer/; managers may still open desk tools
+  const user = await requireStaff(['manager', 'receptionist'])
   if (!user) return
 
-  // Trainers land on workouts; managers can also use this panel
-  if (user.role === 'manager' && !location.hash) {
-    // stay — manager may prefer /manager/
-  }
-
-  await initStaffShell({ user, defaultHash: user.role === 'trainer' ? 'workouts' : 'dash' })
+  await initStaffShell({ user, defaultHash: 'dash' })
 
   const mounts = {
     members: () => mountMembers(el('mount-members'), user),

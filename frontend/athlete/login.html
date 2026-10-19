@@ -3,30 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ورود ورزشکار — GYM CONTROL</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/components.css" />
+  <title>انتقال به ورود یکپارچه — GYM CONTROL</title>
+  <meta http-equiv="refresh" content="0;url=/login/" />
+  <script>
+    location.replace('/login/' + location.search + location.hash)
+  </script>
 </head>
-<body class="panel-page">
-  <div class="login-shell">
-    <div class="login-card">
-      <p class="eyebrow en">GYM CONTROL</p>
-      <h1>ورود ورزشکار</h1>
-      <p class="lead">نشست جدا از کارکنان است (کوکی gym_athlete_session).</p>
-      <form class="form-grid" data-login-form>
-        <label>موبایل<input name="mobile" inputmode="tel" autocomplete="username" value="09121111001" required /></label>
-        <label>رمز عبور<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label>
-        <button class="btn wide" type="submit">ورود</button>
-      </form>
-      <div class="status-msg" data-status hidden></div>
-      <p class="hint" style="margin-top:1rem">
-        <a href="/">صفحه اصلی</a> ·
-        <a href="/login/">ورود کارکنان</a>
-      </p>
-    </div>
-  </div>
-  <script type="module" src="/assets/js/panels/athlete-login.js"></script>
+<body>
+  <p dir="rtl">در حال انتقال به <a href="/login/">صفحهٔ ورود یکپارچه</a>…</p>
 </body>
 </html>

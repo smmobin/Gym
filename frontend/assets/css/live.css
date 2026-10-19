@@ -38,6 +38,21 @@
 }
 .login-card h1 { margin: 0.35rem 0 0.5rem; font-size: 1.45rem; }
 .login-card .lead { color: var(--muted); margin-bottom: 1.2rem; }
+.login-card { width: min(480px, 100%); }
+.demo-accounts {
+  margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line);
+}
+.demo-title { margin: 0 0 0.4rem; font-size: 0.95rem; }
+.demo-table {
+  width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem;
+}
+.demo-table th, .demo-table td {
+  text-align: right; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--line);
+}
+.demo-table th { color: var(--muted); font-weight: 600; }
+.demo-table code, .demo-accounts code {
+  font-family: ui-monospace, monospace; font-size: 0.85em;
+}
 .section-panel[hidden], .view[hidden] { display: none !important; }
 .busy-overlay { opacity: 0.65; pointer-events: none; }
 .print-receipt {

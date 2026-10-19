@@ -1,4 +1,4 @@
-"""Staff auth: login, session cookie, roles, logout, password rules."""
+"""Unified auth: staff + athlete login, session cookie, roles, logout, password rules."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ from sqlalchemy import select
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
 from app.core.security import hash_password, verify_password
-from app.db.seed import DEV_STAFF_PASSWORD
+from app.db.seed import DEV_ATHLETE_PASSWORD, DEV_STAFF_PASSWORD, seed
 from app.main import app
-from app.models import User
+from app.models import Member, MemberStatus, User
 
 
 @pytest.fixture(autouse=True)
@@ -37,12 +37,77 @@ def test_login_success_sets_httponly_cookie(client: TestClient) -> None:
     response = _login(client)
     assert response.status_code == 200
     body = response.json()
+    assert body["kind"] == "staff"
+    assert body["role"] == "manager"
     assert body["user"]["role"] == "manager"
     assert body["user"]["mobile"] == "09120000001"
+    assert body["member"] is None
     assert response.cookies.get("gym_session")
     set_cookie = response.headers.get("set-cookie", "")
     assert "httponly" in set_cookie.lower()
     assert "secure" not in set_cookie.lower()
+
+
+def test_unified_login_receptionist_role(client: TestClient) -> None:
+    response = _login(client, mobile="09120000002")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["kind"] == "staff"
+    assert body["role"] == "receptionist"
+    assert body["user"]["role"] == "receptionist"
+
+
+def test_unified_login_trainer_role(client: TestClient) -> None:
+    response = _login(client, mobile="09120000003")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["kind"] == "staff"
+    assert body["role"] == "trainer"
+
+
+def test_unified_login_athlete(client: TestClient) -> None:
+    response = _login(client, mobile="09121111001", password=DEV_ATHLETE_PASSWORD)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["kind"] == "athlete"
+    assert body["role"] == "athlete"
+    assert body["user"] is None
+    assert body["member"]["mobile"] == "09121111001"
+    assert response.cookies.get("gym_athlete_session")
+    assert client.get("/api/v1/athlete/auth/me").status_code == 200
+    assert client.get("/api/v1/auth/me").status_code == 401
+
+
+def test_unified_login_staff_priority_over_member_same_mobile(client: TestClient) -> None:
+    """If mobile exists in users, staff wins — athlete password must not succeed."""
+    seed()
+    login_rate_limiter.reset()
+    db = SessionLocal()
+    try:
+        member = Member(
+            display_id="M-9099",
+            first_name="تداخل",
+            last_name="تست",
+            mobile="09120000002",
+            status=MemberStatus.ACTIVE.value,
+            password_hash=hash_password("AthleteOnly99"),
+        )
+        db.add(member)
+        db.commit()
+    finally:
+        db.close()
+
+    as_staff = _login(client, mobile="09120000002", password=DEV_STAFF_PASSWORD)
+    assert as_staff.status_code == 200
+    assert as_staff.json()["kind"] == "staff"
+    assert as_staff.json()["role"] == "receptionist"
+
+    client.post("/api/v1/auth/logout")
+    as_athlete_pw = _login(client, mobile="09120000002", password="AthleteOnly99")
+    assert as_athlete_pw.status_code == 401
+
+    seed()  # restore clean seed for other tests
+    login_rate_limiter.reset()
 
 
 def test_login_wrong_password(client: TestClient) -> None:

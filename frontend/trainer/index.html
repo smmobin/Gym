@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>پنل مربی — GYM CONTROL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+</head>
+<body class="panel-page">
+  <div class="api-banner" data-api-banner hidden></div>
+  <input type="checkbox" id="side-toggle" class="side-toggle" />
+  <div class="app">
+    <label for="side-toggle" class="side-backdrop" aria-hidden="true"></label>
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <span class="brand-mark"></span>
+        <div><strong>GYM CONTROL</strong><small>پنل مربی</small></div>
+      </a>
+      <nav class="nav">
+        <p class="nav-label">کار مربی</p>
+        <a class="nav-item active" href="#dash">داشبورد</a>
+        <a class="nav-item" href="#trainees">شاگردان من</a>
+        <a class="nav-item" href="#checkin">ثبت حضور</a>
+        <a class="nav-item" href="#workouts">برنامه تمرینی</a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="/">صفحه اصلی</a>
+        <button type="button" class="btn ghost small" data-logout>خروج</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <label for="side-toggle" class="side-burger" aria-label="منوی پنل">
+            <span></span><span></span><span></span>
+          </label>
+          <div>
+            <h1>پنل مربی</h1>
+            <p><span data-user-role></span> · فقط شاگردان تخصیص‌یافته</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div data-bell-root></div>
+          <div class="user-chip"><span class="avatar" data-avatar>—</span><span data-user-name></span></div>
+        </div>
+      </header>
+
+      <section class="content">
+        <div data-section="dash" data-title="داشبورد مربی">
+          <div class="stats">
+            <article class="stat"><span class="stat-label">شاگردان فعال</span><strong data-stat-trainees>—</strong><em>تخصیص شما</em></article>
+            <article class="stat"><span class="stat-label">حضور امروز</span><strong data-stat-today>—</strong><em>شاگردان</em></article>
+          </div>
+          <div class="quick-actions">
+            <a class="btn" href="#trainees">شاگردان</a>
+            <a class="btn ghost" href="#checkin">ثبت حضور</a>
+            <a class="btn ghost" href="#workouts">برنامه تمرینی</a>
+          </div>
+          <p class="hint">دسترسی شما محدود به شاگردان تخصیص‌داده‌شده است. عضو دیگران از سرور ۴۰۳ می‌شود.</p>
+        </div>
+
+        <div data-section="trainees" data-title="شاگردان من" hidden><div id="mount-trainees"></div></div>
+        <div data-section="checkin" data-title="ثبت حضور شاگرد" hidden><div id="mount-attendance"></div></div>
+        <div data-section="workouts" data-title="برنامه تمرینی" hidden><div id="mount-workouts"></div></div>
+      </section>
+    </div>
+  </div>
+  <script type="module" src="/assets/js/panels/trainer.js"></script>
+  <script src="/js/custom-select.js"></script>
+</body>
+</html>

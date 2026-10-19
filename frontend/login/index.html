@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ورود کارکنان — GYM CONTROL</title>
+  <title>ورود به سامانه — GYM CONTROL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,11 +14,11 @@
   <div class="login-shell">
     <div class="login-card">
       <p class="eyebrow en">GYM CONTROL</p>
-      <h1>ورود کارکنان</h1>
-      <p class="lead">با موبایل و رمز وارد شوید. نشست روی سرور (کوکی HttpOnly) نگه داشته می‌شود.</p>
+      <h1>ورود به سامانه</h1>
+      <p class="lead">فقط موبایل و رمز را وارد کنید. نقش (مدیر، منشی، مربی یا ورزشکار) را سرور تشخیص می‌دهد.</p>
 
       <form class="form-grid" data-login-form>
-        <label>موبایل<input name="mobile" inputmode="tel" autocomplete="username" value="09120000001" required /></label>
+        <label>موبایل<input name="mobile" inputmode="tel" autocomplete="username" placeholder="09xxxxxxxxx" required /></label>
         <label>رمز عبور<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label>
         <button class="btn wide" type="submit">ورود</button>
       </form>
@@ -29,15 +29,31 @@
         <p class="hint">موبایل: <span data-mobile></span></p>
         <div data-bell-root style="margin:0.75rem 0"></div>
         <div class="inline-actions">
-          <a class="btn" data-go href="/receptionist/">ورود به پنل</a>
+          <a class="btn" data-go href="/">ورود به پنل</a>
           <button type="button" class="btn ghost" data-logout>خروج</button>
         </div>
       </section>
 
       <div class="status-msg" data-status hidden></div>
+
+      <aside class="demo-accounts" aria-label="حساب‌های دمو">
+        <h2 class="demo-title">حساب‌های دمو (seed توسعه)</h2>
+        <p class="hint">رمز مشترک seed: <code dir="ltr">ChangeMe123</code> — فقط برای محیط توسعه.</p>
+        <table class="demo-table">
+          <thead>
+            <tr><th>نقش</th><th>موبایل</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>مدیر</td><td dir="ltr">09120000001</td></tr>
+            <tr><td>منشی</td><td dir="ltr">09120000002</td></tr>
+            <tr><td>مربی</td><td dir="ltr">09120000003</td></tr>
+            <tr><td>ورزشکار</td><td dir="ltr">09121111001</td></tr>
+          </tbody>
+        </table>
+      </aside>
+
       <p class="hint" style="margin-top:1rem">
-        <a href="/">صفحه اصلی</a> ·
-        <a href="/athlete/login.html">ورود ورزشکار</a>
+        <a href="/">صفحه اصلی</a>
       </p>
     </div>
   </div>

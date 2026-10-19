@@ -10,6 +10,7 @@ export async function fetchAthleteMe() {
 }
 
 /**
+ * Prefer unified login at /api/v1/auth/login; this path remains for API parity.
  * @param {string} mobile
  * @param {string} password
  */
@@ -28,7 +29,8 @@ export async function athleteLogout() {
 export async function requireAthlete() {
   const member = await fetchAthleteMe()
   if (!member) {
-    location.href = '/athlete/login.html'
+    const next = encodeURIComponent(location.pathname + location.hash)
+    location.href = `/login/?next=${next}`
     return null
   }
   return member

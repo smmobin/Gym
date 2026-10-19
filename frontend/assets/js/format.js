@@ -36,6 +36,7 @@ export const ROLE_LABEL = {
   manager: 'مدیر',
   receptionist: 'منشی',
   trainer: 'مربی',
+  athlete: 'ورزشکار',
 }
 
 export const MEMBER_STATUS = {

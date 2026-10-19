@@ -21,7 +21,7 @@ async function main() {
     try {
       await athleteLogout()
     } finally {
-      location.href = '/athlete/login.html'
+      location.href = '/login/'
     }
   })
 

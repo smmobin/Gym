@@ -15,6 +15,7 @@ export default defineConfig({
         login: path.resolve(rootDir, 'login/index.html'),
         receptionist: path.resolve(rootDir, 'receptionist/index.html'),
         manager: path.resolve(rootDir, 'manager/index.html'),
+        trainer: path.resolve(rootDir, 'trainer/index.html'),
         athlete: path.resolve(rootDir, 'athlete/index.html'),
         athleteLogin: path.resolve(rootDir, 'athlete/login.html'),
       },

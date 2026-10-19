@@ -48,10 +48,10 @@ npm run dev
 | آدرس | کار |
 |------|-----|
 | http://127.0.0.1:5173/ | لندینگ + فرم جلسه آزمایشی واقعی |
-| http://127.0.0.1:5173/login// | ورود کارکنان |
-| http://127.0.0.1:5173/receptionist/ | پنل میز / مربی |
+| http://127.0.0.1:5173/login/ | ورود یکپارچه (موبایل+رمز؛ بدون انتخاب نقش) |
+| http://127.0.0.1:5173/receptionist/ | پنل میز (منشی/مدیر) |
 | http://127.0.0.1:5173/manager/ | پنل مدیر |
-| http://127.0.0.1:5173/athlete/login.html | ورود ورزشکار |
+| http://127.0.0.1:5173/trainer/ | پنل مربی (فقط شاگردان خودش) |
 | http://127.0.0.1:5173/athlete/ | داشبورد ورزشکار |
 
 پروکسی Vite مسیر `/api` را به بک‌اند می‌فرستد؛ cookie روی همان origin می‌ماند.
@@ -110,44 +110,45 @@ cd backend
 
 جزئیات TODOهای باز مدل: [schema-todos.md](../product/schema-todos.md)
 
-## ورود کارکنان (توسعه)
+## ورود یکپارچه (توسعه)
 
-بعد از `alembic upgrade head` و `python -m app.db.seed`:
+بعد از `alembic upgrade head` و `python -m app.db.seed` فقط **یک** صفحهٔ ورود دارید:
 
-| موبایل | نقش | رمز (فقط توسعه) |
-|--------|-----|------------------|
-| `09120000001` | مدیر | `ChangeMe123` |
-| `09120000002` | منشی | `ChangeMe123` |
-| `09120000003` | مربی | `ChangeMe123` |
-| `09120000004` | مربی | `ChangeMe123` |
+**http://127.0.0.1:5173/login/** — فقط موبایل + رمز؛ بدون radio/dropdown نقش.
 
-**این رمزها فقط برای محیط توسعه/دمو هستند — رمز واقعی باشگاه نیستند.**
+| موبایل | نقش تشخیص‌داده‌شده | پنل | رمز (فقط توسعه) |
+|--------|---------------------|------|------------------|
+| `09120000001` | مدیر | `/manager/` | `ChangeMe123` |
+| `09120000002` | منشی | `/receptionist/` | `ChangeMe123` |
+| `09120000003` | مربی | `/trainer/` | `ChangeMe123` |
+| `09120000004` | مربی | `/trainer/` | `ChangeMe123` |
+| `09121111001` | ورزشکار (علی) | `/athlete/` | `ChangeMe123` |
+| `09121111005` | ورزشکار (حسین) | `/athlete/` | `ChangeMe123` |
 
-- صفحه: `/login/` در فرانت، یا API: `POST /api/v1/auth/login` با JSON `{ "mobile", "password" }`
-- Cookie نشست: نام `gym_session`، **HttpOnly**، **SameSite=Lax**، **Secure فقط در production**؛ TTL پیش‌فرض **۱۲ ساعت**
-- خروج: `POST /api/v1/auth/logout` (نشست سمت سرور باطل می‌شود)
-- «من کیستم»: `GET /api/v1/auth/me`
-- نمونه نقش: `GET /api/v1/auth/staff-ping` فقط مدیر و منشی (مربی → ۴۰۳)
+**این رمزها فقط برای محیط توسعه/دمو هستند — رمز واقعی باشگاه نیستند.** همان ثابت‌های `DEV_STAFF_PASSWORD` / `DEV_ATHLETE_PASSWORD` در seed.
+
+### رفتار سرور
+
+- `POST /api/v1/auth/login` با `{ "mobile", "password" }`:
+  1. اول جدول کارکنان (`users`) را چک می‌کند
+  2. اگر نبود، جدول عضو (`members` با `password_hash`) را چک می‌کند
+  3. پاسخ: `{ kind: "staff"|"athlete", role, user?, member? }` + کوکی مناسب (`gym_session` یا `gym_athlete_session`)
+  4. اگر موبایل در **هر دو** جدول بود: **اولویت کارکنان** (رمز ورزشکار همان موبایل کار نمی‌کند)
+- Rate limit حفظ می‌شود (`login:{mobile}`)
+- مسیر قدیمی `POST /api/v1/athlete/auth/login` برای سازگاری API باقی است؛ UI عمومی فقط `/login/` است (`/athlete/login.html` ریدایرکت می‌کند)
+- خروج کارکنان: `POST /api/v1/auth/logout`؛ ورزشکار: `POST /api/v1/athlete/auth/logout`
+- «من کیستم» کارکنان: `GET /api/v1/auth/me`؛ ورزشکار: `GET /api/v1/athlete/auth/me`
+- نمونه نقش اداری: `GET /api/v1/auth/staff-ping` فقط مدیر و منشی (مربی → ۴۰۳)
 - مدیر می‌تواند رمز کارکنان را عوض کند: `POST /api/v1/auth/users/{id}/password`
+- ست رمز ورزشکار از میز: `/receptionist/#members` یا `POST /api/v1/members/{id}/athlete-password`
 
 نکته: برای cookie در مرورگر، فرانت و بک را با یک host یکسان باز کن (هر دو `127.0.0.1` یا هر دو `localhost`). پروکسی Vite روی `/api` این کار را ساده می‌کند.
 
-## ورود ورزشکار (توسعه)
+### ورزشکار بعد از ورود
 
-لاگین ورزشکار **جدا از کارکنان** است: جدول `athlete_sessions` + cookie با نام `gym_athlete_session` (HttpOnly، SameSite=Lax، Secure در prod). Cookie کارکنان (`gym_session`) روی مسیرهای `/athlete` کار نمی‌کند و برعکس.
-
-**بدون پیامک / OTP / درگاه** — رمز را میز (منشی/مدیر) ست می‌کند.
-
-| موبایل | عضو seed | رمز (فقط توسعه) |
-|--------|----------|------------------|
-| `09121111001` | علی رضایی (M-1001) | `ChangeMe123` |
-| `09121111005` | حسین موسوی (M-1005) | `ChangeMe123` |
+داشبورد: http://127.0.0.1:5173/athlete/ — اشتراک/بدهی، پرداخت، برنامه، **کلاس گروهی (رزرو/لغو)**، درخواست تمدید، اعلان‌ها.
 
 سایر اعضا تا وقتی desk رمز نگذارد لاگین نمی‌شوند.
-
-1. http://127.0.0.1:5173/athlete/login.html
-2. داشبورد: http://127.0.0.1:5173/athlete/ — اشتراک/بدهی، پرداخت، برنامه، **کلاس گروهی (رزرو/لغو)**، درخواست تمدید، اعلان‌ها
-3. ست رمز از میز: بخش اعضا در `/receptionist/#members` یا `POST /api/v1/members/{id}/athlete-password` با `{ "password" }`
 
 ### رزرو کلاس توسط ورزشکار
 

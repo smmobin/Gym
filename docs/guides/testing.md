@@ -55,9 +55,11 @@ npm run build
 تست‌های دود در `frontend/tests/` (Vitest + jsdom؛ mock روی `fetch`):
 
 - `api.test.js` — happy path + 401/403
-- `auth-staff.test.js` — لاگین کارکنان
+- `auth-staff.test.js` — ورود یکپارچه + `panelPathForRole` / جلوگیری از next نقش اشتباه
 - `trial.test.js` — ارسال جلسه آزمایشی
 - `athlete-book.test.js` — رزرو کلاس ورزشکار
+
+بک‌اند (نمونهٔ مرتبط با ورود یکپارچه): `test_auth.py` — staff هر نقش، athlete، رمز غلط، اولویت staff اگر موبایل در هر دو جدول.
 
 ابزار: **Vitest** (بدون React / Testing Library).
 
