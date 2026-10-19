@@ -494,13 +494,14 @@ def seed(session: Session | None = None) -> dict[str, int]:
             )
         )
 
+        # Past class so desk can demo no-show / attended on seed booking (مریم).
         group_class = GroupClass(
             title="کراس‌فیت صبح",
             trainer_user_id=trainer2.id,
             capacity=12,
             gender_label=GenderLabel.MIXED.value,
-            starts_at=now + timedelta(days=1, hours=2),
-            ends_at=now + timedelta(days=1, hours=3),
+            starts_at=now - timedelta(hours=3),
+            ends_at=now - timedelta(hours=2),
             is_active=True,
         )
         yoga = GroupClass(

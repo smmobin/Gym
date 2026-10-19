@@ -48,3 +48,27 @@ export type BookingMutationResponse = {
   booked_count: number
   remaining: number
 }
+
+export type BookingOutcomeResponse = {
+  booking: ClassBooking
+  booked_count: number
+  remaining: number
+  session_deducted: boolean
+  sessions_remaining: number | null
+  membership_id: number | null
+  already_deducted_via_attendance: boolean
+}
+
+export type MembershipOption = {
+  id: number
+  plan_name: string | null
+  sessions_remaining: number | null
+  start_date: string
+  end_date: string
+}
+
+export type MembershipRequiredDetail = {
+  code: 'membership_required'
+  message: string
+  options: MembershipOption[]
+}

@@ -18,6 +18,8 @@ from app.schemas.group_classes import (
     BookingListResponse,
     BookingMutationResponse,
     BookingOut,
+    BookingOutcomeRequest,
+    BookingOutcomeResponse,
     GroupClassCreate,
     GroupClassListResponse,
     GroupClassMutationResponse,
@@ -245,4 +247,80 @@ def cancel_booking(
         booking=_booking_out(result.booking),
         booked_count=result.booked_count,
         remaining=result.remaining,
+    )
+
+
+@router.post(
+    "/{class_id}/bookings/{booking_id}/no-show",
+    response_model=BookingOutcomeResponse,
+)
+def mark_booking_no_show(
+    class_id: int,
+    booking_id: int,
+    body: BookingOutcomeRequest = BookingOutcomeRequest(),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> BookingOutcomeResponse:
+    try:
+        result = gc_svc.mark_no_show(
+            db,
+            user=user,
+            class_id=class_id,
+            booking_id=booking_id,
+            membership_id=body.membership_id,
+        )
+        db.commit()
+        db.refresh(result.booking)
+        _ = result.booking.member
+    except gc_svc.GroupClassError as err:
+        db.rollback()
+        _raise(err)
+        raise  # pragma: no cover
+
+    return BookingOutcomeResponse(
+        booking=_booking_out(result.booking),
+        booked_count=result.booked_count,
+        remaining=result.remaining,
+        session_deducted=result.session_deducted,
+        sessions_remaining=result.sessions_remaining,
+        membership_id=result.membership_id,
+        already_deducted_via_attendance=result.already_deducted_via_attendance,
+    )
+
+
+@router.post(
+    "/{class_id}/bookings/{booking_id}/attended",
+    response_model=BookingOutcomeResponse,
+)
+def mark_booking_attended(
+    class_id: int,
+    booking_id: int,
+    body: BookingOutcomeRequest = BookingOutcomeRequest(),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> BookingOutcomeResponse:
+    try:
+        result = gc_svc.mark_attended(
+            db,
+            user=user,
+            class_id=class_id,
+            booking_id=booking_id,
+            membership_id=body.membership_id,
+        )
+        db.commit()
+        db.refresh(result.booking)
+        _ = result.booking.member
+    except gc_svc.GroupClassError as err:
+        db.rollback()
+        _raise(err)
+        raise  # pragma: no cover
+
+    return BookingOutcomeResponse(
+        booking=_booking_out(result.booking),
+        booked_count=result.booked_count,
+        remaining=result.remaining,
+        session_deducted=result.session_deducted,
+        sessions_remaining=result.sessions_remaining,
+        membership_id=result.membership_id,
+        already_deducted_via_attendance=result.already_deducted_via_attendance,
     )

@@ -6,14 +6,34 @@ import { ApiError, apiGet, apiPatch, apiPost } from '@/lib/api'
 import type { StaffUser } from '@/types/auth'
 import type {
   BookingListResponse,
+  BookingMutationResponse,
+  BookingOutcomeResponse,
   ClassBooking,
   GenderLabel,
   GroupClass,
   GroupClassListResponse,
   GroupClassMutationResponse,
-  BookingMutationResponse,
+  MembershipOption,
+  MembershipRequiredDetail,
 } from '@/types/groupClasses'
 import type { Member, MemberListResponse } from '@/types/members'
+
+const STATUS_LABEL: Record<string, string> = {
+  booked: 'رزرو',
+  cancelled: 'لغو',
+  attended: 'حاضر',
+  no_show: 'غایب',
+}
+
+function isMembershipRequired(err: ApiError): err is ApiError & { detail: MembershipRequiredDetail } {
+  const d = err.detail
+  return (
+    !!d &&
+    typeof d === 'object' &&
+    !Array.isArray(d) &&
+    (d as MembershipRequiredDetail).code === 'membership_required'
+  )
+}
 
 const GENDER_LABEL: Record<string, string> = {
   men: 'آقایان',
@@ -67,9 +87,16 @@ function ClassesContent({ user }: { user: StaffUser }) {
   const [warning, setWarning] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [pendingOutcome, setPendingOutcome] = useState<{
+    bookingId: number
+    kind: 'no-show' | 'attended'
+  } | null>(null)
+  const [membershipOptions, setMembershipOptions] = useState<MembershipOption[]>([])
+  const [pickedMembershipId, setPickedMembershipId] = useState<number | ''>('')
 
   const loadClasses = useCallback(async () => {
-    const data = await apiGet<GroupClassListResponse>('/api/v1/group-classes?upcoming=true')
+    // Include started/past classes so desk can mark no-show / attended.
+    const data = await apiGet<GroupClassListResponse>('/api/v1/group-classes')
     setClasses(data.items)
   }, [])
 
@@ -119,17 +146,21 @@ function ClassesContent({ user }: { user: StaffUser }) {
         { member_id: pickedMember.id },
       )
       setMessage(`رزرو ثبت شد. باقی‌مانده: ${data.remaining}`)
-      await loadClasses()
-      await loadBookings(selected.id)
-      const refreshed = await apiGet<GroupClassListResponse>('/api/v1/group-classes?upcoming=true')
-      const updated = refreshed.items.find((c) => c.id === selected.id)
-      if (updated) setSelected(updated)
+      await refreshSelected(selected.id)
     } catch (err) {
       if (err instanceof ApiError) setError(err.message)
       else setError('رزرو ناموفق بود.')
     } finally {
       setBusy(false)
     }
+  }
+
+  async function refreshSelected(classId: number) {
+    await loadClasses()
+    await loadBookings(classId)
+    const refreshed = await apiGet<GroupClassListResponse>('/api/v1/group-classes')
+    const updated = refreshed.items.find((c) => c.id === classId)
+    if (updated) setSelected(updated)
   }
 
   async function onCancelBooking(bookingId: number) {
@@ -142,17 +173,63 @@ function ClassesContent({ user }: { user: StaffUser }) {
         `/api/v1/group-classes/${selected.id}/bookings/${bookingId}/cancel`,
       )
       setMessage(`رزرو لغو شد. باقی‌مانده: ${data.remaining}`)
-      await loadClasses()
-      await loadBookings(selected.id)
-      const refreshed = await apiGet<GroupClassListResponse>('/api/v1/group-classes?upcoming=true')
-      const updated = refreshed.items.find((c) => c.id === selected.id)
-      if (updated) setSelected(updated)
+      await refreshSelected(selected.id)
     } catch (err) {
       if (err instanceof ApiError) setError(err.message)
       else setError('لغو رزرو ناموفق بود.')
     } finally {
       setBusy(false)
     }
+  }
+
+  async function submitOutcome(
+    bookingId: number,
+    kind: 'no-show' | 'attended',
+    membershipId?: number,
+  ) {
+    if (!selected) return
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    setWarning(null)
+    try {
+      const path =
+        kind === 'no-show'
+          ? `/api/v1/group-classes/${selected.id}/bookings/${bookingId}/no-show`
+          : `/api/v1/group-classes/${selected.id}/bookings/${bookingId}/attended`
+      const body =
+        membershipId != null ? { membership_id: membershipId } : {}
+      const data = await apiPost<BookingOutcomeResponse>(path, body)
+      const label = kind === 'no-show' ? 'غیبت' : 'حضور'
+      const deductNote = data.session_deducted
+        ? `جلسه کم شد (باقی: ${data.sessions_remaining ?? '—'}).`
+        : data.already_deducted_via_attendance
+          ? 'جلسه قبلاً با ورود کلاس کم شده بود؛ دوباره کم نشد.'
+          : ''
+      setMessage(`${label} ثبت شد. ظرفیت آزاد: ${data.remaining}. ${deductNote}`)
+      setPendingOutcome(null)
+      setMembershipOptions([])
+      setPickedMembershipId('')
+      await refreshSelected(selected.id)
+    } catch (err) {
+      if (err instanceof ApiError && isMembershipRequired(err)) {
+        setPendingOutcome({ bookingId, kind })
+        setMembershipOptions(err.detail.options ?? [])
+        setWarning(err.detail.message)
+        setError(null)
+      } else if (err instanceof ApiError) {
+        setError(err.message)
+      } else {
+        setError('ثبت حاضر/غایب ناموفق بود.')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function onConfirmMembershipOutcome() {
+    if (!pendingOutcome || pickedMembershipId === '') return
+    await submitOutcome(pendingOutcome.bookingId, pendingOutcome.kind, pickedMembershipId)
   }
 
   function startEdit(row: GroupClass) {
@@ -212,6 +289,10 @@ function ClassesContent({ user }: { user: StaffUser }) {
       setMessage(editingId != null ? 'کلاس به‌روز شد.' : 'کلاس ساخته شد.')
       resetForm()
       await loadClasses()
+      if (data.group_class) {
+        setSelected(data.group_class)
+        await loadBookings(data.group_class.id)
+      }
     } catch (err) {
       if (err instanceof ApiError) setError(err.message)
       else setError('ذخیرهٔ کلاس ناموفق بود.')
@@ -241,7 +322,10 @@ function ClassesContent({ user }: { user: StaffUser }) {
       {error && <p className="err-msg">{error}</p>}
 
       <section className="auth-panel billing-block">
-        <h2 className="form-title">کلاس‌های پیش‌رو</h2>
+        <h2 className="form-title">کلاس‌ها</h2>
+        <p className="hint">
+          ثبت «حاضر» / «غیبت» فقط بعد از شروع کلاس؛ غیبت یک جلسه از بستهٔ کلاس کم می‌کند.
+        </p>
         {classes.length === 0 ? (
           <p className="hint">کلاسی برای نمایش نیست.</p>
         ) : (
@@ -315,14 +399,32 @@ function ClassesContent({ user }: { user: StaffUser }) {
           )}
 
           <ul className="member-list">
-            {bookings
-              .filter((b) => b.status === 'booked')
-              .map((b) => (
-                <li key={b.id}>
+            {bookings.map((b) => (
+              <li key={b.id}>
+                <div>
                   <span>
                     {b.member_display_id ?? b.member_id} — {b.member_name ?? 'عضو'}
                   </span>
-                  {isDesk && (
+                  <div className="hint">{STATUS_LABEL[b.status] ?? b.status}</div>
+                </div>
+                {isDesk && b.status === 'booked' && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy}
+                      onClick={() => void submitOutcome(b.id, 'attended')}
+                    >
+                      حاضر شد
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={busy}
+                      onClick={() => void submitOutcome(b.id, 'no-show')}
+                    >
+                      غیبت
+                    </button>
                     <button
                       type="button"
                       className="btn btn-ghost"
@@ -331,12 +433,45 @@ function ClassesContent({ user }: { user: StaffUser }) {
                     >
                       لغو
                     </button>
-                  )}
-                </li>
-              ))}
+                  </div>
+                )}
+              </li>
+            ))}
           </ul>
-          {bookings.filter((b) => b.status === 'booked').length === 0 && (
-            <p className="hint">رزرو فعالی نیست.</p>
+          {bookings.length === 0 && <p className="hint">رزروی ثبت نشده.</p>}
+
+          {pendingOutcome && (
+            <div className="auth-form">
+              <h3 className="form-title">انتخاب بستهٔ جلسه</h3>
+              <p className="hint">
+                بستهٔ منطبق واضح نبود؛ عضویت را با هشدار انتخاب کنید و دوباره تأیید کنید.
+              </p>
+              <label>
+                عضویت
+                <select
+                  value={pickedMembershipId === '' ? '' : String(pickedMembershipId)}
+                  onChange={(e) =>
+                    setPickedMembershipId(e.target.value ? Number(e.target.value) : '')
+                  }
+                >
+                  <option value="">انتخاب کنید</option>
+                  {membershipOptions.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      #{o.id} — {o.plan_name ?? 'طرح'} (باقی{' '}
+                      {(o.sessions_remaining ?? 0).toLocaleString('fa-IR')})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="btn"
+                disabled={busy || pickedMembershipId === ''}
+                onClick={() => void onConfirmMembershipOutcome()}
+              >
+                تأیید با این عضویت
+              </button>
+            </div>
           )}
         </section>
       )}

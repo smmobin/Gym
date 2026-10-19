@@ -103,3 +103,17 @@ class BookingMutationResponse(BaseModel):
     booking: BookingOut
     booked_count: int
     remaining: int
+
+
+class BookingOutcomeRequest(BaseModel):
+    membership_id: Optional[int] = None
+
+
+class BookingOutcomeResponse(BaseModel):
+    booking: BookingOut
+    booked_count: int
+    remaining: int
+    session_deducted: bool
+    sessions_remaining: Optional[int] = None
+    membership_id: Optional[int] = None
+    already_deducted_via_attendance: bool = False

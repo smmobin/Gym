@@ -9,6 +9,6 @@
 | شمارهٔ رسید خودکار | فیلد `receipt_number` یکتا | **انجام‌شده:** تولید ترتیبی `R-1001…` در سرویس پرداخت (`next_receipt_number`) |
 | یکتایی واگذاری فعال کمد | تاریخچه با `released_at` | **انجام‌شده با چک سرویس** (`active_assignment_for_locker` / عضو) در برش کمد؛ قید جزئی Postgres اختیاری برای آینده |
 | چند مربی فعال هم‌زمان | ردیف‌های `ended_at IS NULL` | **انجام‌شده با چک سرویس** (تکرار جفت فعال → ۴۰۹؛ چند مربی مختلف OK). ایندکس جزئی unique روی `(trainer_user_id, member_id) WHERE ended_at IS NULL` اختیاری برای آینده |
-| مصرف جلسه برای غیبت کلاس | فیلد `sessions_remaining` | **عمداً در برش رزرو کلاس نیامد** — مرحلهٔ بعد/هم‌زمان با حضور: غیبت در کلاس رزروشده یک جلسه از بستهٔ class کم کند؛ اگر بستهٔ منطبق نبود منشی با هشدار انتخاب کند |
+| مصرف جلسه برای غیبت کلاس | `sessions_remaining` + وضعیت `no_show`/`attended` | **انجام‌شده:** `POST …/bookings/{id}/no-show` و `…/attended`؛ جلوگیری از double-deduct با حضور `type=class` هم‌پنجره؛ ابهام بسته → `membership_required` + `membership_id`. فیلد جدا روی booking لازم نشد |
 
 این فایل فقط یادآور است؛ migration اول را بلاک نمی‌کند.

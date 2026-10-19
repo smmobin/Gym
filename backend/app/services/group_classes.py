@@ -3,16 +3,25 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Optional, Union
 
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.enums import BookingStatus, MemberStatus, StaffRole
+from app.models.attendance import Attendance
+from app.models.enums import (
+    AttendanceType,
+    BookingStatus,
+    MemberStatus,
+    MembershipStatus,
+    StaffRole,
+)
 from app.models.group_class import ClassBooking, GroupClass
 from app.models.member import Member
+from app.models.membership import Membership
 from app.models.user import User
+from app.services.attendance import today_tehran
 from app.services.class_booking import (
     ClassFullError,
     active_booking_count,
@@ -22,10 +31,10 @@ from app.services.class_booking import (
 
 
 class GroupClassError(Exception):
-    def __init__(self, status_code: int, detail: str) -> None:
+    def __init__(self, status_code: int, detail: Union[str, dict[str, Any]]) -> None:
         self.status_code = status_code
         self.detail = detail
-        super().__init__(detail)
+        super().__init__(str(detail))
 
 
 @dataclass
@@ -41,6 +50,17 @@ class BookingSnapshot:
     booking: ClassBooking
     booked_count: int
     remaining: int
+
+
+@dataclass
+class AttendanceOutcomeSnapshot:
+    booking: ClassBooking
+    booked_count: int
+    remaining: int
+    session_deducted: bool
+    sessions_remaining: Optional[int]
+    membership_id: Optional[int]
+    already_deducted_via_attendance: bool
 
 
 def ensure_desk_staff(user: User) -> None:
@@ -359,4 +379,237 @@ def cancel_booking(
         booking=booking,
         booked_count=snap.booked_count,
         remaining=snap.remaining,
+    )
+
+
+def _ensure_class_started(group_class: GroupClass) -> None:
+    """Policy: no-show / attended only after class starts_at (UTC-aware compare)."""
+    now = datetime.now(tz=timezone.utc)
+    starts = group_class.starts_at
+    if starts.tzinfo is None:
+        starts = starts.replace(tzinfo=timezone.utc)
+    if now < starts:
+        raise GroupClassError(
+            400,
+            "ثبت حاضر/غایب فقط بعد از شروع کلاس مجاز است.",
+        )
+
+
+def _class_related_attendance(
+    db: Session, *, member_id: int, group_class: GroupClass
+) -> Optional[Attendance]:
+    """
+    Detect prior class check-in that already consumed a session for this slot.
+    Window: 2h before starts_at through 2h after ends_at.
+    """
+    starts = group_class.starts_at
+    ends = group_class.ends_at
+    if starts.tzinfo is None:
+        starts = starts.replace(tzinfo=timezone.utc)
+    if ends.tzinfo is None:
+        ends = ends.replace(tzinfo=timezone.utc)
+    window_start = starts - timedelta(hours=2)
+    window_end = ends + timedelta(hours=2)
+    stmt = (
+        select(Attendance)
+        .where(
+            Attendance.member_id == member_id,
+            Attendance.attendance_type == AttendanceType.CLASS.value,
+            Attendance.check_in_at >= window_start,
+            Attendance.check_in_at <= window_end,
+        )
+        .order_by(Attendance.check_in_at.desc())
+        .limit(1)
+    )
+    return db.scalar(stmt)
+
+
+def _session_pack_options(db: Session, member_id: int) -> list[Membership]:
+    today = today_tehran()
+    rows = list(
+        db.scalars(
+            select(Membership)
+            .options(joinedload(Membership.plan))
+            .where(
+                Membership.member_id == member_id,
+                Membership.status == MembershipStatus.ACTIVE.value,
+                Membership.start_date <= today,
+                Membership.end_date >= today,
+            )
+        )
+        .unique()
+        .all()
+    )
+    return [
+        m
+        for m in rows
+        if m.plan is not None
+        and m.plan.session_count is not None
+        and (m.sessions_remaining or 0) > 0
+    ]
+
+
+def _membership_option_payload(membership: Membership) -> dict[str, Any]:
+    plan_name = membership.plan.name if membership.plan is not None else None
+    return {
+        "id": membership.id,
+        "plan_name": plan_name,
+        "sessions_remaining": membership.sessions_remaining,
+        "start_date": membership.start_date.isoformat(),
+        "end_date": membership.end_date.isoformat(),
+    }
+
+
+def _resolve_class_membership(
+    db: Session,
+    *,
+    member_id: int,
+    membership_id: Optional[int],
+) -> Membership:
+    options = _session_pack_options(db, member_id)
+
+    if membership_id is not None:
+        row = db.scalar(
+            select(Membership)
+            .options(joinedload(Membership.plan))
+            .where(Membership.id == membership_id)
+        )
+        if row is None or row.member_id != member_id:
+            raise GroupClassError(400, "عضویت انتخاب‌شده برای این عضو معتبر نیست.")
+        if row.status != MembershipStatus.ACTIVE.value:
+            raise GroupClassError(400, "عضویت انتخاب‌شده فعال نیست.")
+        today = today_tehran()
+        if row.start_date > today or row.end_date < today:
+            raise GroupClassError(400, "عضویت انتخاب‌شده برای امروز معتبر نیست.")
+        if row.plan is None or row.plan.session_count is None:
+            raise GroupClassError(
+                400,
+                "عضویت انتخاب‌شده بستهٔ جلسه‌ای نیست؛ با هشدار فقط بستهٔ جلسه را انتخاب کنید.",
+            )
+        return row
+
+    if len(options) == 1:
+        return options[0]
+
+    if len(options) == 0:
+        raise GroupClassError(
+            400,
+            {
+                "code": "membership_required",
+                "message": (
+                    "بستهٔ جلسه‌ای با جلسهٔ باقی‌مانده یافت نشد. "
+                    "اگر عضو بسته دارد، membership_id را صریحاً بفرستید."
+                ),
+                "options": [],
+            },
+        )
+
+    raise GroupClassError(
+        400,
+        {
+            "code": "membership_required",
+            "message": (
+                "چند بستهٔ جلسه‌ای فعال است؛ membership_id را با هشدار انتخاب کنید."
+            ),
+            "options": [_membership_option_payload(m) for m in options],
+        },
+    )
+
+
+def _apply_attendance_outcome(
+    db: Session,
+    *,
+    user: User,
+    class_id: int,
+    booking_id: int,
+    new_status: str,
+    membership_id: Optional[int],
+) -> AttendanceOutcomeSnapshot:
+    ensure_can_mutate_booking(user)
+    group_class = _get_class_or_404(db, class_id)
+    _ensure_class_started(group_class)
+
+    booking = db.get(ClassBooking, booking_id)
+    if booking is None or booking.group_class_id != class_id:
+        raise GroupClassError(404, "رزرو یافت نشد.")
+
+    if booking.status != BookingStatus.BOOKED.value:
+        raise GroupClassError(
+            409,
+            "فقط رزرو با وضعیت booked قابل ثبت حاضر/غایب است.",
+        )
+
+    prior = _class_related_attendance(db, member_id=booking.member_id, group_class=group_class)
+    already = prior is not None
+    session_deducted = False
+    sessions_remaining: Optional[int] = None
+    used_membership_id: Optional[int] = prior.membership_id if prior is not None else None
+
+    if already:
+        if prior is not None and prior.membership_id is not None:
+            membership = db.get(Membership, prior.membership_id)
+            if membership is not None:
+                sessions_remaining = membership.sessions_remaining
+                used_membership_id = membership.id
+    else:
+        membership = _resolve_class_membership(
+            db, member_id=booking.member_id, membership_id=membership_id
+        )
+        assert membership.sessions_remaining is not None
+        membership.sessions_remaining = max(membership.sessions_remaining - 1, 0)
+        session_deducted = True
+        sessions_remaining = membership.sessions_remaining
+        used_membership_id = membership.id
+
+    booking.status = new_status
+    db.flush()
+    snap = snapshot(db, group_class)
+    return AttendanceOutcomeSnapshot(
+        booking=booking,
+        booked_count=snap.booked_count,
+        remaining=snap.remaining,
+        session_deducted=session_deducted,
+        sessions_remaining=sessions_remaining,
+        membership_id=used_membership_id,
+        already_deducted_via_attendance=already,
+    )
+
+
+def mark_no_show(
+    db: Session,
+    *,
+    user: User,
+    class_id: int,
+    booking_id: int,
+    membership_id: Optional[int] = None,
+) -> AttendanceOutcomeSnapshot:
+    return _apply_attendance_outcome(
+        db,
+        user=user,
+        class_id=class_id,
+        booking_id=booking_id,
+        new_status=BookingStatus.NO_SHOW.value,
+        membership_id=membership_id,
+    )
+
+
+def mark_attended(
+    db: Session,
+    *,
+    user: User,
+    class_id: int,
+    booking_id: int,
+    membership_id: Optional[int] = None,
+) -> AttendanceOutcomeSnapshot:
+    """
+    Same session policy as no-show: deduct one class session unless a class
+    check-in in the class time window already consumed a session.
+    """
+    return _apply_attendance_outcome(
+        db,
+        user=user,
+        class_id=class_id,
+        booking_id=booking_id,
+        new_status=BookingStatus.ATTENDED.value,
+        membership_id=membership_id,
     )
