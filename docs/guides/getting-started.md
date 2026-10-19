@@ -283,7 +283,7 @@ API برنامه: `GET/POST /api/v1/members/{id}/workout-plans` ، `PATCH /api/v
 
 ## مرحلهٔ بعدی پیشنهادی برای چت جدید
 
-1. تنظیمات باشگاه و اعلان داخل‌برنامه (+ placeholder پیامک/درگاه)
+1. **تنظیمات باشگاه + اعلان داخل‌برنامه + placeholder پیامک** (پرامپت: `docs/prompts/next-coding-prompt.md`)
 2. پنل ورزشکار وقتی کارکنان پایدار شد
 3. HTTPS و بکاپ قبل از دادهٔ واقعی
 
