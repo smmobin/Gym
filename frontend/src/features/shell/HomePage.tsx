@@ -44,6 +44,8 @@ export function HomePage() {
         {' · '}
         <Link to="/billing">مالی</Link>
         {' · '}
+        <Link to="/classes">کلاس‌ها</Link>
+        {' · '}
         پروتوتایپ HTML: فایل‌های <code>index.html</code> در ریشهٔ پروژه.
       </p>
     </main>

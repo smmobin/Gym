@@ -497,14 +497,50 @@ def seed(session: Session | None = None) -> dict[str, int]:
             ends_at=now + timedelta(days=1, hours=3),
             is_active=True,
         )
-        session.add(group_class)
+        yoga = GroupClass(
+            title="یوگا بانوان",
+            trainer_user_id=trainer1.id,
+            capacity=10,
+            gender_label=GenderLabel.WOMEN.value,
+            starts_at=now + timedelta(days=2, hours=4),
+            ends_at=now + timedelta(days=2, hours=5),
+            is_active=True,
+        )
+        # Nearly full — one seat left for demo of capacity UI
+        spin = GroupClass(
+            title="اسپینینگ عصر",
+            trainer_user_id=trainer2.id,
+            capacity=3,
+            gender_label=GenderLabel.MEN.value,
+            starts_at=now + timedelta(hours=6),
+            ends_at=now + timedelta(hours=7),
+            is_active=True,
+        )
+        session.add_all([group_class, yoga, spin])
         session.flush()
-        session.add(
-            ClassBooking(
-                group_class_id=group_class.id,
-                member_id=maryam.id,
-                status=BookingStatus.BOOKED.value,
-            )
+        session.add_all(
+            [
+                ClassBooking(
+                    group_class_id=group_class.id,
+                    member_id=maryam.id,
+                    status=BookingStatus.BOOKED.value,
+                ),
+                ClassBooking(
+                    group_class_id=yoga.id,
+                    member_id=negar.id,
+                    status=BookingStatus.BOOKED.value,
+                ),
+                ClassBooking(
+                    group_class_id=spin.id,
+                    member_id=ali.id,
+                    status=BookingStatus.BOOKED.value,
+                ),
+                ClassBooking(
+                    group_class_id=spin.id,
+                    member_id=hosein.id,
+                    status=BookingStatus.BOOKED.value,
+                ),
+            ]
         )
 
         session.add(

@@ -78,6 +78,8 @@ export function LoginPage() {
             <Link to="/members">اعضا</Link>
             {' · '}
             <Link to="/attendance">حضور</Link>
+            {' · '}
+            <Link to="/classes">کلاس‌ها</Link>
           </p>
           <button type="button" className="btn" onClick={onLogout} disabled={busy}>
             خروج
