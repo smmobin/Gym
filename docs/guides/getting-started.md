@@ -354,10 +354,10 @@ cd backend
 .\.venv\Scripts\python.exe scripts/backup_db.py --dry-run
 ```
 
-## مرحلهٔ بعدی پیشنهادی برای چت جدید
+## مرحلهٔ بعدی
 
-1. **انجام استقرار واقعی** روی اکانت هاست صاحب (credential در گیت نرود) + تمرین restore
-2. اختیاری محصول: freeze عضویت؛ رزرو کلاس ورزشکار
-3. بعداً: پیامک / درگاه واقعی
+1. **کار تو (دستی):** استقرار واقعی طبق [deploy.md](deploy.md) + تمرین restore در [backup.md](backup.md)
+2. **اختیاری کدنویسی:** freeze عضویت (پرامپت: `docs/prompts/next-coding-prompt.md`)
+3. بعداً: رزرو کلاس ورزشکار؛ پیامک / درگاه واقعی
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
