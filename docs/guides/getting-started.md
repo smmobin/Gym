@@ -157,8 +157,8 @@ API: `GET /api/v1/membership-plans` ، `GET/POST …/members/{id}/memberships` (
 
 ## مرحلهٔ بعدی پیشنهادی برای چت جدید
 
-1. کلاس / کمد / مربی به‌ترتیب ارزش روزانه
-2. پنل ورزشکار وقتی کارکنان پایدار شد
-3. گزارش هزینه/سود مدیر (جدول expense هست)
+1. **کلاس گروهی + رزرو + ظرفیت** (پرامپت آماده در `docs/prompts/next-coding-prompt.md`)
+2. کمد → واگذاری مربی/برنامه → قفل پرونده
+3. گزارش هزینه/سود مدیر؛ فرم آزمایشی؛ تنظیمات؛ بعداً پنل ورزشکار
 
-وضعیت زنده و پرامپت کپی‌کردنی: `docs/product/roadmap-status.md` و `docs/prompts/next-coding-prompt.md`.
+وضعیت زنده: `docs/product/roadmap-status.md`.
