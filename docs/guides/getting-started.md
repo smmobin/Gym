@@ -342,8 +342,8 @@ API برنامه: `GET/POST /api/v1/members/{id}/workout-plans` ، `PATCH /api/v
 
 ## مرحلهٔ بعدی پیشنهادی برای چت جدید
 
-1. **پنل ورزشکار** (لاگین + دادهٔ خودش — پرامپت: `docs/prompts/next-coding-prompt.md`)
-2. HTTPS و بکاپ قبل از دادهٔ واقعی (هاست، نه فقط GitHub Pages)
-3. حفره‌های کوچک (مثلاً قفل روی UI ویرایش اعضا)
+1. **آماده‌سازی استقرار** — هاست واقعی + HTTPS + بکاپ/restore (پرامپت: `docs/prompts/next-coding-prompt.md`)
+2. اختیاری محصول: freeze عضویت؛ قفل UI ویرایش اعضا؛ رزرو کلاس ورزشکار
+3. بعداً: پیامک / درگاه واقعی
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
