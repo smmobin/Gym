@@ -79,6 +79,14 @@ export function LoginPage() {
             {' · '}
             <Link to="/attendance">حضور</Link>
             {' · '}
+            <Link to="/billing">مالی</Link>
+            {' · '}
+            {user.role === 'manager' ? (
+              <>
+                <Link to="/reports">گزارش مدیر</Link>
+                {' · '}
+              </>
+            ) : null}
             <Link to="/classes">کلاس‌ها</Link>
             {' · '}
             <Link to="/lockers">کمدها</Link>

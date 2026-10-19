@@ -561,14 +561,37 @@ def seed(session: Session | None = None) -> dict[str, int]:
                 status=TrialLeadStatus.NEW.value,
             )
         )
-        session.add(
-            Expense(
-                category=ExpenseCategory.RENT.value,
-                amount_toman=25_000_000,
-                expense_date=today.replace(day=1),
-                note="اجاره ماهانه ساختگی",
-                created_by_user_id=manager.id,
-            )
+        session.add_all(
+            [
+                Expense(
+                    category=ExpenseCategory.RENT.value,
+                    amount_toman=25_000_000,
+                    expense_date=today.replace(day=1),
+                    note="اجاره ماهانه ساختگی",
+                    created_by_user_id=manager.id,
+                ),
+                Expense(
+                    category=ExpenseCategory.SALARY.value,
+                    amount_toman=18_000_000,
+                    expense_date=today.replace(day=min(5, today.day)),
+                    note="حقوق مربیان (ساختگی)",
+                    created_by_user_id=manager.id,
+                ),
+                Expense(
+                    category=ExpenseCategory.UTILITIES.value,
+                    amount_toman=2_500_000,
+                    expense_date=today.replace(day=min(10, today.day)),
+                    note="برق و آب (ساختگی)",
+                    created_by_user_id=manager.id,
+                ),
+                Expense(
+                    category=ExpenseCategory.PURCHASE.value,
+                    amount_toman=1_200_000,
+                    expense_date=today,
+                    note="خرید لوازم نظافت (ساختگی)",
+                    created_by_user_id=manager.id,
+                ),
+            ]
         )
         session.add(
             AuditLog(

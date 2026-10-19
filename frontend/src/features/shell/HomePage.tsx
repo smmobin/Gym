@@ -44,6 +44,8 @@ export function HomePage() {
         {' · '}
         <Link to="/billing">مالی</Link>
         {' · '}
+        <Link to="/reports">گزارش مدیر</Link>
+        {' · '}
         <Link to="/classes">کلاس‌ها</Link>
         {' · '}
         <Link to="/lockers">کمدها</Link>
