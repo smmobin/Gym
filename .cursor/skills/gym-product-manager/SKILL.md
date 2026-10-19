@@ -18,7 +18,7 @@ description: Runs the GYM CONTROL Product Manager workflow — reads docs, names
 1. بخوان: `docs/README.md`، `docs/product/business-rules.md`، `docs/product/roadmap-status.md`، `docs/guides/project-rules.md`، `docs/guides/security.md`، ADRها در صورت نیاز، و اسکلت `frontend/` + `backend/` (بدون ساخت فیچر).
 2. بگو **الان کجاییم** (یک پاراگراف ساده).
 3. بگو **مرحلهٔ بعد چیست** و **چرا**، و **چه کار نکنند**.
-4. یک **پرامپت آمادهٔ کپی** برای چت Agent سازنده بده (قالب پایین). همان را در `docs/prompts/next-coding-prompt.md` و وضعیت را در `roadmap-status.md` بنویس/به‌روز کن.
+4. یک **پرامپت آمادهٔ کپی** برای چت Agent سازنده بده (قالب پایین) — **همیشه متن کامل پرامپت را در همان پاسخ چت بچسبان** (فقط لینک به فایل کافی نیست؛ درخواست صریح صاحب پروژه). همان را در `docs/prompts/next-coding-prompt.md` و وضعیت را در `roadmap-status.md` بنویس/به‌روز کن.
 5. اگر مرحلهٔ قبلی انجام شده: docs را با واقعیت کد هم‌خوان کن؛ حفرهٔ جدید را لیست کن.
 
 ## پرامپت سازنده باید شامل باشد
