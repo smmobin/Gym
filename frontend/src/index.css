@@ -193,3 +193,63 @@ a {
   border: 1px solid rgba(255, 255, 255, 0.14);
   font-weight: 600;
 }
+
+.linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.billing-block h2,
+.billing-block h3 {
+  margin: 1.25rem 0 0.5rem;
+}
+
+.debt-line {
+  margin: 0 0 1rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ok-msg {
+  color: var(--ok);
+}
+
+.err-msg {
+  color: var(--down);
+}
+
+.receipt-print {
+  margin: 2rem 0;
+  padding: 1.25rem 1.5rem;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-print,
+  .receipt-print * {
+    visibility: visible;
+  }
+
+  .receipt-print {
+    position: absolute;
+    inset: 0;
+    background: white;
+    color: black;
+    border: none;
+  }
+
+  .receipt-print .btn {
+    display: none;
+  }
+}
