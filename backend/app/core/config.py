@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     session_ttl_hours: int = 12
     login_rate_limit_max: int = 20
     login_rate_limit_window_seconds: int = 60
+    # Member file lock TTL from last_seen_at (business-rules 12.1)
+    member_file_lock_ttl_seconds: int = 300
 
     @property
     def cors_origin_list(self) -> list[str]:

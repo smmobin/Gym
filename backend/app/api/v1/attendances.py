@@ -18,6 +18,7 @@ from app.schemas.attendance import (
     TodayAttendancesResponse,
 )
 from app.services import attendance as attendance_svc
+from app.services import member_locks as lock_svc
 
 router = APIRouter(prefix="/attendances", tags=["attendances"])
 
@@ -38,6 +39,10 @@ def _to_out(row: Attendance) -> AttendanceOut:
 
 
 def _raise(err: attendance_svc.AttendanceError) -> None:
+    raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+
+
+def _raise_lock(err: lock_svc.MemberLockError) -> None:
     raise HTTPException(status_code=err.status_code, detail=err.detail) from err
 
 
@@ -69,6 +74,12 @@ def post_check_in(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_STAFF_ALL)),
 ) -> CheckInResponse:
+    try:
+        lock_svc.assert_not_locked_by_other(db, user=user, member_id=body.member_id)
+    except lock_svc.MemberLockError as err:
+        _raise_lock(err)
+        raise  # pragma: no cover
+
     try:
         result = attendance_svc.check_in(
             db,

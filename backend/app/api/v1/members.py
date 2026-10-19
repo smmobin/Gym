@@ -1,4 +1,4 @@
-"""Members list / create / detail / update / soft-archive."""
+"""Members list / create / detail / update / soft-archive / file locks."""
 
 from __future__ import annotations
 
@@ -13,7 +13,9 @@ from app.core.db import get_db
 from app.models.enums import MemberStatus, StaffRole
 from app.models.member import Member
 from app.models.user import User
+from app.schemas.member_locks import MemberLockOut
 from app.schemas.members import MemberCreate, MemberListResponse, MemberOut, MemberUpdate
+from app.services import member_locks as lock_svc
 from app.services.members import (
     build_member_list_query,
     member_by_mobile,
@@ -35,6 +37,24 @@ def _ensure_can_view(db: Session, user: User, member: Member) -> None:
     ):
         return
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="دسترسی مجاز نیست.")
+
+
+def _raise_lock(err: lock_svc.MemberLockError) -> None:
+    raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+
+
+def _lock_out(snap: lock_svc.LockSnapshot) -> MemberLockOut:
+    return MemberLockOut(
+        locked=snap.locked,
+        member_id=snap.member_id,
+        locked_by=snap.locked_by,
+        locked_by_name=snap.locked_by_name,
+        locked_by_mobile=snap.locked_by_mobile,
+        acquired_at=snap.acquired_at,
+        last_seen_at=snap.last_seen_at,
+        expires_at=snap.expires_at,
+        held_by_me=snap.held_by_me,
+    )
 
 
 @router.get("", response_model=MemberListResponse)
@@ -103,14 +123,77 @@ def get_member(
     return MemberOut.model_validate(member)
 
 
+@router.get("/{member_id}/lock", response_model=MemberLockOut)
+def get_member_lock(
+    member_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_STAFF_ALL)),
+) -> MemberLockOut:
+    try:
+        snap = lock_svc.get_lock_status(db, user=user, member_id=member_id)
+        db.commit()
+    except lock_svc.MemberLockError as err:
+        db.rollback()
+        _raise_lock(err)
+        raise  # pragma: no cover
+    return _lock_out(snap)
+
+
+@router.post("/{member_id}/lock", response_model=MemberLockOut)
+def acquire_member_lock(
+    member_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_STAFF_ALL)),
+) -> MemberLockOut:
+    try:
+        snap = lock_svc.acquire_lock(db, user=user, member_id=member_id)
+        db.commit()
+    except lock_svc.MemberLockError as err:
+        db.rollback()
+        _raise_lock(err)
+        raise  # pragma: no cover
+    return _lock_out(snap)
+
+
+@router.post("/{member_id}/lock/touch", response_model=MemberLockOut)
+def touch_member_lock(
+    member_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_STAFF_ALL)),
+) -> MemberLockOut:
+    try:
+        snap = lock_svc.touch_lock(db, user=user, member_id=member_id)
+        db.commit()
+    except lock_svc.MemberLockError as err:
+        db.rollback()
+        _raise_lock(err)
+        raise  # pragma: no cover
+    return _lock_out(snap)
+
+
+@router.post("/{member_id}/unlock", response_model=MemberLockOut)
+def unlock_member_lock(
+    member_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_STAFF_ALL)),
+) -> MemberLockOut:
+    try:
+        snap = lock_svc.unlock(db, user=user, member_id=member_id)
+        db.commit()
+    except lock_svc.MemberLockError as err:
+        db.rollback()
+        _raise_lock(err)
+        raise  # pragma: no cover
+    return _lock_out(snap)
+
+
 @router.patch("/{member_id}", response_model=MemberOut)
 def update_member(
     member_id: int,
     body: MemberUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(*_STAFF_WRITE)),
+    user: User = Depends(require_roles(*_STAFF_WRITE)),
 ) -> MemberOut:
-    # TODO: قفل پروندهٔ ۵دقیقه‌ای هنوز برای PATCH عضو پیاده نشده (schema-todos).
     member = db.get(Member, member_id)
     if member is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="عضو یافت نشد.")
@@ -119,6 +202,12 @@ def update_member(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="عضو آرشیو شده قابل ویرایش نیست.",
         )
+
+    try:
+        lock_svc.assert_not_locked_by_other(db, user=user, member_id=member_id)
+    except lock_svc.MemberLockError as err:
+        _raise_lock(err)
+        raise  # pragma: no cover
 
     data = body.model_dump(exclude_unset=True)
     if "mobile" in data and data["mobile"] != member.mobile:

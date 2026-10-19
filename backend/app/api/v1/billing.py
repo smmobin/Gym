@@ -9,6 +9,7 @@ from app.api.deps import require_roles
 from app.core.db import get_db
 from app.models.enums import StaffRole
 from app.models.membership import Membership
+from app.models.payment import Payment
 from app.models.user import User
 from app.schemas.billing import (
     CancelMembershipResponse,
@@ -24,6 +25,7 @@ from app.schemas.billing import (
     RenewMembershipResponse,
 )
 from app.services import billing as billing_svc
+from app.services import member_locks as lock_svc
 
 router = APIRouter(tags=["billing"])
 
@@ -32,6 +34,18 @@ _DESK = (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value)
 
 def _raise(err: billing_svc.BillingError) -> None:
     raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+
+
+def _raise_lock(err: lock_svc.MemberLockError) -> None:
+    raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+
+
+def _enforce_member_lock(db: Session, user: User, member_id: int) -> None:
+    try:
+        lock_svc.assert_not_locked_by_other(db, user=user, member_id=member_id)
+    except lock_svc.MemberLockError as err:
+        _raise_lock(err)
+        raise  # pragma: no cover
 
 
 def _membership_out(row: Membership) -> MembershipOut:
@@ -95,6 +109,7 @@ def renew_membership(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_DESK)),
 ) -> RenewMembershipResponse:
+    _enforce_member_lock(db, user, member_id)
     try:
         result = billing_svc.renew_membership(
             db,
@@ -171,6 +186,7 @@ def create_payment(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_DESK)),
 ) -> PaymentMutationResponse:
+    _enforce_member_lock(db, user, body.member_id)
     try:
         result = billing_svc.create_payment(
             db,
@@ -204,6 +220,9 @@ def refund_payment(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_DESK)),
 ) -> PaymentMutationResponse:
+    payment = db.get(Payment, payment_id)
+    if payment is not None:
+        _enforce_member_lock(db, user, payment.member_id)
     try:
         result = billing_svc.refund_payment(db, user=user, payment_id=payment_id)
         db.commit()

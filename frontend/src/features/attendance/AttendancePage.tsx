@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { RequireAuth } from '@/features/auth/RequireAuth'
+import { useMemberFileLock } from '@/hooks/useMemberFileLock'
 import { ApiError, apiGet, apiPost } from '@/lib/api'
+import { lockErrorMessage } from '@/lib/memberLock'
 import type { Attendance, AttendanceType, CheckInResponse, TodayAttendancesResponse } from '@/types/attendance'
 import type { StaffUser } from '@/types/auth'
 import type { Member, MemberListResponse } from '@/types/members'
@@ -23,6 +25,14 @@ function AttendanceContent({ user }: { user: StaffUser }) {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [pendingSecondConfirm, setPendingSecondConfirm] = useState(false)
+
+  const {
+    lock,
+    lockError,
+    lockHeldByMe,
+    busy: lockBusy,
+    release: releaseLock,
+  } = useMemberFileLock(selected?.id ?? null)
 
   const loadToday = useCallback(async () => {
     const data = await apiGet<TodayAttendancesResponse>('/api/v1/attendances/today')
@@ -75,7 +85,7 @@ function AttendanceContent({ user }: { user: StaffUser }) {
           setError(err.message)
         } else {
           setPendingSecondConfirm(false)
-          setError(err.message)
+          setError(lockErrorMessage(err, 'ثبت ورود ناموفق بود.'))
         }
       } else {
         setError('ثبت ورود ناموفق بود.')
@@ -148,6 +158,30 @@ function AttendanceContent({ user }: { user: StaffUser }) {
           <h2 className="form-title">
             عضو انتخاب‌شده: {selected.first_name} {selected.last_name}
           </h2>
+          <div className="lock-banner" role="status">
+            {lockBusy ? (
+              <p className="hint">در حال گرفتن قفل پرونده…</p>
+            ) : lockHeldByMe ? (
+              <p className="ok-msg">
+                قفل پرونده دست شماست.{' '}
+                <button
+                  type="button"
+                  className="linkish"
+                  disabled={busy}
+                  onClick={() => void releaseLock()}
+                >
+                  آزادسازی قفل
+                </button>
+              </p>
+            ) : lockError ? (
+              <p className="err-msg">{lockError}</p>
+            ) : lock?.locked ? (
+              <p className="err-msg">
+                قفل دست {lock.locked_by_name ?? 'کاربر دیگر'}
+                {lock.locked_by_mobile ? ` (${lock.locked_by_mobile})` : ''} است.
+              </p>
+            ) : null}
+          </div>
           <label>
             نوع ورود
             <select

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { RequireAuth } from '@/features/auth/RequireAuth'
+import { useMemberFileLock } from '@/hooks/useMemberFileLock'
 import { ApiError, apiGet, apiPost } from '@/lib/api'
+import { lockErrorMessage } from '@/lib/memberLock'
 import type { StaffUser } from '@/types/auth'
 import type {
   MembershipListResponse,
@@ -60,6 +62,14 @@ function BillingContent({ user }: { user: StaffUser }) {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const {
+    lock,
+    lockError,
+    lockHeldByMe,
+    busy: lockBusy,
+    release: releaseLock,
+  } = useMemberFileLock(selected?.id ?? null)
 
   const loadPlans = useCallback(async () => {
     if (!isDesk) return
@@ -145,8 +155,7 @@ function BillingContent({ user }: { user: StaffUser }) {
       )
       await loadMemberFinance(selected.id)
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message)
-      else setError('تمدید ناموفق بود.')
+      setError(lockErrorMessage(err, 'تمدید ناموفق بود.'))
     } finally {
       setBusy(false)
     }
@@ -177,8 +186,7 @@ function BillingContent({ user }: { user: StaffUser }) {
       setPayAmount('')
       await loadMemberFinance(selected.id)
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message)
-      else setError('ثبت پرداخت ناموفق بود.')
+      setError(lockErrorMessage(err, 'ثبت پرداخت ناموفق بود.'))
     } finally {
       setBusy(false)
     }
@@ -194,8 +202,7 @@ function BillingContent({ user }: { user: StaffUser }) {
       setPrintPayment(data.payment)
       if (selected) await loadMemberFinance(selected.id)
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message)
-      else setError('برگشت ناموفق بود.')
+      setError(lockErrorMessage(err, 'برگشت ناموفق بود.'))
     } finally {
       setBusy(false)
     }
@@ -261,6 +268,40 @@ function BillingContent({ user }: { user: StaffUser }) {
             {selected.display_id} — {selected.first_name} {selected.last_name}
           </h2>
           <p className="debt-line">بدهی فعلی: {formatToman(debt)}</p>
+          <div className="lock-banner" role="status">
+            {lockBusy ? (
+              <p className="hint">در حال گرفتن قفل پرونده…</p>
+            ) : lockHeldByMe ? (
+              <p className="ok-msg">
+                قفل پرونده دست شماست
+                {lock?.expires_at
+                  ? ` تا ${new Date(lock.expires_at).toLocaleString('fa-IR')}`
+                  : ''}
+                .{' '}
+                <button
+                  type="button"
+                  className="linkish"
+                  disabled={busy}
+                  onClick={() => void releaseLock()}
+                >
+                  آزادسازی قفل
+                </button>
+              </p>
+            ) : lockError ? (
+              <p className="err-msg">{lockError}</p>
+            ) : lock?.locked ? (
+              <p className="err-msg">
+                قفل دست {lock.locked_by_name ?? 'کاربر دیگر'}
+                {lock.locked_by_mobile ? ` (${lock.locked_by_mobile})` : ''} است
+                {lock.expires_at
+                  ? ` — انقضا: ${new Date(lock.expires_at).toLocaleString('fa-IR')}`
+                  : ''}
+                .
+              </p>
+            ) : (
+              <p className="hint">قفل فعالی نیست؛ برای کار هم‌زمان توصیه می‌شود قفل بگیرید.</p>
+            )}
+          </div>
 
           <h3>عضویت‌ها</h3>
           <ul className="status-list">

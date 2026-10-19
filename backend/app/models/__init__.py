@@ -19,6 +19,7 @@ from app.models.group_class import ClassBooking, GroupClass
 from app.models.gym_settings import GymSettings
 from app.models.locker import Locker, LockerAssignment
 from app.models.member import Member
+from app.models.member_file_lock import MemberFileLock
 from app.models.membership import Membership, MembershipPlan
 from app.models.payment import Payment
 from app.models.session import StaffSession
@@ -41,6 +42,7 @@ __all__ = [
     "Locker",
     "LockerAssignment",
     "Member",
+    "MemberFileLock",
     "MemberStatus",
     "Membership",
     "MembershipPlan",
