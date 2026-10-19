@@ -44,16 +44,22 @@ pytest -q
 
 ابزار: **pytest** + **httpx** / TestClient فست‌اپ‌آی.
 
-## فرانت‌اند (React)
+## فرانت‌اند (Ocean Dark MPA)
 
 ```powershell
 cd frontend
 npm test
+npm run build
 ```
 
-تست‌ها معمولاً کنار فایل‌ها: `*.test.ts` / `*.test.tsx`.
+تست‌های دود در `frontend/tests/` (Vitest + jsdom؛ mock روی `fetch`):
 
-ابزار: **Vitest** (+ Testing Library در صورت نیاز UI).
+- `api.test.js` — happy path + 401/403
+- `auth-staff.test.js` — لاگین کارکنان
+- `trial.test.js` — ارسال جلسه آزمایشی
+- `athlete-book.test.js` — رزرو کلاس ورزشکار
+
+ابزار: **Vitest** (بدون React / Testing Library).
 
 ---
 

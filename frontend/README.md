@@ -1,41 +1,30 @@
-# Frontend · GYM CONTROL
+# GYM CONTROL — فرانت Ocean Dark (MPA)
 
-React + TypeScript + Vite (RTL / فارسی).
+فرانت عملیاتی محصول: **HTML + CSS + JS** با تم Ocean Dark، بدون React.
 
-## Setup
+## اجرا
 
 ```powershell
-cd frontend
 npm install
-```
-
-## Run
-
-```powershell
 npm run dev
 ```
 
-## Tests
+با پروکسی `/api` به بک‌اند `127.0.0.1:8000`.
+
+## صفحات
+
+| مسیر | نقش |
+|------|-----|
+| `/` | لندینگ + فرم جلسه آزمایشی واقعی |
+| `/login/` | ورود کارکنان |
+| `/receptionist/` | پنل میز / مربی |
+| `/manager/` | پنل مدیر (+ گزارش) |
+| `/athlete/login.html` | ورود ورزشکار |
+| `/athlete/` | داشبورد ورزشکار |
+
+## تست و بیلد
 
 ```powershell
 npm test
+npm run build
 ```
-
-قبل از commit/push باید سبز باشند. جزئیات: `docs/guides/testing.md`
-
-App: http://127.0.0.1:5173  
-Requests to `/api/*` are proxied to the FastAPI backend on port `8000`.
-
-## Layout
-
-```text
-frontend/src/
-├── app/            # (reserved) app shell wiring
-├── components/     # shared UI
-├── features/       # feature modules (athlete, receptionist, manager, ...)
-├── lib/            # api helpers, formatters
-├── types/          # shared TypeScript types
-└── styles/         # optional extra styles
-```
-
-پروتوتایپ HTML فعلی در ریشهٔ ریپو مرجع طراحی Ocean Dark است.

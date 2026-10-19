@@ -1,16 +1,23 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(rootDir, 'src'),
+  root: rootDir,
+  publicDir: 'public',
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(rootDir, 'index.html'),
+        login: path.resolve(rootDir, 'login/index.html'),
+        receptionist: path.resolve(rootDir, 'receptionist/index.html'),
+        manager: path.resolve(rootDir, 'manager/index.html'),
+        athlete: path.resolve(rootDir, 'athlete/index.html'),
+        athleteLogin: path.resolve(rootDir, 'athlete/login.html'),
+      },
     },
   },
   server: {
@@ -25,6 +32,5 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './src/test/setup.ts',
   },
 })

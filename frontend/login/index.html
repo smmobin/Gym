@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ورود کارکنان — GYM CONTROL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+</head>
+<body class="panel-page">
+  <div class="api-banner" data-api-banner hidden></div>
+  <div class="login-shell">
+    <div class="login-card">
+      <p class="eyebrow en">GYM CONTROL</p>
+      <h1>ورود کارکنان</h1>
+      <p class="lead">با موبایل و رمز وارد شوید. نشست روی سرور (کوکی HttpOnly) نگه داشته می‌شود.</p>
+
+      <form class="form-grid" data-login-form>
+        <label>موبایل<input name="mobile" inputmode="tel" autocomplete="username" value="09120000001" required /></label>
+        <label>رمز عبور<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label>
+        <button class="btn wide" type="submit">ورود</button>
+      </form>
+
+      <section data-logged hidden>
+        <p>شما وارد شده‌اید: <strong data-name></strong></p>
+        <p>نقش: <strong data-role></strong></p>
+        <p class="hint">موبایل: <span data-mobile></span></p>
+        <div data-bell-root style="margin:0.75rem 0"></div>
+        <div class="inline-actions">
+          <a class="btn" data-go href="/receptionist/">ورود به پنل</a>
+          <button type="button" class="btn ghost" data-logout>خروج</button>
+        </div>
+      </section>
+
+      <div class="status-msg" data-status hidden></div>
+      <p class="hint" style="margin-top:1rem">
+        <a href="/">صفحه اصلی</a> ·
+        <a href="/athlete/login.html">ورود ورزشکار</a>
+      </p>
+    </div>
+  </div>
+  <script type="module" src="/assets/js/panels/login.js"></script>
+</body>
+</html>

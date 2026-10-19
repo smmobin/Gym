@@ -1,6 +1,6 @@
 # ADR 0001 — پشتهٔ فرانت‌اند
 
-- **وضعیت:** Accepted  
+- **وضعیت:** Superseded — جایگزین با [0005-frontend-ocean-dark-mpa](0005-frontend-ocean-dark-mpa.md)  
 - **تاریخ:** 2026-10-13  
 - **مرتبط:** [0004 تحویل و PWA](0004-delivery-and-pwa.md)
 

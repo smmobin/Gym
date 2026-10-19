@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>پنل میز — GYM CONTROL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+</head>
+<body class="panel-page">
+  <div class="api-banner" data-api-banner hidden></div>
+  <input type="checkbox" id="side-toggle" class="side-toggle" />
+  <div class="app">
+    <label for="side-toggle" class="side-backdrop" aria-hidden="true"></label>
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <span class="brand-mark"></span>
+        <div><strong>GYM CONTROL</strong><small>پنل میز</small></div>
+      </a>
+      <nav class="nav">
+        <p class="nav-label">عملیات</p>
+        <a class="nav-item active" href="#dash">داشبورد</a>
+        <a class="nav-item" href="#members" data-desk-only>اعضا</a>
+        <a class="nav-item" href="#checkin">حضور</a>
+        <a class="nav-item" href="#billing" data-desk-only>مالی</a>
+        <a class="nav-item" href="#classes">کلاس‌ها</a>
+        <a class="nav-item" href="#lockers" data-desk-only>کمدها</a>
+        <a class="nav-item" href="#trainers" data-desk-only>مربیان</a>
+        <a class="nav-item" href="#workouts">برنامه تمرینی</a>
+        <a class="nav-item" href="#guests" data-desk-only>مهمان روزانه</a>
+        <a class="nav-item" href="#trial" data-desk-only>صف آزمایشی</a>
+        <a class="nav-item" href="#sms">قالب پیامک</a>
+        <a class="nav-item" href="#settings">تنظیمات</a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="/">صفحه اصلی</a>
+        <a href="/manager/" data-manager-only>پنل مدیر</a>
+        <button type="button" class="btn ghost small" data-logout>خروج</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <label for="side-toggle" class="side-burger" aria-label="منوی پنل">
+            <span></span><span></span><span></span>
+          </label>
+          <div>
+            <h1>داشبورد میز</h1>
+            <p><span data-user-role></span> · داده از API</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div data-bell-root></div>
+          <div class="user-chip"><span class="avatar" data-avatar>—</span><span data-user-name></span></div>
+        </div>
+      </header>
+
+      <section class="content">
+        <div data-section="dash" data-title="داشبورد میز">
+          <div class="stats">
+            <article class="stat"><span class="stat-label">حاضر امروز</span><strong data-stat-today>—</strong><em>از API</em></article>
+            <article class="stat"><span class="stat-label">وضعیت</span><strong>متصل</strong><em class="ok">Ocean Dark</em></article>
+          </div>
+          <div class="quick-actions">
+            <a class="btn" href="#members">اعضا</a>
+            <a class="btn ghost" href="#checkin">حضور</a>
+            <a class="btn ghost" href="#billing">مالی</a>
+            <a class="btn ghost" href="#guests">مهمان</a>
+          </div>
+          <p class="hint">از منوی کناری هر بخش را باز کنید. بنر قرمز فقط وقتی API قطع است دیده می‌شود.</p>
+        </div>
+
+        <div data-section="members" data-title="اعضا" hidden><div id="mount-members"></div></div>
+        <div data-section="checkin" data-title="حضور و غیاب" hidden><div id="mount-attendance"></div></div>
+        <div data-section="billing" data-title="مالی و تمدید" hidden><div id="mount-billing"></div></div>
+        <div data-section="classes" data-title="کلاس‌های گروهی" hidden><div id="mount-classes"></div></div>
+        <div data-section="lockers" data-title="کمدها" hidden><div id="mount-lockers"></div></div>
+        <div data-section="trainers" data-title="مربیان" hidden><div id="mount-trainers"></div></div>
+        <div data-section="workouts" data-title="برنامه تمرینی" hidden><div id="mount-workouts"></div></div>
+        <div data-section="guests" data-title="مهمان روزانه" hidden><div id="mount-guests"></div></div>
+        <div data-section="trial" data-title="صف آزمایشی" hidden><div id="mount-trial"></div></div>
+        <div data-section="sms" data-title="قالب پیامک" hidden><div id="mount-sms"></div></div>
+        <div data-section="settings" data-title="تنظیمات" hidden><div id="mount-settings"></div></div>
+      </section>
+    </div>
+  </div>
+  <script type="module" src="/assets/js/panels/receptionist.js"></script>
+  <script src="/js/custom-select.js"></script>
+</body>
+</html>
+

@@ -4,7 +4,7 @@
 
 هدف این نیست که کتابچهٔ طولانی بنویسیم. هدف این است که چند ماه بعد (یا وقتی نفر جدید بیاید) بفهمیم:
 
-- چرا React نه Vue؟
+- چرا فرانت MPA است نه React؟
 - چرا PostgreSQL نه MongoDB؟
 - چرا فعلاً اپ اندروید نمی‌سازیم؟
 
@@ -25,9 +25,8 @@
 
 | شماره | عنوان | وضعیت |
 |-------|--------|--------|
-| [0001](0001-frontend-stack.md) | پشتهٔ فرانت‌اند | Accepted |
+| [0001](0001-frontend-stack.md) | پشتهٔ فرانت‌اند (React) | **Superseded** توسط 0005 |
 | [0002](0002-backend-stack.md) | پشتهٔ بک‌اند | Accepted |
 | [0003](0003-database.md) | دیتابیس | Accepted |
 | [0004](0004-delivery-and-pwa.md) | تحویل محصول: سایت → PWA | Accepted |
-
-> وضعیت به **Accepted** تغییر کرد؛ اسکلت `frontend/` و `backend/` بر اساس همین تصمیم‌ها ساخته شده است.
+| [0005](0005-frontend-ocean-dark-mpa.md) | فرانت Ocean Dark MPA (بدون React) | **Accepted** |

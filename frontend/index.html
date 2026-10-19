@@ -1,19 +1,378 @@
-<!doctype html>
+﻿<!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GYM CONTROL · باشگاه آذر</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>باشگاه آذر · GYM CONTROL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+</head>
+<body class="landing-page">
+  <div class="api-banner" data-api-banner hidden></div>
+
+  <header class="site-nav">
+    <a class="site-brand" href="#top">
+      <span class="brand-mark"></span>
+      <span>
+        <strong class="en">GYM CONTROL</strong>
+        <small>باشگاه آذر</small>
+      </span>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+    <label for="nav-toggle" class="nav-burger" aria-label="باز کردن منو">
+      <span></span><span></span><span></span>
+    </label>
+    <nav class="site-links">
+      <a href="#programs">رشته‌ها</a>
+      <a href="#plans">عضویت</a>
+      <a href="#schedule">کلاس‌ها</a>
+      <a href="#coaches">مربیان</a>
+      <a href="#facility">فضا</a>
+      <a href="#roles">ورود به پنل</a>
+      <a class="btn nav-cta-mobile" href="#trial">جلسه آزمایشی</a>
+    </nav>
+    <a class="btn nav-cta-desktop" href="#trial">جلسه آزمایشی</a>
+  </header>
+  <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
+
+  <main id="top">
+    <section class="hero-bleed">
+      <img class="hero-media" src="/images/hero-gym.jpg" alt="سالن وزنه باشگاه آذر" />
+      <div class="hero-veil"></div>
+      <div class="hero-copy">
+        <p class="brand-lockup en">GYM CONTROL</p>
+        <h1>باشگاه آذر</h1>
+        <p class="hero-lead">تمرین منظم، مربی متخصص و عضویت شفاف در قلب تهران.</p>
+        <div class="hero-cta">
+          <a class="btn" href="#trial">رزرو جلسه آزمایشی</a>
+          <a class="btn ghost" href="#schedule">برنامه این هفته</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip reveal">
+      <div><strong>+۱٬۸۰۰</strong><span>عضو فعال نمونه</span></div>
+      <div><strong>۱۲</strong><span>سال سابقه</span></div>
+      <div><strong>۴٫۸</strong><span>امتیاز رضایت</span></div>
+      <div><strong>۰۶:۳۰–۲۲:۳۰</strong><span>ساعات کاری روزانه</span></div>
+    </section>
+
+    <section class="section" id="programs">
+      <div class="section-intro reveal">
+        <p class="eyebrow">رشته‌ها و برنامه‌ها</p>
+        <h2>برای هر هدف، مسیر مشخص</h2>
+        <p>از شروع تازه تا آماده‌سازی مسابقه — برنامه متناسب با سطح شما.</p>
+      </div>
+      <div class="program-grid reveal">
+        <article class="program">
+          <img src="/images/facility-floor.jpg" alt="سالن قدرتی" />
+          <div>
+            <h3>بدنسازی و قدرت</h3>
+            <p>سالن وزنه آزاد، رک و کابل با برنامه مربی.</p>
+          </div>
+        </article>
+        <article class="program">
+          <img src="/images/class-studio.jpg" alt="کلاس گروهی" />
+          <div>
+            <h3>کلاس‌های گروهی</h3>
+            <p>یوگا، فانکشنال، TRX و هوازی با ظرفیت محدود.</p>
+          </div>
+        </article>
+        <article class="program">
+          <img src="/images/amenities.jpg" alt="فضای ریکاوری" />
+          <div>
+            <h3>ریکاوری و آمادگی</h3>
+            <p>کشش، ریکاوری و مشاوره تغذیه نمایشی.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="plans">
+      <div class="section-intro reveal">
+        <p class="eyebrow">پلن‌های عضویت</p>
+        <h2>قیمت شفاف، بدون ابهام</h2>
+        <p>سه طرح اصلی با امکان تمدید از پنل منشی یا درخواست ورزشکار.</p>
+      </div>
+      <div class="plan-grid reveal">
+        <article class="plan">
+          <h3>ماهانه</h3>
+          <p class="price">۱٬۲۰۰٬۰۰۰ <small>تومان</small></p>
+          <ul>
+            <li>دسترسی به سالن وزنه</li>
+            <li>۲ کلاس گروهی در هفته</li>
+            <li>قفل کمد عمومی</li>
+          </ul>
+          <a class="btn ghost wide" href="#trial">شروع نمایشی</a>
+        </article>
+        <article class="plan featured">
+          <span class="plan-tag">پیشنهاد باشگاه</span>
+          <h3>سه‌ماهه</h3>
+          <p class="price">۳٬۵۰۰٬۰۰۰ <small>تومان</small></p>
+          <ul>
+            <li>همه امکانات ماهانه</li>
+            <li>کلاس نامحدود</li>
+            <li>۱ جلسه مربی خصوصی</li>
+          </ul>
+          <a class="btn wide" href="#trial">انتخاب این طرح</a>
+        </article>
+        <article class="plan">
+          <h3>شش‌ماهه</h3>
+          <p class="price">۶٬۵۰۰٬۰۰۰ <small>تومان</small></p>
+          <ul>
+            <li>همه امکانات سه‌ماهه</li>
+            <li>۳ جلسه مربی خصوصی</li>
+            <li>اولویت رزرو کلاس</li>
+          </ul>
+          <a class="btn ghost wide" href="#trial">شروع نمایشی</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="schedule">
+      <div class="section-intro reveal">
+        <p class="eyebrow">برنامه کلاس‌ها</p>
+        <h2>پیش‌نمایش هفته جاری</h2>
+        <p>ظرفیت‌ها نمونه هستند و رزرو واقعی هنوز متصل نیست.</p>
+      </div>
+      <div class="schedule-wrap reveal">
+        <table class="schedule">
+          <thead>
+            <tr>
+              <th>کلاس</th>
+              <th>روز</th>
+              <th>ساعت</th>
+              <th>مربی</th>
+              <th>ظرفیت</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-label="کلاس">فانکشنال</td>
+              <td data-label="روز">شنبه</td>
+              <td data-label="ساعت">۰۷:۰۰</td>
+              <td data-label="مربی">سارا محمدی</td>
+              <td data-label="ظرفیت"><span class="badge ok">۸ از ۱۲</span></td>
+              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
+            </tr>
+            <tr>
+              <td data-label="کلاس">یوگا</td>
+              <td data-label="روز">یکشنبه</td>
+              <td data-label="ساعت">۱۸:۳۰</td>
+              <td data-label="مربی">نگار احمدی</td>
+              <td data-label="ظرفیت"><span class="badge warn">۲ از ۱۰</span></td>
+              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
+            </tr>
+            <tr>
+              <td data-label="کلاس">TRX</td>
+              <td data-label="روز">دوشنبه</td>
+              <td data-label="ساعت">۱۹:۰۰</td>
+              <td data-label="مربی">محمد کریمی</td>
+              <td data-label="ظرفیت"><span class="badge ok">۵ از ۱۲</span></td>
+              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
+            </tr>
+            <tr>
+              <td data-label="کلاس">هوازی</td>
+              <td data-label="روز">چهارشنبه</td>
+              <td data-label="ساعت">۱۷:۰۰</td>
+              <td data-label="مربی">سارا محمدی</td>
+              <td data-label="ظرفیت"><span class="badge danger">تکمیل</span></td>
+              <td data-label=""><button class="btn ghost small" type="button" disabled>لیست انتظار</button></td>
+            </tr>
+            <tr>
+              <td data-label="کلاس">قدرت مبتدی</td>
+              <td data-label="روز">پنجشنبه</td>
+              <td data-label="ساعت">۲۰:۰۰</td>
+              <td data-label="مربی">علی رضایی</td>
+              <td data-label="ظرفیت"><span class="badge ok">۹ از ۱۴</span></td>
+              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="coaches">
+      <div class="section-intro reveal">
+        <p class="eyebrow">تیم مربیان</p>
+        <h2>با مربی درست شروع کن</h2>
+        <p>معرفی کوتاه مربیان نمونه — رزرو جلسه از پنل منشی انجام می‌شود.</p>
+      </div>
+      <div class="coach-grid reveal">
+        <article class="coach">
+          <img src="/images/trainer-male.jpg" alt="مربی محمد کریمی" />
+          <div>
+            <h3>محمد کریمی</h3>
+            <p class="role">مربی قدرت و بدنسازی</p>
+            <p>تخصص در افزایش حجم و فرم حرکت. سابقه ۱۲ سال.</p>
+            <a class="btn ghost small" href="#trial">جلسه با محمد</a>
+          </div>
+        </article>
+        <article class="coach">
+          <img src="/images/trainer-female.jpg" alt="مربی سارا محمدی" />
+          <div>
+            <h3>سارا محمدی</h3>
+            <p class="role">مربی کلاس گروهی و فانکشنال</p>
+            <p>تمرکز روی بازگشت به تمرین و کلاس‌های باانرژی.</p>
+            <a class="btn ghost small" href="#trial">جلسه با سارا</a>
+          </div>
+        </article>
+        <article class="coach">
+          <img src="/images/class-studio.jpg" alt="مربی نگار احمدی" />
+          <div>
+            <h3>نگار احمدی</h3>
+            <p class="role">مربی یوگا و انعطاف</p>
+            <p>جلسات آرام‌سازی، تنفس و بهبود دامنه حرکتی.</p>
+            <a class="btn ghost small" href="#trial">جلسه با نگار</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="facility">
+      <div class="section-intro reveal">
+        <p class="eyebrow">فضا و امکانات</p>
+        <h2>سالن واقعی، نه فقط شعار</h2>
+        <p>نمایی از سالن وزنه، استودیوی کلاس و فضای ریکاوری باشگاه آذر.</p>
+      </div>
+      <div class="gallery reveal">
+        <figure class="wide">
+          <img src="/images/hero-gym.jpg" alt="سالن وزنه" />
+          <figcaption>سالن وزنه آزاد</figcaption>
+        </figure>
+        <figure>
+          <img src="/images/facility-floor.jpg" alt="ناحیه هوازی" />
+          <figcaption>ناحیه هوازی و فانکشنال</figcaption>
+        </figure>
+        <figure>
+          <img src="/images/class-studio.jpg" alt="استودیو کلاس" />
+          <figcaption>استودیوی کلاس گروهی</figcaption>
+        </figure>
+        <figure>
+          <img src="/images/amenities.jpg" alt="امکانات رفاهی" />
+          <figcaption>امکانات رفاهی و ریکاوری</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-intro reveal">
+        <p class="eyebrow">نظر اعضا</p>
+        <h2>اعتماد از تجربه واقعی</h2>
+        <p>نظرهای زیر ساختگی و فقط برای نمایش پروتوتایپ هستند.</p>
+      </div>
+      <div class="quote-grid reveal">
+        <blockquote>
+          <p>«تمدید اشتراک و پیگیری حضور برایم خیلی ساده شده؛ دیگه لازم نیست فقط با منشی هماهنگ کنم.»</p>
+          <cite>علی رضایی · عضو سه‌ماهه</cite>
+        </blockquote>
+        <blockquote>
+          <p>«کلاس‌های عصر ظرفیت مشخص دارند و از قبل می‌دانم جا هست یا نه.»</p>
+          <cite>سارا محمدی · عضو ماهانه</cite>
+        </blockquote>
+        <blockquote>
+          <p>«فضای سالن تمیز است و مربی‌ها دقیق برنامه می‌دهند.»</p>
+          <cite>رضا حسینی · عضو شش‌ماهه</cite>
+        </blockquote>
+      </div>
+    </section>
+
+    <section class="section split-contact" id="trial">
+      <div class="contact-card reveal">
+        <p class="eyebrow">بازدید و جلسه آزمایشی</p>
+        <h2>یک جلسه رایگان رزرو کن</h2>
+        <p>فرم به API واقعی وصل است؛ عضو خودکار ساخته نمی‌شود.</p>
+        <form class="trial-form" method="post">
+          <label>نام و نام خانوادگی<input type="text" name="full_name" placeholder="مثلاً علی رضایی" required /></label>
+          <label>موبایل<input type="tel" name="mobile" placeholder="۰۹۱۲..." required /></label>
+          <label>زمان مناسب
+            <select id="trial-time" name="preferred_time_note">
+              <option value="morning">صبح (۰۶:۳۰–۱۲:۰۰)</option>
+              <option value="evening" selected>عصر (۱۶:۰۰–۲۰:۰۰)</option>
+              <option value="night">شب (۲۰:۰۰–۲۲:۳۰)</option>
+            </select>
+          </label>
+          <button class="btn wide" type="submit">ثبت درخواست جلسه آزمایشی</button><div class="status-msg" data-trial-status hidden></div>
+        </form>
+        <p class="hint">درخواست فقط در صف trial-leads ثبت می‌شود.</p>
+      </div>
+      <div class="info-card reveal">
+        <h3>آدرس و ساعات</h3>
+        <ul class="info-list">
+          <li><strong>نشانی</strong><span>تهران، خیابان ولیعصر، کوچه نمونه، پلاک ۱۲</span></li>
+          <li><strong>تلفن</strong><span>۰۲۱-=======</span></li>
+          <li><strong>ساعات کاری</strong><span>همه‌روزه ۰۶:۳۰ تا ۲۲:۳۰</span></li>
+          <li><strong>پارکینگ</strong><span>۲ ساعت رایگان برای اعضا</span></li>
+        </ul>
+        <div class="map-placeholder" aria-hidden="true">نقشه نمایشی · میدان ولیعصر</div>
+      </div>
+    </section>
+
+    <section class="section" id="roles">
+      <div class="section-intro reveal">
+        <p class="eyebrow">سامانه GYM CONTROL</p>
+        <h2>ورود به پنل‌های مدیریتی</h2>
+        <p>با حساب seed وارد پنل واقعی شوید.</p>
+      </div>
+      <div class="roles reveal">
+        <a class="role-card" href="/athlete/login.html">
+          <h2>ورزشکار</h2>
+          <p>وضعیت اشتراک، حضور، پرداخت‌ها و برنامه تمرینی.</p>
+          <span>ورود ورزشکار ←</span>
+        </a>
+        <a class="role-card" href="/login/?next=/receptionist/">
+          <h2>منشی باشگاه</h2>
+          <p>ثبت عضو، حضور و غیاب، تمدید و دریافت وجه.</p>
+          <span>ورود کارکنان (منشی) ←</span>
+        </a>
+        <a class="role-card" href="/login/?next=/manager/">
+          <h2>مدیر باشگاه</h2>
+          <p>آمار کلان، طرح‌ها، کارکنان و گزارش مالی.</p>
+          <span>ورود کارکنان (مدیر) ←</span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <strong class="en">GYM CONTROL</strong>
+      <p>لندینگ محصول · ورود واقعی از لینک پنل‌ها</p>
+    </div>
+    <div class="footer-links">
+      <a href="#plans">عضویت</a>
+      <a href="#schedule">کلاس‌ها</a>
+      <a href="#coaches">مربیان</a>
+      <a href="#roles">پنل‌ها</a>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      var toggle = document.getElementById("nav-toggle");
+      var nav = document.querySelector(".site-links");
+      if (!toggle || !nav) return;
+      function isMobileNav() {
+        return window.matchMedia("(max-width: 1100px)").matches;
+      }
+      document.querySelectorAll(".site-links a").forEach(function (link) {
+        link.addEventListener("click", function () {
+          if (isMobileNav()) toggle.checked = false;
+        });
+      });
+      document.addEventListener("click", function (event) {
+        if (!toggle.checked || !isMobileNav()) return;
+        if (event.target.closest(".site-links, .nav-burger, .nav-toggle, label[for='nav-toggle']")) {
+          return;
+        }
+        toggle.checked = false;
+      });
+    })();
+  </script>
+  <script type="module" src="/assets/js/panels/landing.js"></script>`n  <script src="/js/custom-select.js"></script>
+</body>
 </html>
+
+

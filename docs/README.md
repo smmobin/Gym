@@ -14,7 +14,8 @@
 | [guides/product-manager.md](guides/product-manager.md) | چطور چت مدیر محصول را راه بیندازی |
 | [guides/principled-project-playbook.md](guides/principled-project-playbook.md) | الگوی کامل قابل‌تکرار: پروتوتایپ، docs، مشخصات، ساختار، تست، برش‌ها، دیپلوی |
 | [adr/README.md](adr/README.md) | ADR چیست + فهرست تصمیم‌های معماری |
-| [adr/0001-frontend-stack.md](adr/0001-frontend-stack.md) | انتخاب فرانت‌اند |
+| [adr/0001-frontend-stack.md](adr/0001-frontend-stack.md) | فرانت React (Superseded) |
+| [adr/0005-frontend-ocean-dark-mpa.md](adr/0005-frontend-ocean-dark-mpa.md) | فرانت Ocean Dark MPA (فعلی) |
 | [adr/0002-backend-stack.md](adr/0002-backend-stack.md) | انتخاب بک‌اند (و نظر دربارهٔ پایتون) |
 | [adr/0003-database.md](adr/0003-database.md) | انتخاب دیتابیس |
 | [adr/0004-delivery-and-pwa.md](adr/0004-delivery-and-pwa.md) | سایت اول، PWA بعداً، بدون اپ اندروید بومی |

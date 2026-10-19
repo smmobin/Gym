@@ -1,8 +1,9 @@
 # GYM CONTROL · باشگاه آذر
 
-سامانهٔ مدیریت باشگاه ورزشی — پروتوتایپ HTML + اسکلت فرانت/بک برای نسخهٔ عملیاتی.
+سامانهٔ مدیریت باشگاه ورزشی — فرانت Ocean Dark متصل به API + بک‌اند FastAPI.
 
-**نسخهٔ زنده (پروتوتایپ):** [smmobin.github.io/Gym](https://smmobin.github.io/Gym/)
+**ماکت استاتیک (بدون API):** [smmobin.github.io/Gym](https://smmobin.github.io/Gym/)  
+**محصول واقعی UI:** پوشهٔ `frontend/` (Vite + HTML/CSS/JS) با بک‌اند لوکال/هاست.
 
 ---
 
@@ -16,12 +17,13 @@ cd backend
 .\.venv\Scripts\Activate.ps1
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
-# ترمینال ۲ — React
+# ترمینال ۲ — فرانت Ocean Dark
 cd frontend
 npm run dev
 ```
 
 - فرانت: http://127.0.0.1:5173  
+- ورود کارکنان: http://127.0.0.1:5173/login/  
 - API docs: http://127.0.0.1:8000/docs  
 
 ---
@@ -30,37 +32,32 @@ npm run dev
 
 ```text
 Gym/
-├── frontend/               # React + TypeScript + Vite
+├── frontend/               # Ocean Dark MPA (HTML/CSS/JS + Vite) — UI محصول
 ├── backend/                # FastAPI + SQLAlchemy + Alembic + Postgres
 ├── docs/                   # مستندات و ADR (منبع حقیقت)
-├── index.html              # پروتوتایپ لندینگ (GitHub Pages)
-├── athlete.html            # پروتوتایپ پنل ورزشکار
-├── receptionist.html       # پروتوتایپ پنل منشی
-├── manager.html            # پروتوتایپ پنل مدیر
+├── index.html …            # ماکت GitHub Pages (بدون API)
 ├── styles.css / js / images
-└── alternate-themes/       # فقط محلی (gitignore) — روی GitHub نیست
+└── alternate-themes/       # فقط محلی (gitignore)
 ```
 
 ---
 
-## پشتهٔ پیشنهادی (ADR)
+## پشته (ADR)
 
 | لایه | انتخاب |
 |------|--------|
-| فرانت | React + TypeScript + Vite |
+| فرانت | HTML/CSS/JS Ocean Dark + Vite (بدون React) — [ADR 0005](docs/adr/0005-frontend-ocean-dark-mpa.md) |
 | بک‌اند | Python FastAPI |
 | دیتابیس | PostgreSQL (`gym_control`) |
 
 - [فهرست مستندات](docs/README.md)
 - [راهنمای شروع](docs/guides/getting-started.md)
-- [استقرار (لیارا / VPS)](docs/guides/deploy.md)
-- [بکاپ Postgres](docs/guides/backup.md)
-- [نصب ابزارها](docs/guides/dev-toolchain-setup.md)
-- [ADRها](docs/adr/README.md)
+- [استقرار](docs/guides/deploy.md)
+- [بکاپ](docs/guides/backup.md)
 
 ---
 
 ## نکات امنیتی / گیت
 
 - `.env`، `.venv`، `node_modules`، لاگ‌ها و رمزها در `.gitignore` هستند.
-- `alternate-themes/` روی دستگاه می‌ماند ولی به GitHub پوش نمی‌شود.
+- `alternate-themes/` به GitHub پوش نمی‌شود.

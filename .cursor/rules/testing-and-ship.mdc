@@ -16,7 +16,7 @@ Automated checks that run code and assert expected behavior (API returns ok, UI 
    - whether the feature is **fully OK / green**, or
    - **partial / broken**, with what failed.
 5. Document non-obvious test decisions in `docs/guides/testing.md` when the convention changes.
-6. Backend: `pytest` under `backend/tests/`. Frontend: `vitest` under `frontend/src/**/*.test.ts(x)`.
+6. Backend: `pytest` under `backend/tests/`. Frontend: `vitest` under `frontend/tests/**/*.test.js` (Ocean Dark MPA; no React).
 
 ## Out of scope for mandatory tests
 Pure docs-only changes, `.gitignore` tweaks, or copy edits with no behavior change — still say so briefly to the user.
