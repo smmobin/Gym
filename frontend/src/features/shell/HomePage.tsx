@@ -48,6 +48,10 @@ export function HomePage() {
         {' · '}
         <Link to="/lockers">کمدها</Link>
         {' · '}
+        <Link to="/trainers">مربیان</Link>
+        {' · '}
+        <Link to="/workouts">برنامه‌ها</Link>
+        {' · '}
         پروتوتایپ HTML: فایل‌های <code>index.html</code> در ریشهٔ پروژه.
       </p>
     </main>

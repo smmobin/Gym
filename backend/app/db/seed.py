@@ -603,6 +603,8 @@ def seed(session: Session | None = None) -> dict[str, int]:
             "payments": len(payments),
             "lockers": 5,
             "group_classes": 3,
+            "trainer_assignments": 3,
+            "workout_plans": 1,
         }
     except Exception:
         session.rollback()

@@ -82,6 +82,10 @@ export function LoginPage() {
             <Link to="/classes">کلاس‌ها</Link>
             {' · '}
             <Link to="/lockers">کمدها</Link>
+            {' · '}
+            <Link to="/trainers">مربیان</Link>
+            {' · '}
+            <Link to="/workouts">برنامه‌ها</Link>
           </p>
           <button type="button" className="btn" onClick={onLogout} disabled={busy}>
             خروج
