@@ -31,6 +31,13 @@ export function mountTrialPublicForm(form, statusEl) {
   })
 }
 
+const STATUS_LABEL = {
+  new: 'جدید',
+  contacted: 'تماس',
+  converted: 'تبدیل',
+  closed: 'بسته',
+}
+
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountTrialLeads(root, user) {
   if (user.role !== 'manager' && user.role !== 'receptionist') {
@@ -38,18 +45,21 @@ export function mountTrialLeads(root, user) {
     return
   }
   root.innerHTML = `
-    <article class="panel">
-      <header class="panel-head"><h2>صف جلسه آزمایشی</h2>
-        <select data-filter>
-          <option value="">همه</option>
-          <option value="new">جدید</option>
-          <option value="contacted">تماس‌گرفته</option>
-          <option value="converted">تبدیل‌شده</option>
-          <option value="closed">بسته</option>
-        </select>
+    <article class="panel trial-panel">
+      <header class="panel-head">
+        <h2>صف جلسه آزمایشی</h2>
+        <div class="trial-filter">
+          <select data-filter class="select-compact" data-compact aria-label="فیلتر وضعیت">
+            <option value="">همه</option>
+            <option value="new">جدید</option>
+            <option value="contacted">تماس‌گرفته</option>
+            <option value="converted">تبدیل‌شده</option>
+            <option value="closed">بسته</option>
+          </select>
+        </div>
       </header>
       <div class="status-msg" data-status hidden></div>
-      <div class="list" data-list></div>
+      <div class="list trial-list" data-list></div>
       <p class="hint">برای ساخت عضو/مهمان از بخش مهمان روزانه استفاده کنید — تبدیل خودکار نیست.</p>
     </article>
   `
@@ -65,19 +75,24 @@ export function mountTrialLeads(root, user) {
       const items = data.items || []
       list.innerHTML = items.length
         ? items
-            .map(
-              (t) => `<div class="row-item"><div>
-            <h3>${t.full_name} · ${t.mobile}</h3>
-            <p>${t.preferred_time_note || '—'} · ${t.message || ''}</p>
-            <p class="hint">${formatDateTime(t.created_at)} · ${t.status}</p>
+            .map((t) => {
+              const statusKey = String(t.status || 'new')
+              return `<div class="row-item trial-row">
+          <div class="trial-row-main">
+            <h3>${t.full_name} <span class="trial-mobile" dir="ltr">${t.mobile}</span></h3>
+            <p>${t.preferred_time_note || '—'}${t.message ? ` · ${t.message}` : ''}</p>
+            <p class="hint">${formatDateTime(t.created_at)} · ${STATUS_LABEL[statusKey] || statusKey}</p>
           </div>
-          <select data-id="${t.id}">
-            <option value="new" ${t.status === 'new' ? 'selected' : ''}>جدید</option>
-            <option value="contacted" ${t.status === 'contacted' ? 'selected' : ''}>تماس</option>
-            <option value="converted" ${t.status === 'converted' ? 'selected' : ''}>تبدیل</option>
-            <option value="closed" ${t.status === 'closed' ? 'selected' : ''}>بسته</option>
-          </select></div>`,
-            )
+          <div class="trial-row-action">
+            <select data-id="${t.id}" class="select-compact" data-compact aria-label="وضعیت ${t.full_name}">
+              <option value="new" ${statusKey === 'new' ? 'selected' : ''}>جدید</option>
+              <option value="contacted" ${statusKey === 'contacted' ? 'selected' : ''}>تماس</option>
+              <option value="converted" ${statusKey === 'converted' ? 'selected' : ''}>تبدیل</option>
+              <option value="closed" ${statusKey === 'closed' ? 'selected' : ''}>بسته</option>
+            </select>
+          </div>
+        </div>`
+            })
             .join('')
         : '<p class="hint">ردیفی نیست.</p>'
       list.querySelectorAll('select[data-id]').forEach((sel) => {
@@ -93,6 +108,7 @@ export function mountTrialLeads(root, user) {
           }
         })
       })
+      globalThis.GymCustomSelect?.refresh?.(list)
       setStatus(status, `${items.length.toLocaleString('fa-IR')} درخواست`, 'ok')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
@@ -100,5 +116,6 @@ export function mountTrialLeads(root, user) {
   }
 
   filter.addEventListener('change', () => void load())
+  globalThis.GymCustomSelect?.refresh?.(root)
   void load()
 }

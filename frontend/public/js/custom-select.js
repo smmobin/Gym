@@ -5,16 +5,32 @@
     return (option.textContent || "").trim();
   }
 
+  function sizeClassFor(select) {
+    if (select.classList.contains("select-compact") || select.hasAttribute("data-compact")) {
+      return "is-compact";
+    }
+    if (select.classList.contains("select-block") || select.hasAttribute("data-block")) {
+      return "is-block";
+    }
+    // Full-width inside forms / labeled fields; compact in toolbars and list rows
+    if (select.closest(".form-grid, .trial-form, label")) return "is-block";
+    if (select.closest(".row-item, .panel-head, .inline-actions, .topbar-actions")) {
+      return "is-compact";
+    }
+    return "is-block";
+  }
+
   function enhanceSelect(select) {
     if (!select || select.dataset.enhanced === "1") return;
     if (select.closest("[data-custom-select]")) return;
+    if (select.classList.contains("custom-select-native")) return;
 
     var options = Array.prototype.slice.call(select.options);
     if (!options.length) return;
 
     var selected = select.selectedOptions[0] || options[0];
     var root = document.createElement("div");
-    root.className = "custom-select";
+    root.className = "custom-select " + sizeClassFor(select);
     root.setAttribute("data-custom-select", "");
 
     var trigger = document.createElement("button");
@@ -71,7 +87,6 @@
     if (!native || !trigger || !valueEl || !menu || root.dataset.bound === "1") return;
     root.dataset.bound = "1";
 
-    // Keep menu in-flow under the field (never portaled / floating).
     if (menu.parentNode !== root) root.appendChild(menu);
     menu.removeAttribute("style");
 
@@ -175,10 +190,30 @@
     });
   }
 
-  function init() {
-    document.querySelectorAll("select").forEach(enhanceSelect);
-    document.querySelectorAll("[data-custom-select]").forEach(bindCustomSelect);
+  function refresh(scope) {
+    var root = scope && scope.querySelectorAll ? scope : document;
+    root.querySelectorAll("select").forEach(enhanceSelect);
+    root.querySelectorAll("[data-custom-select]").forEach(bindCustomSelect);
   }
+
+  function init() {
+    refresh(document);
+    if (typeof MutationObserver === "undefined") return;
+    var mo = new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (node) {
+          if (!node || node.nodeType !== 1) return;
+          if (node.matches && node.matches("select")) enhanceSelect(node);
+          if (node.querySelectorAll) {
+            node.querySelectorAll("select").forEach(enhanceSelect);
+          }
+        });
+      });
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  window.GymCustomSelect = { refresh: refresh, enhance: enhanceSelect };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
