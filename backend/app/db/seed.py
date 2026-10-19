@@ -451,7 +451,13 @@ def seed(session: Session | None = None) -> dict[str, int]:
             ]
         )
 
-        lockers = [Locker(code="L-01"), Locker(code="L-02")]
+        lockers = [
+            Locker(code="L-01"),
+            Locker(code="L-02"),
+            Locker(code="L-03"),
+            Locker(code="L-04"),
+            Locker(code="L-05"),
+        ]
         session.add_all(lockers)
         session.flush()
         session.add(
@@ -595,8 +601,8 @@ def seed(session: Session | None = None) -> dict[str, int]:
             "plans": len(plans),
             "memberships": 10,
             "payments": len(payments),
-            "lockers": 2,
-            "group_classes": 1,
+            "lockers": 5,
+            "group_classes": 3,
         }
     except Exception:
         session.rollback()

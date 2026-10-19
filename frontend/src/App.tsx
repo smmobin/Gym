@@ -4,6 +4,7 @@ import { AttendancePage } from '@/features/attendance/AttendancePage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { BillingPage } from '@/features/billing/BillingPage'
 import { ClassesPage } from '@/features/classes/ClassesPage'
+import { LockersPage } from '@/features/lockers/LockersPage'
 import { MembersPage } from '@/features/members/MembersPage'
 import { HomePage } from '@/features/shell/HomePage'
 
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/billing" element={<BillingPage />} />
         <Route path="/classes" element={<ClassesPage />} />
+        <Route path="/lockers" element={<LockersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
