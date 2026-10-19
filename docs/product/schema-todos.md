@@ -15,6 +15,7 @@
 | لاگین ورزشکار | `members.password_hash` + `athlete_sessions` + `athlete_notifications` | **انجام‌شده:** cookie `gym_athlete_session` جدا از staff؛ API `/athlete/*` فقط دادهٔ خودش؛ رمز توسط desk؛ بدون OTP/پیامک |
 | freeze عضویت | `status=frozen` + `freeze_*` روی `memberships` + `freeze_annual_cap_days` | **انجام‌شده:** `POST …/freeze` و `…/unfreeze`؛ سقف عضو‌محور؛ `end_date` جابه‌جا؛ check-in روی frozen ممنوع؛ UI در `/billing` |
 | رزرو کلاس ورزشکار | همان `class_bookings` | **انجام‌شده:** `GET/POST /athlete/group-classes…` + cancel؛ ظرفیت reuse از `book_member_core`؛ بدون waitlist |
-| رزرو کلاس توسط ورزشکار | همان `class_bookings` / `group_classes` | **باز:** endpointهای `/athlete/...` برای لیست/رزرو/لغو فقط خود؛ reuse capacity؛ UI در `/athlete` |
+| درگاه پرداخت آنلاین | `PaymentMethod.ONLINE` + وضعیت پرداخت | **باز:** اتصال واقعی (sandbox)؛ بدون ذخیرهٔ کارت؛ کلید فقط env |
+| پیامک واقعی | صفحهٔ `/sms-templates` placeholder | **باز:** Provider ایرانی + کلید فقط env؛ دکمهٔ مرده را زنده کن |
 
 این فایل فقط یادآور است؛ migration اول را بلاک نمی‌کند.

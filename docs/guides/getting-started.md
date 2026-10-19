@@ -384,7 +384,6 @@ cd backend
 ## مرحلهٔ بعدی
 
 1. **کار تو (دستی):** استقرار واقعی طبق [deploy.md](deploy.md) + تمرین restore در [backup.md](backup.md)
-2. **اختیاری کدنویسی:** پیامک / درگاه واقعی (پرامپت: `docs/prompts/next-coding-prompt.md`)
-3. بعداً: پیامک / درگاه واقعی
+2. **اختیاری کدنویسی:** درگاه پرداخت آنلاین (پرامپت کامل: `docs/prompts/next-coding-prompt.md`) — بعداً پیامک واقعی
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
