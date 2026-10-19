@@ -33,6 +33,10 @@ body {
   padding: 4rem 1.5rem;
 }
 
+.athlete-page {
+  max-width: 40rem;
+}
+
 .eyebrow {
   margin: 0 0 0.5rem;
   letter-spacing: 0.08em;

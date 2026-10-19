@@ -1,5 +1,7 @@
 """SQLAlchemy models for GYM CONTROL v1 schema."""
 
+from app.models.athlete_notification import AthleteNotification
+from app.models.athlete_session import AthleteSession
 from app.models.attendance import Attendance
 from app.models.audit import AuditLog
 from app.models.enums import (
@@ -30,6 +32,8 @@ from app.models.user import User
 from app.models.workout import WorkoutPlan
 
 __all__ = [
+    "AthleteNotification",
+    "AthleteSession",
     "Attendance",
     "AttendanceType",
     "AuditLog",

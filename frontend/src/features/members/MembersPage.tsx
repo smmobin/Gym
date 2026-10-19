@@ -23,6 +23,9 @@ function MembersContent({ user }: { user: StaffUser }) {
   const [lastName, setLastName] = useState('')
   const [mobile, setMobile] = useState('')
   const [notes, setNotes] = useState('')
+  const [pwMemberId, setPwMemberId] = useState<number | ''>('')
+  const [athletePassword, setAthletePassword] = useState('')
+  const [pwMessage, setPwMessage] = useState<string | null>(null)
 
   const load = useCallback(async (search?: string) => {
     setError(null)
@@ -89,6 +92,26 @@ function MembersContent({ user }: { user: StaffUser }) {
     }
   }
 
+  async function onSetAthletePassword(event: FormEvent) {
+    event.preventDefault()
+    if (!canWrite(user.role) || !pwMemberId) return
+    setBusy(true)
+    setError(null)
+    setPwMessage(null)
+    try {
+      await apiPost(`/api/v1/members/${pwMemberId}/athlete-password`, {
+        password: athletePassword,
+      })
+      setAthletePassword('')
+      setPwMessage('رمز ورود ورزشکار تنظیم شد.')
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.message)
+      else setError('ست رمز ناموفق بود.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <main className="page">
       <p className="eyebrow">GYM CONTROL</p>
@@ -142,6 +165,44 @@ function MembersContent({ user }: { user: StaffUser }) {
         </ul>
         {items.length === 0 ? <p className="hint">عضوی یافت نشد.</p> : null}
       </section>
+
+      {canWrite(user.role) ? (
+        <form className="auth-form" onSubmit={onSetAthletePassword}>
+          <h2 className="form-title">رمز ورود ورزشکار</h2>
+          <p className="hint">بدون پیامک — میز رمز را ست/عوض می‌کند. حداقل ۸ کاراکتر.</p>
+          <label>
+            عضو
+            <select
+              value={pwMemberId}
+              onChange={(e) => setPwMemberId(e.target.value ? Number(e.target.value) : '')}
+              required
+            >
+              <option value="">انتخاب کنید</option>
+              {items
+                .filter((m) => m.status !== 'archived')
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.display_id} · {m.first_name} {m.last_name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label>
+            رمز جدید
+            <input
+              type="password"
+              value={athletePassword}
+              onChange={(e) => setAthletePassword(e.target.value)}
+              minLength={8}
+              required
+            />
+          </label>
+          {pwMessage ? <p className="ok-msg">{pwMessage}</p> : null}
+          <button type="submit" className="btn" disabled={busy}>
+            ست رمز ورزشکار
+          </button>
+        </form>
+      ) : null}
 
       {canWrite(user.role) ? (
         <form className="auth-form" onSubmit={onCreate}>

@@ -121,6 +121,32 @@ cd backend
 
 نکته: برای cookie در مرورگر، فرانت و بک را با یک host یکسان باز کن (هر دو `127.0.0.1` یا هر دو `localhost`). پروکسی Vite روی `/api` این کار را ساده می‌کند.
 
+## ورود ورزشکار (توسعه)
+
+لاگین ورزشکار **جدا از کارکنان** است: جدول `athlete_sessions` + cookie با نام `gym_athlete_session` (HttpOnly، SameSite=Lax، Secure در prod). Cookie کارکنان (`gym_session`) روی مسیرهای `/athlete` کار نمی‌کند و برعکس.
+
+**بدون پیامک / OTP / درگاه** — رمز را میز (منشی/مدیر) ست می‌کند.
+
+| موبایل | عضو seed | رمز (فقط توسعه) |
+|--------|----------|------------------|
+| `09121111001` | علی رضایی (M-1001) | `ChangeMe123` |
+| `09121111005` | حسین موسوی (M-1005) | `ChangeMe123` |
+
+سایر اعضا تا وقتی desk رمز نگذارد لاگین نمی‌شوند.
+
+1. http://127.0.0.1:5173/athlete/login
+2. داشبورد: http://127.0.0.1:5173/athlete — اشتراک/بدهی، پرداخت، برنامه (فقط خواندن)، درخواست تمدید، اعلان‌ها
+3. ست رمز از میز: صفحهٔ `/members` یا `POST /api/v1/members/{id}/athlete-password` با `{ "password" }`
+
+API ورزشکار (همه فقط «خودش»):
+- `POST /api/v1/athlete/auth/login|logout` ، `GET /api/v1/athlete/auth/me`
+- `GET /api/v1/athlete/memberships` (+ `debt_toman`)
+- `GET /api/v1/athlete/payments`
+- `GET /api/v1/athlete/workout-plans`
+- `GET /api/v1/athlete/notifications` ، `POST …/notifications/{id}/read`
+- `POST /api/v1/athlete/renewal-requests` → اعلان desk از نوع `renewal_request` (بدون تمدید خودکار)
+- `PATCH /api/v1/athlete/profile` — فقط نام/نام‌خانوادگی (موبایل عوض نمی‌شود)
+
 ## اعضا (بعد از لاگین)
 
 1. وارد شوید: http://127.0.0.1:5173/login (مثلاً مدیر `09120000001` / `ChangeMe123`)

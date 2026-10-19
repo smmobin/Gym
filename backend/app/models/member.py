@@ -28,6 +28,8 @@ class Member(Base):
     first_name: Mapped[str] = mapped_column(String(80), nullable=False)
     last_name: Mapped[str] = mapped_column(String(80), nullable=False)
     mobile: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
+    # Athlete login password; null until desk sets it (no SMS/OTP in v1).
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     birth_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(

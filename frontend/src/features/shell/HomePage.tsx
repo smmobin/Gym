@@ -40,6 +40,8 @@ export function HomePage() {
         {' · '}
         <Link to="/login">ورود کارکنان</Link>
         {' · '}
+        <Link to="/athlete/login">ورود ورزشکار</Link>
+        {' · '}
         <Link to="/members">اعضا</Link>
         {' · '}
         <Link to="/guests">مهمان روزانه</Link>

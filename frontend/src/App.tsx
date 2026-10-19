@@ -1,5 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
+import { AthleteHomePage } from '@/features/athlete/AthleteHomePage'
+import { AthleteLoginPage } from '@/features/athlete/AthleteLoginPage'
 import { AttendancePage } from '@/features/attendance/AttendancePage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { BillingPage } from '@/features/billing/BillingPage'
@@ -22,6 +24,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/athlete/login" element={<AthleteLoginPage />} />
+        <Route path="/athlete" element={<AthleteHomePage />} />
         <Route path="/trial" element={<TrialPublicPage />} />
         <Route path="/trial-leads" element={<TrialLeadsPage />} />
         <Route path="/guests" element={<GuestsPage />} />

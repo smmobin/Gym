@@ -58,7 +58,8 @@ describe('MembersPage', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'اعضا' })).toBeInTheDocument()
-    expect(await screen.findByText(/علی رضایی/)).toBeInTheDocument()
+    expect((await screen.findAllByText(/علی رضایی/)).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByRole('heading', { name: 'ثبت عضو جدید' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'رمز ورود ورزشکار' })).toBeInTheDocument()
   })
 })

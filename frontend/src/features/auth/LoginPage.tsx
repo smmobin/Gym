@@ -155,6 +155,8 @@ export function LoginPage() {
 
       <p className="hint">
         <Link to="/">بازگشت به خانه</Link>
+        {' · '}
+        <Link to="/athlete/login">ورود ورزشکار</Link>
       </p>
     </main>
   )

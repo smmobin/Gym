@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Auth / session (cookie name + TTL documented in getting-started)
     session_cookie_name: str = "gym_session"
     session_ttl_hours: int = 12
+    # Athlete sessions are separate cookies + table (never share staff sessions)
+    athlete_session_cookie_name: str = "gym_athlete_session"
+    athlete_session_ttl_hours: int = 12
     login_rate_limit_max: int = 20
     login_rate_limit_window_seconds: int = 60
     # Member file lock TTL from last_seen_at (business-rules 12.1)

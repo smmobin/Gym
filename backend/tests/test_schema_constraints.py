@@ -57,6 +57,8 @@ def test_expected_tables_exist_after_migration() -> None:
         "member_file_locks",
         "staff_notifications",
         "staff_notification_reads",
+        "athlete_sessions",
+        "athlete_notifications",
         "alembic_version",
     }
     missing = expected - tables
@@ -67,7 +69,13 @@ def test_alembic_current_revision() -> None:
     with engine.connect() as conn:
         rev = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     # Head may advance; must be a known applied revision (not empty).
-    assert rev in {"2ac5732e2cdb", "d4d03f2d4572", "a1b2c3d4e5f6", "b2c3d4e5f6a7"}
+    assert rev in {
+        "2ac5732e2cdb",
+        "d4d03f2d4572",
+        "a1b2c3d4e5f6",
+        "b2c3d4e5f6a7",
+        "c3d4e5f6a7b8",
+    }
 
 
 def test_member_mobile_unique(db: Session) -> None:

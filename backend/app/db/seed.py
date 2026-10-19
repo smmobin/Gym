@@ -18,6 +18,8 @@ from sqlalchemy.orm import Session
 from app.core.db import SessionLocal, engine
 from app.core.security import hash_password
 from app.models import (
+    AthleteNotification,
+    AthleteSession,
     Attendance,
     AttendanceType,
     AuditLog,
@@ -55,6 +57,8 @@ UTC = timezone.utc
 
 # Dev-only shared password for seed staff accounts (NOT a real gym password).
 DEV_STAFF_PASSWORD = "ChangeMe123"
+# Dev-only athlete passwords for seed members with login enabled.
+DEV_ATHLETE_PASSWORD = "ChangeMe123"
 
 
 def _clear_domain(session: Session) -> None:
@@ -74,6 +78,8 @@ def _clear_domain(session: Session) -> None:
         TrialLead,
         StaffNotificationRead,
         StaffNotification,
+        AthleteNotification,
+        AthleteSession,
         AuditLog,
         StaffSession,
         MemberFileLock,
@@ -94,6 +100,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
         now = datetime.now(tz=UTC)
 
         staff_password_hash = hash_password(DEV_STAFF_PASSWORD)
+        athlete_password_hash = hash_password(DEV_ATHLETE_PASSWORD)
         manager = User(
             mobile="09120000001",
             password_hash=staff_password_hash,
@@ -220,6 +227,27 @@ def seed(session: Session | None = None) -> dict[str, int]:
             elham,
             guest,
         ) = members
+        # At least two active athletes can log in (no SMS/OTP in v1).
+        ali.password_hash = athlete_password_hash
+        hosein.password_hash = athlete_password_hash
+        session.add(
+            AthleteNotification(
+                member_id=ali.id,
+                kind="welcome",
+                title="خوش‌آمد به پنل ورزشکار",
+                body="این اعلان نمونهٔ seed است. فقط دادهٔ خودتان را می‌بینید.",
+                is_read=False,
+            )
+        )
+        session.add(
+            AthleteNotification(
+                member_id=hosein.id,
+                kind="debt_reminder",
+                title="یادآوری بدهی (نمونه)",
+                body="بدهی در گزارش درآمد نیست؛ فقط ماندهٔ تعهد شماست.",
+                is_read=False,
+            )
+        )
 
         # Memberships: active / near-expiry / expired / debt / paid / zero gift / guest day
         m_ali = Membership(

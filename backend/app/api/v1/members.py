@@ -13,8 +13,10 @@ from app.core.db import get_db
 from app.models.enums import MemberStatus, StaffRole
 from app.models.member import Member
 from app.models.user import User
+from app.schemas.athlete import AthletePasswordSet, MessageResponse
 from app.schemas.member_locks import MemberLockOut
 from app.schemas.members import MemberCreate, MemberListResponse, MemberOut, MemberUpdate
+from app.services import athlete as athlete_svc
 from app.services import member_locks as lock_svc
 from app.services.members import (
     build_member_list_query,
@@ -231,6 +233,28 @@ def update_member(
         ) from None
     db.refresh(member)
     return MemberOut.model_validate(member)
+
+
+@router.post(
+    "/{member_id}/athlete-password",
+    response_model=MessageResponse,
+)
+def set_athlete_password(
+    member_id: int,
+    body: AthletePasswordSet,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_STAFF_WRITE)),
+) -> MessageResponse:
+    """Desk sets / resets athlete login password (no SMS in v1)."""
+    try:
+        athlete_svc.set_athlete_password(
+            db, user=user, member_id=member_id, password=body.password
+        )
+        db.commit()
+    except athlete_svc.AthleteError as err:
+        db.rollback()
+        raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+    return MessageResponse(detail="رمز ورود ورزشکار تنظیم شد.")
 
 
 @router.post("/{member_id}/archive", response_model=MemberOut)

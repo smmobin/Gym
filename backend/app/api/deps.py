@@ -1,4 +1,4 @@
-"""FastAPI dependencies: current user and role gates."""
+"""FastAPI dependencies: staff user + athlete member gates (separate cookies)."""
 
 from __future__ import annotations
 
@@ -12,6 +12,9 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.core.security import hash_session_token
+from app.models.athlete_session import AthleteSession
+from app.models.enums import MemberStatus
+from app.models.member import Member
 from app.models.session import StaffSession
 from app.models.user import User
 
@@ -67,3 +70,48 @@ def require_roles(*roles: str) -> Callable[..., User]:
         return user
 
     return _dependency
+
+
+def get_current_athlete(
+    request: Request,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> Member:
+    """Resolve athlete from gym_athlete_session only — staff cookie is ignored."""
+    token = request.cookies.get(settings.athlete_session_cookie_name)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="نشست ورزشکار معتبر نیست. دوباره وارد شوید.",
+        )
+
+    token_hash = hash_session_token(token)
+    now = datetime.now(tz=timezone.utc)
+    stmt = (
+        select(AthleteSession)
+        .where(
+            AthleteSession.token_hash == token_hash,
+            AthleteSession.revoked_at.is_(None),
+            AthleteSession.expires_at > now,
+        )
+        .limit(1)
+    )
+    athlete_session = db.scalar(stmt)
+    if athlete_session is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="نشست ورزشکار معتبر نیست. دوباره وارد شوید.",
+        )
+
+    member = db.get(Member, athlete_session.member_id)
+    if (
+        member is None
+        or member.status == MemberStatus.ARCHIVED.value
+        or member.archived_at is not None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="حساب ورزشکار غیرفعال یا یافت نشد.",
+        )
+    return member
+
