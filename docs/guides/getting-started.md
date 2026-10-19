@@ -242,9 +242,18 @@ Seed: مربی یک به علی و نگار وصل است؛ برنامهٔ نم�
 API واگذاری: `GET /api/v1/trainers` ، `GET/POST /api/v1/members/{id}/trainers` ، `POST …/trainers/{assignment_id}/end`  
 API برنامه: `GET/POST /api/v1/members/{id}/workout-plans` ، `PATCH /api/v1/workout-plans/{id}`
 
+## GitHub Pages در برابر محصول واقعی
+
+| | GitHub Pages (`*.github.io/Gym`) | لوکال (`127.0.0.1:5173` + API `:8000`) |
+|--|--|--|
+| چیست؟ | ماکت HTML ریشه (ظاهر/جریان نمایشی) | React + FastAPI + Postgres |
+| لاگین واقعی؟ | نه | بله (`/login`) |
+| داده از دیتابیس؟ | نه | بله (بعد از migration/seed) |
+| برای دیدن فیچرهای جدید | مناسب نیست | همین را روشن کن |
+
 ## مرحلهٔ بعدی پیشنهادی برای چت جدید
 
-1. فرم آزمایشی عمومی → صف منشی؛ مهمان روزانه
+1. **فرم آزمایشی + مهمان روزانه** (پرامپت: `docs/prompts/next-coding-prompt.md`)
 2. تنظیمات باشگاه و اعلان داخل‌برنامه
 3. پنل ورزشکار وقتی کارکنان پایدار شد
 
