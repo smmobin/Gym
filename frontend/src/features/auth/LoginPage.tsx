@@ -81,6 +81,14 @@ export function LoginPage() {
             {' · '}
             <Link to="/billing">مالی</Link>
             {' · '}
+            {user.role === 'manager' || user.role === 'receptionist' ? (
+              <>
+                <Link to="/trial-leads">صف آزمایشی</Link>
+                {' · '}
+                <Link to="/guests">مهمان روزانه</Link>
+                {' · '}
+              </>
+            ) : null}
             {user.role === 'manager' ? (
               <>
                 <Link to="/reports">گزارش مدیر</Link>

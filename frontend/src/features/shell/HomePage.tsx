@@ -36,9 +36,15 @@ export function HomePage() {
       </ul>
 
       <p className="hint">
+        <Link to="/trial">جلسه آزمایشی (عمومی)</Link>
+        {' · '}
         <Link to="/login">ورود کارکنان</Link>
         {' · '}
         <Link to="/members">اعضا</Link>
+        {' · '}
+        <Link to="/guests">مهمان روزانه</Link>
+        {' · '}
+        <Link to="/trial-leads">صف آزمایشی</Link>
         {' · '}
         <Link to="/attendance">حضور</Link>
         {' · '}

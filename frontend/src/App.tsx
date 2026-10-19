@@ -4,11 +4,14 @@ import { AttendancePage } from '@/features/attendance/AttendancePage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { BillingPage } from '@/features/billing/BillingPage'
 import { ClassesPage } from '@/features/classes/ClassesPage'
+import { GuestsPage } from '@/features/guests/GuestsPage'
 import { LockersPage } from '@/features/lockers/LockersPage'
 import { MembersPage } from '@/features/members/MembersPage'
 import { ReportsPage } from '@/features/reports/ReportsPage'
 import { HomePage } from '@/features/shell/HomePage'
 import { TrainersPage } from '@/features/trainers/TrainersPage'
+import { TrialLeadsPage } from '@/features/trial/TrialLeadsPage'
+import { TrialPublicPage } from '@/features/trial/TrialPublicPage'
 import { WorkoutsPage } from '@/features/workouts/WorkoutsPage'
 
 export default function App() {
@@ -17,6 +20,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/trial" element={<TrialPublicPage />} />
+        <Route path="/trial-leads" element={<TrialLeadsPage />} />
+        <Route path="/guests" element={<GuestsPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/billing" element={<BillingPage />} />

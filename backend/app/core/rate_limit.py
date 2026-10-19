@@ -36,3 +36,6 @@ class SlidingWindowRateLimiter:
 
 # Shared limiter for login endpoints (tests may call reset).
 login_rate_limiter = SlidingWindowRateLimiter(max_attempts=20, window_seconds=60)
+
+# Public trial form (by client IP); tests may call reset.
+trial_lead_rate_limiter = SlidingWindowRateLimiter(max_attempts=15, window_seconds=60)
