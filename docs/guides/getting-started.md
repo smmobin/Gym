@@ -374,7 +374,7 @@ cd backend
 ## مرحلهٔ بعدی
 
 1. **کار تو (دستی):** استقرار واقعی طبق [deploy.md](deploy.md) + تمرین restore در [backup.md](backup.md)
-2. **اختیاری کدنویسی:** freeze عضویت (پرامپت: `docs/prompts/next-coding-prompt.md`)
-3. بعداً: رزرو کلاس ورزشکار؛ پیامک / درگاه واقعی
+2. **اختیاری کدنویسی:** رزرو کلاس توسط ورزشکار (پرامپت کامل: `docs/prompts/next-coding-prompt.md`)
+3. بعداً: پیامک / درگاه واقعی
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
