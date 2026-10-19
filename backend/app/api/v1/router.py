@@ -7,9 +7,11 @@ from app.api.v1 import (
     expenses,
     group_classes,
     guests,
+    gym_settings,
     health,
     lockers,
     members,
+    notifications,
     trainers,
     trial_leads,
     workout_plans,
@@ -22,6 +24,8 @@ api_router.include_router(members.router)
 api_router.include_router(attendances.router)
 api_router.include_router(billing.router)
 api_router.include_router(expenses.router)
+api_router.include_router(gym_settings.router)
+api_router.include_router(notifications.router)
 api_router.include_router(trial_leads.router)
 api_router.include_router(guests.router)
 api_router.include_router(group_classes.router)

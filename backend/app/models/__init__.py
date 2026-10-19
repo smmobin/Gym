@@ -21,6 +21,7 @@ from app.models.locker import Locker, LockerAssignment
 from app.models.member import Member
 from app.models.member_file_lock import MemberFileLock
 from app.models.membership import Membership, MembershipPlan
+from app.models.notification import StaffNotification, StaffNotificationRead
 from app.models.payment import Payment
 from app.models.session import StaffSession
 from app.models.trainer import TrainerMemberAssignment
@@ -50,6 +51,8 @@ __all__ = [
     "Payment",
     "PaymentMethod",
     "PaymentStatus",
+    "StaffNotification",
+    "StaffNotificationRead",
     "StaffRole",
     "StaffSession",
     "TrainerMemberAssignment",

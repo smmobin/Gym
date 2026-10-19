@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.models.enums import StaffRole, TrialLeadStatus
 from app.models.trial_lead import TrialLead
 from app.models.user import User
+from app.services.notifications import notify_trial_lead_created
 
 _STATUSES = {s.value for s in TrialLeadStatus}
 
@@ -43,6 +44,7 @@ def create_public_lead(
     )
     db.add(lead)
     db.flush()
+    notify_trial_lead_created(db, lead)
     return lead
 
 

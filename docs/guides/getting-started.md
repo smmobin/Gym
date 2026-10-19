@@ -221,6 +221,39 @@ API: `GET /api/v1/trial-leads?status=` ، `PATCH /api/v1/trial-leads/{id}` — t
 
 API: `POST /api/v1/guests` — trainer → ۴۰۳
 
+## تنظیمات باشگاه، اعلان، پیامک (placeholder)
+
+### تنظیمات (`/settings`)
+
+1. لاگین مدیر → http://127.0.0.1:5173/settings
+2. نام / تلفن / نشانی / ساعت پایان روز / روز هشدار انقضا / سقف freeze / یادداشت ساعت کاری و قوانین تمدید را ویرایش کن
+3. منشی اگر URL را باز کند → پیام عدم دسترسی UI؛ `PATCH` سرور → ۴۰۳؛ `GET /gym-settings` برای همهٔ کارکنان OK است
+4. حضور از قبل `day_end_time` را از `gym_settings` می‌خواند (hardcode جدا نیست)
+
+API: `GET /api/v1/gym-settings` (staff)، `PATCH /api/v1/gym-settings` (manager) — تغییر حساس → `audit_logs`
+
+### اعلان داخل‌برنامه
+
+**طراحی v1:** جدول `staff_notifications` سراسری desk (نه inbox جدا per-user) + `staff_notification_reads` برای وضعیت خوانده‌شده per-user.
+
+| kind | منبع |
+|------|------|
+| `trial_lead_new` | هنگام `POST /public/trial-leads` |
+| `membership_expiring` | refresh سبک روی `GET /notifications` (بر اساس `expiry_warning_days`) |
+| `member_debt` | همان refresh (خلاصه + حداکثر ۱۰ نمونه؛ نه اسپم بی‌نهایت) |
+| `renewal_request` | فقط seed/نمونه تا لاگین ورزشکار |
+
+API: `GET /api/v1/notifications` ، `POST /api/v1/notifications/{id}/read` ، `POST /api/v1/notifications/read-all`  
+UI: زنگوله بعد از لاگین (صفحهٔ ورود / تنظیمات / پیامک)
+
+### قالب پیامک (`/sms-templates`)
+
+چند قالب ثابت + دکمهٔ ارسال **disabled** + متن «هنوز آماده نیست». بدون SDK و بدون کلید در گیت.
+
+### درگاه آنلاین
+
+در `/billing` روش «آنلاین» هست ولی صریحاً به درگاه وصل نیست.
+
 ## کلاس‌های گروهی
 
 1. لاگین مدیر/منشی (یا مربی برای فقط‌خواندن کلاس‌های خودش)، سپس http://127.0.0.1:5173/classes

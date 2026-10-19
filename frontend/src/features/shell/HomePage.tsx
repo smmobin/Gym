@@ -52,6 +52,10 @@ export function HomePage() {
         {' · '}
         <Link to="/reports">گزارش مدیر</Link>
         {' · '}
+        <Link to="/settings">تنظیمات</Link>
+        {' · '}
+        <Link to="/sms-templates">قالب پیامک</Link>
+        {' · '}
         <Link to="/classes">کلاس‌ها</Link>
         {' · '}
         <Link to="/lockers">کمدها</Link>

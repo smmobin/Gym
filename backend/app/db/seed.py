@@ -39,6 +39,8 @@ from app.models import (
     Payment,
     PaymentMethod,
     PaymentStatus,
+    StaffNotification,
+    StaffNotificationRead,
     StaffRole,
     StaffSession,
     TrainerMemberAssignment,
@@ -70,6 +72,8 @@ def _clear_domain(session: Session) -> None:
         MembershipPlan,
         Expense,
         TrialLead,
+        StaffNotificationRead,
+        StaffNotification,
         AuditLog,
         StaffSession,
         MemberFileLock,
@@ -590,6 +594,28 @@ def seed(session: Session | None = None) -> dict[str, int]:
                     expense_date=today,
                     note="خرید لوازم نظافت (ساختگی)",
                     created_by_user_id=manager.id,
+                ),
+            ]
+        )
+        session.add_all(
+            [
+                StaffNotification(
+                    kind="renewal_request",
+                    title="درخواست تمدید (نمونه)",
+                    body="نمونهٔ placeholder — لاگین ورزشکار هنوز نیست؛ فقط قالب UI/اعلان.",
+                    role_audience="desk",
+                    entity_type=None,
+                    entity_id=None,
+                    is_derived=False,
+                ),
+                StaffNotification(
+                    kind="trial_lead_new",
+                    title="فرم آزمایشی نمونه",
+                    body="برای تست زنگوله — از seed",
+                    role_audience="desk",
+                    entity_type="trial_lead",
+                    entity_id=None,
+                    is_derived=False,
                 ),
             ]
         )

@@ -8,7 +8,9 @@ import { GuestsPage } from '@/features/guests/GuestsPage'
 import { LockersPage } from '@/features/lockers/LockersPage'
 import { MembersPage } from '@/features/members/MembersPage'
 import { ReportsPage } from '@/features/reports/ReportsPage'
+import { SettingsPage } from '@/features/settings/SettingsPage'
 import { HomePage } from '@/features/shell/HomePage'
+import { SmsTemplatesPage } from '@/features/sms/SmsTemplatesPage'
 import { TrainersPage } from '@/features/trainers/TrainersPage'
 import { TrialLeadsPage } from '@/features/trial/TrialLeadsPage'
 import { TrialPublicPage } from '@/features/trial/TrialPublicPage'
@@ -27,6 +29,8 @@ export default function App() {
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/billing" element={<BillingPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/sms-templates" element={<SmsTemplatesPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/lockers" element={<LockersPage />} />
         <Route path="/trainers" element={<TrainersPage />} />

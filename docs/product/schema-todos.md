@@ -10,5 +10,7 @@
 | یکتایی واگذاری فعال کمد | تاریخچه با `released_at` | **انجام‌شده با چک سرویس** (`active_assignment_for_locker` / عضو) در برش کمد؛ قید جزئی Postgres اختیاری برای آینده |
 | چند مربی فعال هم‌زمان | ردیف‌های `ended_at IS NULL` | **انجام‌شده با چک سرویس** (تکرار جفت فعال → ۴۰۹؛ چند مربی مختلف OK). ایندکس جزئی unique روی `(trainer_user_id, member_id) WHERE ended_at IS NULL` اختیاری برای آینده |
 | مصرف جلسه برای غیبت کلاس | `sessions_remaining` + وضعیت `no_show`/`attended` | **انجام‌شده:** `POST …/bookings/{id}/no-show` و `…/attended`؛ جلوگیری از double-deduct با حضور `type=class` هم‌پنجره؛ ابهام بسته → `membership_required` + `membership_id`. فیلد جدا روی booking لازم نشد |
+| اعلان کارکنان | `staff_notifications` + `staff_notification_reads` | **انجام‌شده (v1):** اعلان سراسری desk + خوانده‌شده per-user؛ trial رویداد؛ انقضا/بدهی روی GET بدون کرون؛ renewal فقط seed تا لاگین ورزشکار |
+| تنظیمات باشگاه | جدول `gym_settings` از اول | **انجام‌شده:** `GET/PATCH /gym-settings`؛ attendance از قبل `day_end_time` را می‌خواند |
 
 این فایل فقط یادآور است؛ migration اول را بلاک نمی‌کند.

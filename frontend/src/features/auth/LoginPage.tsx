@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
+import { NotificationBell } from '@/features/shell/NotificationBell'
 import { ApiError, apiGet, apiPost } from '@/lib/api'
 import type { LoginResponse, MeResponse, StaffUser } from '@/types/auth'
 
@@ -67,13 +68,18 @@ export function LoginPage() {
 
       {user ? (
         <section className="auth-panel" aria-live="polite">
-          <p>
-            شما وارد شده‌اید: <strong>{user.full_name}</strong>
-          </p>
-          <p>
-            نقش: <strong>{ROLE_LABEL[user.role] ?? user.role}</strong>
-          </p>
-          <p className="hint">موبایل: {user.mobile}</p>
+          <div className="page-head">
+            <div>
+              <p>
+                شما وارد شده‌اید: <strong>{user.full_name}</strong>
+              </p>
+              <p>
+                نقش: <strong>{ROLE_LABEL[user.role] ?? user.role}</strong>
+              </p>
+              <p className="hint">موبایل: {user.mobile}</p>
+            </div>
+            <NotificationBell />
+          </div>
           <p className="hint">
             <Link to="/members">اعضا</Link>
             {' · '}
@@ -93,8 +99,12 @@ export function LoginPage() {
               <>
                 <Link to="/reports">گزارش مدیر</Link>
                 {' · '}
+                <Link to="/settings">تنظیمات</Link>
+                {' · '}
               </>
             ) : null}
+            <Link to="/sms-templates">قالب پیامک</Link>
+            {' · '}
             <Link to="/classes">کلاس‌ها</Link>
             {' · '}
             <Link to="/lockers">کمدها</Link>
