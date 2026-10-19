@@ -135,14 +135,24 @@ cd backend
 سایر اعضا تا وقتی desk رمز نگذارد لاگین نمی‌شوند.
 
 1. http://127.0.0.1:5173/athlete/login
-2. داشبورد: http://127.0.0.1:5173/athlete — اشتراک/بدهی، پرداخت، برنامه (فقط خواندن)، درخواست تمدید، اعلان‌ها
+2. داشبورد: http://127.0.0.1:5173/athlete — اشتراک/بدهی، پرداخت، برنامه (فقط خواندن)، **کلاس گروهی (رزرو/لغو)**، درخواست تمدید، اعلان‌ها
 3. ست رمز از میز: صفحهٔ `/members` یا `POST /api/v1/members/{id}/athlete-password` با `{ "password" }`
+
+### رزرو کلاس توسط ورزشکار
+
+- لیست: کلاس‌های **فعال** با `starts_at >= الان` (آینده؛ کلاس گذشتهٔ seed مثل کراس‌فیت دیده نمی‌شود؛ کلاس‌های بعدیِ امروز دیده می‌شوند).
+- رزرو/لغو فقط برای `member` سشن؛ `member_id` از کلاینت پذیرفته نمی‌شود.
+- ظرفیت همان منطق میز (`assert_can_book`) — پر → ۴۰۹؛ بدون waitlist.
+- Seed: کلاس «پیلاتس عصر» خالی برای دمو؛ علی روی «اسپینینگ عصر» از قبل رزرو دارد.
+
+امتحان سریع: لاگین `09121111001` / `ChangeMe123` → بخش کلاس‌ها → رزرو «پیلاتس عصر» → لغو.
 
 API ورزشکار (همه فقط «خودش»):
 - `POST /api/v1/athlete/auth/login|logout` ، `GET /api/v1/athlete/auth/me`
 - `GET /api/v1/athlete/memberships` (+ `debt_toman`)
 - `GET /api/v1/athlete/payments`
 - `GET /api/v1/athlete/workout-plans`
+- `GET /api/v1/athlete/group-classes` ، `POST …/group-classes/{id}/book` ، `GET /athlete/class-bookings` ، `POST …/class-bookings/{id}/cancel`
 - `GET /api/v1/athlete/notifications` ، `POST …/notifications/{id}/read`
 - `POST /api/v1/athlete/renewal-requests` → اعلان desk از نوع `renewal_request` (بدون تمدید خودکار)
 - `PATCH /api/v1/athlete/profile` — فقط نام/نام‌خانوادگی (موبایل عوض نمی‌شود)
@@ -374,7 +384,7 @@ cd backend
 ## مرحلهٔ بعدی
 
 1. **کار تو (دستی):** استقرار واقعی طبق [deploy.md](deploy.md) + تمرین restore در [backup.md](backup.md)
-2. **اختیاری کدنویسی:** رزرو کلاس توسط ورزشکار (پرامپت کامل: `docs/prompts/next-coding-prompt.md`)
+2. **اختیاری کدنویسی:** پیامک / درگاه واقعی (پرامپت: `docs/prompts/next-coding-prompt.md`)
 3. بعداً: پیامک / درگاه واقعی
 
 وضعیت زنده: `docs/product/roadmap-status.md`.

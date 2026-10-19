@@ -3,6 +3,9 @@ import { Link, Navigate } from 'react-router-dom'
 
 import { ApiError, apiGet, apiPost } from '@/lib/api'
 import type {
+  AthleteBookClassResponse,
+  AthleteGroupClass,
+  AthleteGroupClassListResponse,
   AthleteMember,
   AthleteMembership,
   AthleteMembershipsResponse,
@@ -14,6 +17,12 @@ import type {
   AthleteWorkoutPlansResponse,
 } from '@/types/athlete'
 
+const GENDER_LABEL: Record<string, string> = {
+  men: 'آقایان',
+  women: 'بانوان',
+  mixed: 'مختلط',
+}
+
 function formatToman(n: number): string {
   return `${n.toLocaleString('fa-IR')} تومان`
 }
@@ -24,6 +33,12 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('fa-IR')
 }
 
+function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString('fa-IR')
+}
+
 export function AthleteHomePage() {
   const [member, setMember] = useState<AthleteMember | null>(null)
   const [loading, setLoading] = useState(true)
@@ -32,18 +47,20 @@ export function AthleteHomePage() {
   const [payments, setPayments] = useState<AthletePayment[]>([])
   const [plans, setPlans] = useState<AthleteWorkoutPlan[]>([])
   const [notifications, setNotifications] = useState<AthleteNotification[]>([])
+  const [classes, setClasses] = useState<AthleteGroupClass[]>([])
   const [note, setNote] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const loadAll = useCallback(async () => {
-    const [me, ms, ps, ws, ns] = await Promise.all([
+    const [me, ms, ps, ws, ns, cs] = await Promise.all([
       apiGet<{ member: AthleteMember }>('/api/v1/athlete/auth/me'),
       apiGet<AthleteMembershipsResponse>('/api/v1/athlete/memberships'),
       apiGet<AthletePaymentsResponse>('/api/v1/athlete/payments'),
       apiGet<AthleteWorkoutPlansResponse>('/api/v1/athlete/workout-plans'),
       apiGet<AthleteNotificationListResponse>('/api/v1/athlete/notifications'),
+      apiGet<AthleteGroupClassListResponse>('/api/v1/athlete/group-classes'),
     ])
     setMember(me.member)
     setMemberships(ms.items)
@@ -51,6 +68,7 @@ export function AthleteHomePage() {
     setPayments(ps.items)
     setPlans(ws.items)
     setNotifications(ns.items)
+    setClasses(cs.items)
   }, [])
 
   useEffect(() => {
@@ -103,6 +121,40 @@ export function AthleteHomePage() {
     }
   }
 
+  async function onBookClass(classId: number) {
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await apiPost<AthleteBookClassResponse>(
+        `/api/v1/athlete/group-classes/${classId}/book`,
+      )
+      setMessage(`رزرو ثبت شد. ظرفیت باقی‌مانده: ${res.remaining.toLocaleString('fa-IR')}`)
+      await loadAll()
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.message)
+      else setError('رزرو ناموفق بود.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function onCancelBooking(bookingId: number) {
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      await apiPost(`/api/v1/athlete/class-bookings/${bookingId}/cancel`)
+      setMessage('رزرو لغو شد.')
+      await loadAll()
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.message)
+      else setError('لغو رزرو ناموفق بود.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (loading) {
     return (
       <main className="page athlete-page">
@@ -124,7 +176,7 @@ export function AthleteHomePage() {
       <p className="hint">
         {member.display_id} · {member.mobile}
       </p>
-      <p className="lead">فقط دادهٔ خودتان را می‌بینید. رزرو کلاس از این پنل نیست.</p>
+      <p className="lead">فقط دادهٔ خودتان را می‌بینید — از جمله رزرو کلاس‌های گروهی.</p>
 
       {error ? (
         <p className="err-msg" role="alert">
@@ -132,6 +184,58 @@ export function AthleteHomePage() {
         </p>
       ) : null}
       {message ? <p className="ok-msg">{message}</p> : null}
+
+      <section className="billing-block">
+        <h2>کلاس‌های گروهی</h2>
+        <p className="hint">
+          کلاس‌های آینده (شروع‌نشده). برچسب جنسیت فقط نمایشی است. ظرفیت پر → رزرو ممکن نیست.
+        </p>
+        {classes.length === 0 ? (
+          <p className="hint">کلاسی برای رزرو نیست.</p>
+        ) : (
+          <ul className="status-list">
+            {classes.map((c) => (
+              <li key={c.id}>
+                <strong>{c.title}</strong>
+                {' · '}
+                {formatDateTime(c.starts_at)}
+                {c.trainer_full_name ? ` · مربی: ${c.trainer_full_name}` : ''}
+                {' · '}
+                {GENDER_LABEL[c.gender_label] ?? c.gender_label}
+                {' · '}
+                باقی‌مانده {c.remaining.toLocaleString('fa-IR')} از{' '}
+                {c.capacity.toLocaleString('fa-IR')}
+                {c.booked_by_me && c.my_booking_id != null ? (
+                  <>
+                    {' · '}
+                    <span className="ok-msg">رزرو شما</span>{' '}
+                    <button
+                      type="button"
+                      className="linkish"
+                      disabled={busy}
+                      onClick={() => void onCancelBooking(c.my_booking_id!)}
+                    >
+                      لغو رزرو
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {' '}
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={busy || c.remaining < 1}
+                      onClick={() => void onBookClass(c.id)}
+                    >
+                      {c.remaining < 1 ? 'پر شده' : 'رزرو'}
+                    </button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="billing-block">
         <h2>اشتراک‌ها و بدهی</h2>

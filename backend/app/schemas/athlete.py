@@ -152,3 +152,53 @@ class RenewalRequestCreate(BaseModel):
 class RenewalRequestResponse(BaseModel):
     detail: str
     staff_notification_id: int
+
+
+class AthleteGroupClassOut(BaseModel):
+    id: int
+    title: str
+    trainer_user_id: Optional[int] = None
+    trainer_full_name: Optional[str] = None
+    capacity: int
+    booked_count: int
+    remaining: int
+    gender_label: str
+    starts_at: datetime
+    ends_at: datetime
+    is_active: bool
+    booked_by_me: bool = False
+    my_booking_id: Optional[int] = None
+
+
+class AthleteGroupClassListResponse(BaseModel):
+    items: list[AthleteGroupClassOut]
+    total: int
+
+
+class AthleteClassBookingOut(BaseModel):
+    id: int
+    group_class_id: int
+    class_title: Optional[str] = None
+    status: str
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AthleteClassBookingListResponse(BaseModel):
+    items: list[AthleteClassBookingOut]
+    total: int
+
+
+class AthleteBookClassResponse(BaseModel):
+    booking: AthleteClassBookingOut
+    booked_count: int
+    remaining: int
+
+
+class AthleteCancelBookingResponse(BaseModel):
+    booking: AthleteClassBookingOut
+    booked_count: int
+    remaining: int

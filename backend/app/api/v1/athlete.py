@@ -11,6 +11,12 @@ from app.core.db import get_db
 from app.core.rate_limit import login_rate_limiter
 from app.models.member import Member
 from app.schemas.athlete import (
+    AthleteBookClassResponse,
+    AthleteCancelBookingResponse,
+    AthleteClassBookingListResponse,
+    AthleteClassBookingOut,
+    AthleteGroupClassListResponse,
+    AthleteGroupClassOut,
     AthleteLoginRequest,
     AthleteLoginResponse,
     AthleteMembershipOut,
@@ -30,6 +36,7 @@ from app.schemas.athlete import (
     RenewalRequestResponse,
 )
 from app.services import athlete as athlete_svc
+from app.services import athlete_classes as athlete_class_svc
 from app.services.athlete_session import (
     create_athlete_session,
     revoke_athlete_session_by_token,
@@ -248,4 +255,111 @@ def athlete_renewal_request(
     return RenewalRequestResponse(
         detail="درخواست تمدید برای میز ثبت شد. تمدید خودکار و درگاه هنوز فعال نیست.",
         staff_notification_id=staff_id,
+    )
+
+
+def _athlete_booking_out(booking) -> AthleteClassBookingOut:
+    gc = getattr(booking, "group_class", None)
+    return AthleteClassBookingOut(
+        id=booking.id,
+        group_class_id=booking.group_class_id,
+        class_title=gc.title if gc is not None else None,
+        status=booking.status,
+        starts_at=gc.starts_at if gc is not None else None,
+        ends_at=gc.ends_at if gc is not None else None,
+        created_at=booking.created_at,
+    )
+
+
+@router.get("/group-classes", response_model=AthleteGroupClassListResponse)
+def athlete_list_group_classes(
+    db: Session = Depends(get_db),
+    member: Member = Depends(get_current_athlete),
+) -> AthleteGroupClassListResponse:
+    """Active upcoming classes (starts_at >= now); includes my booking flag."""
+    views = athlete_class_svc.list_athlete_classes(db, member=member)
+    items = [
+        AthleteGroupClassOut(
+            id=v.group_class.id,
+            title=v.group_class.title,
+            trainer_user_id=v.group_class.trainer_user_id,
+            trainer_full_name=v.trainer_full_name,
+            capacity=v.group_class.capacity,
+            booked_count=v.booked_count,
+            remaining=v.remaining,
+            gender_label=v.group_class.gender_label,
+            starts_at=v.group_class.starts_at,
+            ends_at=v.group_class.ends_at,
+            is_active=v.group_class.is_active,
+            booked_by_me=v.booked_by_me,
+            my_booking_id=v.my_booking_id,
+        )
+        for v in views
+    ]
+    return AthleteGroupClassListResponse(items=items, total=len(items))
+
+
+@router.get("/class-bookings", response_model=AthleteClassBookingListResponse)
+def athlete_list_own_bookings(
+    db: Session = Depends(get_db),
+    member: Member = Depends(get_current_athlete),
+) -> AthleteClassBookingListResponse:
+    rows = athlete_class_svc.list_own_bookings(db, member=member)
+    return AthleteClassBookingListResponse(
+        items=[_athlete_booking_out(r) for r in rows],
+        total=len(rows),
+    )
+
+
+@router.post(
+    "/group-classes/{class_id}/book",
+    response_model=AthleteBookClassResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def athlete_book_class(
+    class_id: int,
+    db: Session = Depends(get_db),
+    member: Member = Depends(get_current_athlete),
+) -> AthleteBookClassResponse:
+    """Book for the session member only — no member_id in body."""
+    try:
+        result = athlete_class_svc.book_own_class(db, member=member, class_id=class_id)
+        db.commit()
+        db.refresh(result.booking)
+        _ = result.booking.group_class
+    except athlete_svc.AthleteError as err:
+        db.rollback()
+        _raise(err)
+        raise  # pragma: no cover
+    return AthleteBookClassResponse(
+        booking=_athlete_booking_out(result.booking),
+        booked_count=result.booked_count,
+        remaining=result.remaining,
+    )
+
+
+@router.post(
+    "/class-bookings/{booking_id}/cancel",
+    response_model=AthleteCancelBookingResponse,
+)
+def athlete_cancel_booking(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    member: Member = Depends(get_current_athlete),
+) -> AthleteCancelBookingResponse:
+    try:
+        result = athlete_class_svc.cancel_own_booking(
+            db, member=member, booking_id=booking_id
+        )
+        db.commit()
+        db.refresh(result.booking)
+        _ = result.booking.group_class
+    except athlete_svc.AthleteError as err:
+        db.rollback()
+        _raise(err)
+        raise  # pragma: no cover
+    return AthleteCancelBookingResponse(
+        booking=_athlete_booking_out(result.booking),
+        booked_count=result.booked_count,
+        remaining=result.remaining,
     )

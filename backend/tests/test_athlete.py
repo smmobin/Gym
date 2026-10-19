@@ -57,6 +57,7 @@ def test_unauthorized_athlete_routes(client: TestClient) -> None:
     assert client.get("/api/v1/athlete/payments").status_code == 401
     assert client.get("/api/v1/athlete/workout-plans").status_code == 401
     assert client.get("/api/v1/athlete/notifications").status_code == 401
+    assert client.get("/api/v1/athlete/group-classes").status_code == 401
     assert client.post("/api/v1/athlete/renewal-requests", json={}).status_code == 401
 
 

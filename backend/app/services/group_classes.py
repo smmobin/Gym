@@ -301,14 +301,13 @@ def list_bookings(
     return rows, snapshot(db, group_class)
 
 
-def book_member(
+def book_member_core(
     db: Session,
     *,
-    user: User,
     class_id: int,
     member_id: int,
 ) -> BookingSnapshot:
-    ensure_can_mutate_booking(user)
+    """Capacity + duplicate rules shared by desk and athlete self-booking."""
     group_class = _get_class_or_404(db, class_id)
     if not group_class.is_active:
         raise GroupClassError(400, "این کلاس فعال نیست.")
@@ -355,14 +354,13 @@ def book_member(
     )
 
 
-def cancel_booking(
+def cancel_booking_core(
     db: Session,
     *,
-    user: User,
     class_id: int,
     booking_id: int,
 ) -> BookingSnapshot:
-    ensure_can_mutate_booking(user)
+    """Cancel a booked row; caller must enforce who may cancel."""
     group_class = _get_class_or_404(db, class_id)
     booking = db.get(ClassBooking, booking_id)
     if booking is None or booking.group_class_id != class_id:
@@ -380,6 +378,28 @@ def cancel_booking(
         booked_count=snap.booked_count,
         remaining=snap.remaining,
     )
+
+
+def book_member(
+    db: Session,
+    *,
+    user: User,
+    class_id: int,
+    member_id: int,
+) -> BookingSnapshot:
+    ensure_can_mutate_booking(user)
+    return book_member_core(db, class_id=class_id, member_id=member_id)
+
+
+def cancel_booking(
+    db: Session,
+    *,
+    user: User,
+    class_id: int,
+    booking_id: int,
+) -> BookingSnapshot:
+    ensure_can_mutate_booking(user)
+    return cancel_booking_core(db, class_id=class_id, booking_id=booking_id)
 
 
 def _ensure_class_started(group_class: GroupClass) -> None:

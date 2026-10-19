@@ -70,3 +70,40 @@ export type AthleteNotificationListResponse = {
   total: number
   unread_count: number
 }
+
+export type AthleteGroupClass = {
+  id: number
+  title: string
+  trainer_user_id: number | null
+  trainer_full_name: string | null
+  capacity: number
+  booked_count: number
+  remaining: number
+  gender_label: string
+  starts_at: string
+  ends_at: string
+  is_active: boolean
+  booked_by_me: boolean
+  my_booking_id: number | null
+}
+
+export type AthleteGroupClassListResponse = {
+  items: AthleteGroupClass[]
+  total: number
+}
+
+export type AthleteClassBooking = {
+  id: number
+  group_class_id: number
+  class_title: string | null
+  status: string
+  starts_at: string | null
+  ends_at: string | null
+  created_at: string
+}
+
+export type AthleteBookClassResponse = {
+  booking: AthleteClassBooking
+  booked_count: number
+  remaining: number
+}

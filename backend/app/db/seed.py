@@ -557,7 +557,17 @@ def seed(session: Session | None = None) -> dict[str, int]:
             ends_at=now + timedelta(hours=7),
             is_active=True,
         )
-        session.add_all([group_class, yoga, spin])
+        # Empty open class for athlete self-book demo (علی / 09121111001)
+        pilates = GroupClass(
+            title="پیلاتس عصر",
+            trainer_user_id=trainer1.id,
+            capacity=8,
+            gender_label=GenderLabel.MIXED.value,
+            starts_at=now + timedelta(days=1, hours=3),
+            ends_at=now + timedelta(days=1, hours=4),
+            is_active=True,
+        )
+        session.add_all([group_class, yoga, spin, pilates])
         session.flush()
         session.add_all(
             [
@@ -682,7 +692,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             "memberships": 10,
             "payments": len(payments),
             "lockers": 5,
-            "group_classes": 3,
+            "group_classes": 4,
             "trainer_assignments": 3,
             "workout_plans": 1,
         }
