@@ -36,6 +36,10 @@ class MembershipOut(BaseModel):
     end_date: date
     status: str
     sessions_remaining: Optional[int] = None
+    freeze_started_at: Optional[date] = None
+    freeze_ends_at: Optional[date] = None
+    freeze_days_used: int = 0
+    remaining_freeze_days_this_year: int = 0
     notes: Optional[str] = None
     created_at: datetime
 
@@ -46,6 +50,22 @@ class MembershipListResponse(BaseModel):
     items: list[MembershipOut]
     total: int
     debt_toman: int
+    freeze_annual_cap_days: int = 14
+    freeze_days_used_member: int = 0
+    remaining_freeze_days_this_year: int = 0
+    freeze_cap_year: Optional[int] = None
+
+
+class FreezeMembershipRequest(BaseModel):
+    """Provide either days (>0) or freeze_ends_at (exclusive resume date after today)."""
+
+    days: Optional[int] = Field(default=None, ge=1, le=366)
+    freeze_ends_at: Optional[date] = None
+
+
+class FreezeMembershipResponse(BaseModel):
+    membership: MembershipOut
+    remaining_freeze_days_this_year: int
 
 
 class RenewMembershipRequest(BaseModel):

@@ -24,6 +24,10 @@ export type MembershipRow = {
   end_date: string
   status: string
   sessions_remaining: number | null
+  freeze_started_at: string | null
+  freeze_ends_at: string | null
+  freeze_days_used: number
+  remaining_freeze_days_this_year: number
   notes: string | null
   created_at: string
 }
@@ -32,6 +36,15 @@ export type MembershipListResponse = {
   items: MembershipRow[]
   total: number
   debt_toman: number
+  freeze_annual_cap_days: number
+  freeze_days_used_member: number
+  remaining_freeze_days_this_year: number
+  freeze_cap_year: number | null
+}
+
+export type FreezeMembershipResponse = {
+  membership: MembershipRow
+  remaining_freeze_days_this_year: number
 }
 
 export type PaymentRow = {

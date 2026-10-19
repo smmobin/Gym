@@ -13,5 +13,6 @@
 | اعلان کارکنان | `staff_notifications` + `staff_notification_reads` | **انجام‌شده (v1):** اعلان سراسری desk + خوانده‌شده per-user؛ trial رویداد؛ انقضا/بدهی روی GET بدون کرون؛ renewal فقط seed تا لاگین ورزشکار |
 | تنظیمات باشگاه | جدول `gym_settings` از اول | **انجام‌شده:** `GET/PATCH /gym-settings`؛ attendance از قبل `day_end_time` را می‌خواند |
 | لاگین ورزشکار | `members.password_hash` + `athlete_sessions` + `athlete_notifications` | **انجام‌شده:** cookie `gym_athlete_session` جدا از staff؛ API `/athlete/*` فقط دادهٔ خودش؛ رمز توسط desk؛ بدون OTP/پیامک |
+| freeze عضویت | `status=frozen` + `freeze_*` روی `memberships` + `freeze_annual_cap_days` | **انجام‌شده:** `POST …/freeze` و `…/unfreeze`؛ سقف عضو‌محور؛ `end_date` جابه‌جا؛ check-in روی frozen ممنوع؛ UI در `/billing` |
 
 این فایل فقط یادآور است؛ migration اول را بلاک نمی‌کند.

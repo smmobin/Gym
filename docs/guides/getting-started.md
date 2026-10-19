@@ -177,9 +177,26 @@ API: `POST /api/v1/attendances/check-in` ، `POST /api/v1/attendances/{id}/check
 
 **سیاست تاریخ تمدید:** اگر اشتراک مرجع هنوز تمام نشده (`end_date >= امروز تهران`)، `start_date` عضویت جدید = همان `end_date` (روز باقی‌مانده نسوزد). اگر منقضی باشد، شروع از امروز. بدون مرجع: شروع از امروز. `end_date` = `start_date + duration_days` طرح.
 
-API: `GET /api/v1/membership-plans` ، `GET/POST …/members/{id}/memberships` (renew) ، `POST /api/v1/memberships/{id}/cancel` ، `GET …/members/{id}/payments` ، `POST /api/v1/payments` ، `POST /api/v1/payments/{id}/refund`
+API: `GET /api/v1/membership-plans` ، `GET/POST …/members/{id}/memberships` (renew) ، `POST /api/v1/memberships/{id}/cancel` ، `POST …/freeze` ، `POST …/unfreeze` ، `GET …/members/{id}/payments` ، `POST /api/v1/payments` ، `POST /api/v1/payments/{id}/refund`
 
 مربی روی این مسیرها ۴۰۳ می‌گیرد.
+
+## توقف عضویت (freeze)
+
+منشی/مدیر می‌توانند عضویت **فعال** را چند روز متوقف کنند تا روزهای باقی‌مانده نسوزد (`end_date` به همان اندازه جلو می‌رود).
+
+**سیاست v1 (مستند):**
+- **سقف:** از `gym_settings.freeze_annual_cap_days` (پیش‌فرض ۱۴). مصرف = جمع `freeze_days_used` همهٔ عضویت‌های همان عضو. برچسب سال = **سال میلادی تاریخ امروز در Asia/Tehran**؛ ریست خودکار شمارنده در ۱ ژانویه در v1 نیست.
+- **شروع:** `POST /api/v1/memberships/{id}/freeze` با `{ "days": N }` یا `{ "freeze_ends_at": "YYYY-MM-DD" }` (روز ازسرگیری؛ باید بعد از امروز باشد). وضعیت → `frozen`؛ ورود با آن عضویت ممنوع.
+- **پایان دستی:** `POST …/unfreeze`. اگر زودتر از موعد: روزهای استفاده‌نشده از `freeze_days_used` کم و از `end_date` برگردانده می‌شود.
+- **پایان خودکار:** اگر `today >= freeze_ends_at`، هنگام لیست عضویت‌ها یا check-in، توقف بسته و وضعیت `active` می‌شود (بدون کم کردن اضافه از end_date).
+
+### امتحان
+
+1. seed + لاگین مدیر → `/billing` → عضو (مثلاً علی) را انتخاب کن
+2. سقف باقی‌مانده را ببین → تعداد روز → «ثبت توقف»
+3. همان عضویت «توقف» می‌شود؛ «پایان توقف» بزن یا صبر کن تا موعد
+4. با `membership_id` متوقف‌شده check-in بزن → ۴۰۹
 
 ## قفل پروندهٔ عضو (۵ دقیقه)
 

@@ -7,6 +7,7 @@ import { ApiError, apiGet, apiPost } from '@/lib/api'
 import { lockErrorMessage } from '@/lib/memberLock'
 import type { StaffUser } from '@/types/auth'
 import type {
+  FreezeMembershipResponse,
   MembershipListResponse,
   MembershipPlan,
   MembershipPlanListResponse,
@@ -49,6 +50,10 @@ function BillingContent({ user }: { user: StaffUser }) {
   const [memberships, setMemberships] = useState<MembershipRow[]>([])
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [debt, setDebt] = useState(0)
+  const [freezeRemaining, setFreezeRemaining] = useState(14)
+  const [freezeCap, setFreezeCap] = useState(14)
+  const [freezeDays, setFreezeDays] = useState('3')
+  const [freezeTargetId, setFreezeTargetId] = useState<number | ''>('')
 
   const [planId, setPlanId] = useState<number | ''>('')
   const [agreed, setAgreed] = useState('')
@@ -89,12 +94,18 @@ function BillingContent({ user }: { user: StaffUser }) {
     setMemberships(ms.items)
     setPayments(ps.items)
     setDebt(ms.debt_toman)
+    setFreezeCap(ms.freeze_annual_cap_days ?? 14)
+    setFreezeRemaining(ms.remaining_freeze_days_this_year ?? 14)
     if (ms.items.length) {
       setBaseMembershipId(ms.items[0].id)
       setPayMembershipId(ms.items[0].id)
+      const active = ms.items.find((row) => row.status === 'active')
+      const frozen = ms.items.find((row) => row.status === 'frozen')
+      setFreezeTargetId((frozen ?? active ?? ms.items[0]).id)
     } else {
       setBaseMembershipId('')
       setPayMembershipId('')
+      setFreezeTargetId('')
     }
   }, [])
 
@@ -187,6 +198,53 @@ function BillingContent({ user }: { user: StaffUser }) {
       await loadMemberFinance(selected.id)
     } catch (err) {
       setError(lockErrorMessage(err, 'ثبت پرداخت ناموفق بود.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function onFreeze(event: FormEvent) {
+    event.preventDefault()
+    if (!selected || freezeTargetId === '') return
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const days = Number(freezeDays)
+      if (!Number.isFinite(days) || days < 1) {
+        setError('تعداد روز توقف معتبر نیست.')
+        return
+      }
+      const data = await apiPost<FreezeMembershipResponse>(
+        `/api/v1/memberships/${freezeTargetId}/freeze`,
+        { days },
+      )
+      setFreezeRemaining(data.remaining_freeze_days_this_year)
+      setMessage(
+        `توقف ثبت شد تا ${data.membership.freeze_ends_at}. پایان عضویت الان ${data.membership.end_date}. باقی سقف: ${data.remaining_freeze_days_this_year} روز.`,
+      )
+      await loadMemberFinance(selected.id)
+    } catch (err) {
+      setError(lockErrorMessage(err, 'توقف عضویت ناموفق بود.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function onUnfreeze(membershipId: number) {
+    if (!selected) return
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const data = await apiPost<FreezeMembershipResponse>(
+        `/api/v1/memberships/${membershipId}/unfreeze`,
+      )
+      setFreezeRemaining(data.remaining_freeze_days_this_year)
+      setMessage(`توقف پایان یافت. وضعیت: فعال. باقی سقف: ${data.remaining_freeze_days_this_year} روز.`)
+      await loadMemberFinance(selected.id)
+    } catch (err) {
+      setError(lockErrorMessage(err, 'پایان توقف ناموفق بود.'))
     } finally {
       setBusy(false)
     }
@@ -304,15 +362,75 @@ function BillingContent({ user }: { user: StaffUser }) {
           </div>
 
           <h3>عضویت‌ها</h3>
+          <p className="hint">
+            سقف توقف سالانه: {freezeRemaining.toLocaleString('fa-IR')} از{' '}
+            {freezeCap.toLocaleString('fa-IR')} روز باقی مانده
+          </p>
           <ul className="status-list">
             {memberships.length === 0 && <li>عضویتی نیست.</li>}
             {memberships.map((m) => (
               <li key={m.id}>
                 #{m.id} · {m.plan_name ?? `طرح ${m.plan_id}`} · {formatToman(m.agreed_amount_toman)} ·{' '}
                 {m.start_date} → {m.end_date} · {STATUS_LABEL[m.status] ?? m.status}
+                {m.status === 'frozen' ? (
+                  <>
+                    {' '}
+                    (تا {m.freeze_ends_at}){' '}
+                    <button
+                      type="button"
+                      className="linkish"
+                      disabled={busy || !lockHeldByMe}
+                      onClick={() => void onUnfreeze(m.id)}
+                    >
+                      پایان توقف
+                    </button>
+                  </>
+                ) : null}
               </li>
             ))}
           </ul>
+
+          <form className="auth-form" onSubmit={onFreeze}>
+            <h3>توقف عضویت (freeze)</h3>
+            <p className="hint">
+              روزهای توقف به پایان عضویت اضافه می‌شوند تا نسوزند. ورود با عضویت متوقف‌شده ممنوع است.
+            </p>
+            <label>
+              عضویت فعال
+              <select
+                value={freezeTargetId}
+                onChange={(e) =>
+                  setFreezeTargetId(e.target.value ? Number(e.target.value) : '')
+                }
+              >
+                <option value="">انتخاب کنید</option>
+                {memberships
+                  .filter((m) => m.status === 'active')
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      #{m.id} · {m.plan_name ?? m.plan_id} تا {m.end_date}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              تعداد روز توقف
+              <input
+                type="number"
+                min={1}
+                max={freezeRemaining || 1}
+                value={freezeDays}
+                onChange={(e) => setFreezeDays(e.target.value)}
+              />
+            </label>
+            <button
+              type="submit"
+              className="btn"
+              disabled={busy || !lockHeldByMe || freezeRemaining < 1}
+            >
+              ثبت توقف
+            </button>
+          </form>
 
           <form className="auth-form" onSubmit={onRenew}>
             <h3>تمدید</h3>

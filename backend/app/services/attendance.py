@@ -154,14 +154,25 @@ def select_membership_for_checkin(
     """
     Policy (documented in getting-started):
     - optional membership_id wins if valid for today and ACTIVE
+    - frozen memberships are never valid for check-in
     - gym → prefer duration plans (no session_count)
     - class / pt → prefer session packs with sessions_remaining > 0
     """
+    if membership_id is not None:
+        targeted = db.get(Membership, membership_id)
+        if targeted is not None and targeted.member_id == member_id:
+            if targeted.status == MembershipStatus.FROZEN.value:
+                raise AttendanceError(
+                    409,
+                    "این عضویت در توقف (freeze) است؛ تا پایان توقف ورود با آن مجاز نیست.",
+                    code="membership_frozen",
+                )
+
     candidates = _valid_memberships(db, member_id, today)
     if not candidates:
         raise AttendanceError(
             409,
-            "اشتراک معتبر فعال برای ورود وجود ندارد (منقضی یا غیرفعال).",
+            "اشتراک معتبر فعال برای ورود وجود ندارد (منقضی، توقف، یا غیرفعال).",
             code="no_valid_membership",
         )
 
@@ -250,6 +261,10 @@ def check_in(
     member = _load_member(db, member_id)
     today = today_tehran()
     now = now_tehran()
+
+    from app.services.membership_freeze import complete_due_freezes_for_member
+
+    complete_due_freezes_for_member(db, member.id, today=today)
 
     still_open = open_attendance_for_member(db, member.id)
     if still_open is not None:

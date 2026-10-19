@@ -14,6 +14,8 @@ from app.models.user import User
 from app.schemas.billing import (
     CancelMembershipResponse,
     CreatePaymentRequest,
+    FreezeMembershipRequest,
+    FreezeMembershipResponse,
     MembershipListResponse,
     MembershipOut,
     MembershipPlanListResponse,
@@ -26,6 +28,7 @@ from app.schemas.billing import (
 )
 from app.services import billing as billing_svc
 from app.services import member_locks as lock_svc
+from app.services import membership_freeze as freeze_svc
 
 router = APIRouter(tags=["billing"])
 
@@ -48,7 +51,11 @@ def _enforce_member_lock(db: Session, user: User, member_id: int) -> None:
         raise  # pragma: no cover
 
 
-def _membership_out(row: Membership) -> MembershipOut:
+def _membership_out(
+    row: Membership,
+    *,
+    remaining_freeze_days_this_year: int = 0,
+) -> MembershipOut:
     plan_name = row.plan.name if row.plan is not None else None
     return MembershipOut(
         id=row.id,
@@ -60,9 +67,17 @@ def _membership_out(row: Membership) -> MembershipOut:
         end_date=row.end_date,
         status=row.status,
         sessions_remaining=row.sessions_remaining,
+        freeze_started_at=row.freeze_started_at,
+        freeze_ends_at=row.freeze_ends_at,
+        freeze_days_used=int(row.freeze_days_used or 0),
+        remaining_freeze_days_this_year=remaining_freeze_days_this_year,
         notes=row.notes,
         created_at=row.created_at,
     )
+
+
+def _raise_freeze(err: freeze_svc.FreezeError) -> None:
+    raise HTTPException(status_code=err.status_code, detail=err.detail) from err
 
 
 @router.get("/membership-plans", response_model=MembershipPlanListResponse)
@@ -86,15 +101,26 @@ def list_memberships(
 ) -> MembershipListResponse:
     try:
         billing_svc.ensure_desk_staff(user)
+        freeze_svc.complete_due_freezes_for_member(db, member_id)
+        db.commit()
         rows = billing_svc.list_member_memberships(db, member_id)
         debt = billing_svc.member_debt_toman(db, member_id)
+        cap = freeze_svc.freeze_cap_info(db, member_id)
     except billing_svc.BillingError as err:
+        db.rollback()
         _raise(err)
         raise  # pragma: no cover
     return MembershipListResponse(
-        items=[_membership_out(r) for r in rows],
+        items=[
+            _membership_out(r, remaining_freeze_days_this_year=cap.remaining_days)
+            for r in rows
+        ],
         total=len(rows),
         debt_toman=debt,
+        freeze_annual_cap_days=cap.cap_days,
+        freeze_days_used_member=cap.used_days,
+        remaining_freeze_days_this_year=cap.remaining_days,
+        freeze_cap_year=cap.cap_year,
     )
 
 
@@ -149,11 +175,77 @@ def cancel_membership(
         db.commit()
         db.refresh(row)
         _ = row.plan
+        cap = freeze_svc.freeze_cap_info(db, row.member_id)
     except billing_svc.BillingError as err:
         db.rollback()
         _raise(err)
         raise  # pragma: no cover
-    return CancelMembershipResponse(membership=_membership_out(row))
+    return CancelMembershipResponse(
+        membership=_membership_out(row, remaining_freeze_days_this_year=cap.remaining_days)
+    )
+
+
+@router.post(
+    "/memberships/{membership_id}/freeze",
+    response_model=FreezeMembershipResponse,
+)
+def freeze_membership(
+    membership_id: int,
+    body: FreezeMembershipRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> FreezeMembershipResponse:
+    membership = db.get(Membership, membership_id)
+    if membership is not None:
+        _enforce_member_lock(db, user, membership.member_id)
+    try:
+        row = freeze_svc.freeze_membership(
+            db,
+            user=user,
+            membership_id=membership_id,
+            days=body.days,
+            freeze_ends_at=body.freeze_ends_at,
+        )
+        db.commit()
+        row = freeze_svc.load_membership_with_plan(db, row.id)
+        cap = freeze_svc.freeze_cap_info(db, row.member_id)
+    except freeze_svc.FreezeError as err:
+        db.rollback()
+        _raise_freeze(err)
+        raise  # pragma: no cover
+    return FreezeMembershipResponse(
+        membership=_membership_out(row, remaining_freeze_days_this_year=cap.remaining_days),
+        remaining_freeze_days_this_year=cap.remaining_days,
+    )
+
+
+@router.post(
+    "/memberships/{membership_id}/unfreeze",
+    response_model=FreezeMembershipResponse,
+)
+def unfreeze_membership(
+    membership_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> FreezeMembershipResponse:
+    membership = db.get(Membership, membership_id)
+    if membership is not None:
+        _enforce_member_lock(db, user, membership.member_id)
+    try:
+        row = freeze_svc.unfreeze_membership(
+            db, user=user, membership_id=membership_id
+        )
+        db.commit()
+        row = freeze_svc.load_membership_with_plan(db, row.id)
+        cap = freeze_svc.freeze_cap_info(db, row.member_id)
+    except freeze_svc.FreezeError as err:
+        db.rollback()
+        _raise_freeze(err)
+        raise  # pragma: no cover
+    return FreezeMembershipResponse(
+        membership=_membership_out(row, remaining_freeze_days_this_year=cap.remaining_days),
+        remaining_freeze_days_this_year=cap.remaining_days,
+    )
 
 
 @router.get("/members/{member_id}/payments", response_model=PaymentListResponse)
