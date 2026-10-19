@@ -383,7 +383,8 @@ cd backend
 
 ## مرحلهٔ بعدی
 
-1. **کار تو (دستی):** استقرار واقعی طبق [deploy.md](deploy.md) + تمرین restore در [backup.md](backup.md)
-2. **اختیاری کدنویسی:** درگاه پرداخت آنلاین (پرامپت کامل: `docs/prompts/next-coding-prompt.md`) — بعداً پیامک واقعی
+1. **اولویت کدنویسی (تصمیم صاحب):** جایگزینی فرانت React ساده با پروتوتایپ Ocean Dark داخل `frontend/` + اتصال به همهٔ APIها (پرامپت کامل: `docs/prompts/next-coding-prompt.md`)
+2. **کار دستی بعداً:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md)
+3. اختیاری بعدی: درگاه / پیامک واقعی
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
