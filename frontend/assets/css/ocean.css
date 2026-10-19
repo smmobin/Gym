@@ -941,7 +941,7 @@ table {
   width: 100%;
   border-collapse: collapse;
 }
-table:not(.responsive-table):not(.schedule) {
+table:not(.responsive-table):not(.schedule):not(.demo-table) {
   min-width: 640px;
 }
 .responsive-table {

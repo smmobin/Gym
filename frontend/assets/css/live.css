@@ -44,12 +44,23 @@
 }
 .demo-title { margin: 0 0 0.4rem; font-size: 0.95rem; }
 .demo-table {
-  width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
 }
 .demo-table th, .demo-table td {
-  text-align: right; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--line);
+  text-align: right;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
-.demo-table th { color: var(--muted); font-weight: 600; }
+.demo-table th { color: var(--muted); font-weight: 600; white-space: normal; }
+.demo-table td[dir="ltr"] { text-align: left; font-variant-numeric: tabular-nums; }
 .demo-table code, .demo-accounts code {
   font-family: ui-monospace, monospace; font-size: 0.85em;
 }
