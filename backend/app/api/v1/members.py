@@ -22,6 +22,8 @@ from app.services.members import (
     build_member_list_query,
     member_by_mobile,
     next_display_id,
+    serialize_member,
+    serialize_members,
     trainer_can_view_member,
 )
 
@@ -75,7 +77,7 @@ def list_members(
         include_archived=include_archived,
     )
     items = list(db.scalars(stmt).all())
-    return MemberListResponse(items=[MemberOut.model_validate(m) for m in items], total=len(items))
+    return MemberListResponse(items=serialize_members(db, items), total=len(items))
 
 
 @router.post("", response_model=MemberOut, status_code=status.HTTP_201_CREATED)
@@ -109,7 +111,7 @@ def create_member(
             detail="این شماره موبایل قبلاً ثبت شده است.",
         ) from None
     db.refresh(member)
-    return MemberOut.model_validate(member)
+    return serialize_member(db, member)
 
 
 @router.get("/{member_id}", response_model=MemberOut)
@@ -122,7 +124,7 @@ def get_member(
     if member is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="عضو یافت نشد.")
     _ensure_can_view(db, user, member)
-    return MemberOut.model_validate(member)
+    return serialize_member(db, member)
 
 
 @router.get("/{member_id}/lock", response_model=MemberLockOut)
@@ -232,7 +234,7 @@ def update_member(
             detail="این شماره موبایل قبلاً ثبت شده است.",
         ) from None
     db.refresh(member)
-    return MemberOut.model_validate(member)
+    return serialize_member(db, member)
 
 
 @router.post(
@@ -267,10 +269,10 @@ def archive_member(
     if member is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="عضو یافت نشد.")
     if member.status == MemberStatus.ARCHIVED.value:
-        return MemberOut.model_validate(member)
+        return serialize_member(db, member)
 
     member.status = MemberStatus.ARCHIVED.value
     member.archived_at = datetime.now(tz=timezone.utc)
     db.commit()
     db.refresh(member)
-    return MemberOut.model_validate(member)
+    return serialize_member(db, member)

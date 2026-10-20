@@ -70,16 +70,88 @@
   border: 1px dashed var(--line); padding: 1rem; margin-top: 1rem; border-radius: 12px;
   background: var(--bg-elevated);
 }
-.member-pick {
-  max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 10px;
-  margin-top: 0.5rem;
+.member-search {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  z-index: 5;
 }
-.member-pick button {
-  display: block; width: 100%; text-align: right; background: transparent; border: 0;
-  color: var(--text); padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--line);
-  cursor: pointer; font: inherit;
+.member-search.is-open {
+  z-index: 60;
 }
-.member-pick button:hover, .member-pick button.is-selected { background: var(--accent-dim); }
+.member-search > label { margin: 0; }
+.member-pick.is-overlay,
+.member-pick.is-open {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 55;
+  max-height: min(18rem, 55vh);
+  overflow: auto;
+  margin: 0;
+  padding: 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 55%),
+    color-mix(in srgb, var(--panel) 94%, #000 6%);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.42),
+    0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent) inset;
+}
+.member-pick[hidden] { display: none !important; }
+.member-pick-list {
+  display: grid;
+  gap: 0.25rem;
+}
+.member-pick-empty {
+  margin: 0.35rem 0.5rem;
+}
+.member-pick-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: right;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: var(--text);
+  padding: 0.65rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.15s ease;
+}
+.member-pick-item:hover,
+.member-pick-item.is-selected {
+  background: var(--accent-dim);
+}
+.member-pick-main {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  text-align: right;
+}
+.member-pick-name {
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+.member-pick-sub {
+  font-size: 0.78rem;
+}
+.member-pick-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+.panel:has(.member-search.is-open),
+.panel:has(.member-pick.is-open) {
+  overflow: visible;
+}
 .inline-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
 .panel-head {
   align-items: center;

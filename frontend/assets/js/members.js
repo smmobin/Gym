@@ -222,38 +222,88 @@ export function mountMembers(root, user) {
 }
 
 /**
- * Shared member search picker for other panels.
+ * Ensure search input + results sit in a relative wrapper for the overlay dropdown.
+ * @param {HTMLInputElement} input
+ * @param {HTMLElement} pickRoot
+ */
+function ensureMemberSearchWrap(input, pickRoot) {
+  let wrap = /** @type {HTMLElement | null} */ (input.closest('.member-search'))
+  if (wrap && wrap.contains(pickRoot)) {
+    pickRoot.classList.add('is-overlay')
+    return wrap
+  }
+
+  wrap = document.createElement('div')
+  wrap.className = 'member-search'
+  const label = input.closest('label')
+  const anchor = label || input
+  const parent = anchor.parentNode
+  if (!parent) return wrap
+  parent.insertBefore(wrap, anchor)
+  wrap.appendChild(anchor)
+  wrap.appendChild(pickRoot)
+  pickRoot.classList.add('is-overlay')
+  pickRoot.hidden = true
+  return wrap
+}
+
+/**
+ * Shared member search picker for other panels (floating overlay under the field).
  * @param {HTMLElement} pickRoot
  * @param {HTMLInputElement} input
  * @param {(member: any) => void} onPick
  */
 export function bindMemberSearch(pickRoot, input, onPick) {
+  if (!pickRoot || !input) return
+  const wrap = ensureMemberSearchWrap(input, pickRoot)
   let timer
+  let open = false
+
+  function show() {
+    open = true
+    wrap.classList.add('is-open')
+    pickRoot.hidden = false
+    pickRoot.classList.add('is-open')
+  }
+
+  function hide() {
+    open = false
+    wrap.classList.remove('is-open')
+    pickRoot.hidden = true
+    pickRoot.classList.remove('is-open')
+  }
+
   async function run() {
     const q = input.value.trim()
     const params = new URLSearchParams()
     if (q) params.set('q', q)
+    show()
     try {
       const data = await apiGet(`/api/v1/members?${params}`)
-      renderMemberPick(
-        pickRoot,
-        (data.items || []).map((m) => ({
-          id: m.id,
-          label: `${m.first_name} ${m.last_name} — ${m.display_id} — ${m.mobile}`,
-          ...m,
-        })),
-        (id) => {
-          const m = (data.items || []).find((x) => x.id === id)
-          if (m) onPick(m)
-        },
-      )
+      const items = data.items || []
+      renderMemberPick(pickRoot, items, (id) => {
+        const m = items.find((x) => x.id === id)
+        if (m) onPick(m)
+        hide()
+      })
     } catch {
-      pickRoot.innerHTML = '<p class="hint">جستجو ناموفق بود.</p>'
+      pickRoot.innerHTML = '<p class="hint member-pick-empty">جستجو ناموفق بود.</p>'
     }
   }
+
   input.addEventListener('input', () => {
     clearTimeout(timer)
-    timer = setTimeout(run, 300)
+    timer = setTimeout(() => void run(), 300)
   })
   input.addEventListener('focus', () => void run())
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hide()
+  })
+
+  document.addEventListener('click', (event) => {
+    if (!open) return
+    const target = /** @type {Node | null} */ (event.target)
+    if (target && wrap.contains(target)) return
+    hide()
+  })
 }

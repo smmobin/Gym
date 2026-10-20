@@ -15,8 +15,8 @@ from app.schemas.guests import (
     DayGuestPaymentOut,
     DayGuestResponse,
 )
-from app.schemas.members import MemberOut
 from app.services import guests as guests_svc
+from app.services.members import serialize_member
 
 router = APIRouter(tags=["guests"])
 
@@ -63,7 +63,7 @@ def register_day_guest(
         else "مهمان روزانه ثبت شد."
     )
     return DayGuestResponse(
-        member=MemberOut.model_validate(result.member),
+        member=serialize_member(db, result.member),
         membership=DayGuestMembershipOut(
             id=result.membership.id,
             plan_id=result.membership.plan_id,

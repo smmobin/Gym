@@ -1,3 +1,5 @@
+import { ROLE_LABEL } from './format.js'
+
 /**
  * @param {HTMLElement | null} el
  * @param {string} text
@@ -75,27 +77,70 @@ export function bindHashNav(defaultHash = 'dash') {
 }
 
 /**
+ * @param {any} m
+ */
+export function memberPickLabel(m) {
+  const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.label || '—'
+  return name
+}
+
+/**
+ * Floating member picker rows: name, id, mobile, role, active subscription.
  * @param {HTMLElement} root
- * @param {Array<{id:number, label:string}>} items
+ * @param {Array<any>} items
  * @param {(id: number) => void} onPick
  */
 export function renderMemberPick(root, items, onPick) {
   root.innerHTML = ''
+  root.classList.add('member-pick', 'is-overlay')
   if (!items.length) {
-    root.innerHTML = '<p class="hint">موردی یافت نشد.</p>'
+    root.innerHTML = '<p class="hint member-pick-empty">موردی یافت نشد.</p>'
     return
   }
+  const list = document.createElement('div')
+  list.className = 'member-pick-list'
   items.forEach((m) => {
     const btn = document.createElement('button')
     btn.type = 'button'
-    btn.textContent = m.label
+    btn.className = 'member-pick-item'
+    const name = memberPickLabel(m)
+    const roleKey = m.role || 'athlete'
+    const roleText = ROLE_LABEL[roleKey] || roleKey
+    const hasSub = !!m.has_active_membership
+    const subClass = hasSub ? 'ok' : 'warn'
+    const subText = hasSub ? 'اشتراک فعال' : 'بدون اشتراک فعال'
+    const meta = [m.display_id, m.mobile].filter(Boolean).join(' · ')
+    btn.innerHTML = `
+      <span class="member-pick-main">
+        <strong class="member-pick-name">${escapeHtml(name)}</strong>
+        <span class="member-pick-sub hint">${escapeHtml(meta || '—')}</span>
+      </span>
+      <span class="member-pick-meta">
+        <span class="badge">${escapeHtml(roleText)}</span>
+        <span class="badge ${subClass}">${subText}</span>
+      </span>
+    `
+    btn.addEventListener('mousedown', (event) => {
+      // Keep input focused long enough for click to register before blur-close.
+      event.preventDefault()
+    })
     btn.addEventListener('click', () => {
-      root.querySelectorAll('button').forEach((b) => b.classList.remove('is-selected'))
+      root.querySelectorAll('.member-pick-item').forEach((b) => b.classList.remove('is-selected'))
       btn.classList.add('is-selected')
       onPick(m.id)
     })
-    root.appendChild(btn)
+    list.appendChild(btn)
   })
+  root.appendChild(list)
+}
+
+/** @param {string} value */
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 /** @param {HTMLElement | null} banner */

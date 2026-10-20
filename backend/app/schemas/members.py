@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -68,6 +68,9 @@ class MemberOut(BaseModel):
     status: str
     archived_at: Optional[datetime] = None
     created_at: datetime
+    # Always athlete for members API; exposed so pickers can show role badges.
+    role: Literal["athlete"] = "athlete"
+    has_active_membership: bool = False
 
     model_config = {"from_attributes": True}
 

@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import re
+from datetime import date
+from typing import Iterable
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.models.enums import MemberStatus, StaffRole
+from app.models.enums import MemberStatus, MembershipStatus, StaffRole
 from app.models.member import Member
+from app.models.membership import Membership
 from app.models.trainer import TrainerMemberAssignment
 from app.models.user import User
+from app.schemas.members import MemberOut
 
 _DISPLAY_RE = re.compile(r"^M-(\d+)$", re.IGNORECASE)
 _DISPLAY_START = 1001
@@ -78,3 +82,50 @@ def build_member_list_query(
         )
 
     return stmt.order_by(Member.display_id.asc())
+
+
+def members_with_active_membership(
+    db: Session,
+    member_ids: Iterable[int],
+    *,
+    today: date | None = None,
+) -> set[int]:
+    """Member ids that currently have an ACTIVE membership covering today."""
+    ids = {int(i) for i in member_ids}
+    if not ids:
+        return set()
+    day = today or date.today()
+    rows = db.scalars(
+        select(Membership.member_id)
+        .where(
+            Membership.member_id.in_(ids),
+            Membership.status == MembershipStatus.ACTIVE.value,
+            Membership.start_date <= day,
+            Membership.end_date >= day,
+        )
+        .distinct()
+    ).all()
+    return set(rows)
+
+
+def serialize_member(db: Session, member: Member, *, today: date | None = None) -> MemberOut:
+    active = members_with_active_membership(db, [member.id], today=today)
+    return MemberOut.model_validate(member).model_copy(
+        update={"role": "athlete", "has_active_membership": member.id in active}
+    )
+
+
+def serialize_members(
+    db: Session,
+    members: Iterable[Member],
+    *,
+    today: date | None = None,
+) -> list[MemberOut]:
+    rows = list(members)
+    active = members_with_active_membership(db, [m.id for m in rows], today=today)
+    return [
+        MemberOut.model_validate(m).model_copy(
+            update={"role": "athlete", "has_active_membership": m.id in active}
+        )
+        for m in rows
+    ]

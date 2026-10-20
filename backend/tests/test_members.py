@@ -46,6 +46,10 @@ def test_list_members_as_manager_hides_archived_by_default(client: TestClient) -
     _login(client, "09120000001")
     members = client.get("/api/v1/members").json()["items"]
     assert len(members) >= 8
+    assert all(m.get("role") == "athlete" for m in members)
+    assert "has_active_membership" in members[0]
+    ali = next(m for m in members if m["display_id"] == "M-1001")
+    assert ali["has_active_membership"] is True
 
     created = client.post(
         "/api/v1/members",
