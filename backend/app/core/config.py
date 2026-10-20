@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     # Optional browser return after our callback (e.g. http://127.0.0.1:5173/athlete/#pay)
     payment_gateway_front_return_url: str = ""
 
+    # SMS provider (secrets only via env — never commit real API keys)
+    # provider: none | kavenegar (extensible via adapter factory)
+    sms_provider: str = "none"
+    sms_api_key: str = ""
+    sms_sender: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
@@ -81,6 +87,14 @@ class Settings(BaseSettings):
         if provider in {"", "none", "off", "disabled"}:
             return False
         return bool((self.payment_gateway_merchant_id or "").strip())
+
+    @property
+    def sms_enabled(self) -> bool:
+        """True only when a real SMS provider is named and API key is present."""
+        provider = (self.sms_provider or "").strip().lower()
+        if provider in {"", "none", "off", "disabled"}:
+            return False
+        return bool((self.sms_api_key or "").strip())
 
 
 @lru_cache

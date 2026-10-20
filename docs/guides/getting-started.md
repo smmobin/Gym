@@ -239,6 +239,35 @@ API:
 
 مبالغ اپلیکیشن تومان‌اند؛ به درگاه به‌صورت ریال (`×۱۰`) فرستاده می‌شوند.
 
+## پیامک (کاوه‌نگار)
+
+پیش‌فرض خاموش است (`SMS_PROVIDER=none`). بدون API key، UI همان «هنوز آماده نیست» است و `POST /sms/send` → ۴۰۳ فارسی.
+
+### فعال‌سازی لوکال (تست)
+
+1. در `backend/.env` (از `.env.example` کپی کن؛ **کلید واقعی در گیت نگذار**):
+
+```env
+SMS_PROVIDER=kavenegar
+SMS_API_KEY=
+SMS_SENDER=
+```
+
+برای تست دستی با پنل واقعی، `SMS_API_KEY` را از داشبورد کاوه‌نگار بگذار. **ارسال واقعی اعتبار کم می‌کند.**
+
+2. بک و فرانت را بالا بیاور؛ لاگین مدیر `09120000001` / `ChangeMe123` → `/manager/#sms`
+3. عضو را جستجو کن → ارسال روی یکی از قالب‌ها
+4. `GET /api/v1/sms/status` فقط `enabled/provider/label` می‌دهد (بدون کلید)
+
+**تست خودکار:** `pytest backend/tests/test_sms.py` با mock HTTP — بدون شبکه و بدون کلید واقعی.
+
+API:
+- `GET /api/v1/sms/status`
+- `GET /api/v1/sms/templates` — desk
+- `POST /api/v1/sms/send` — `{ template_id, member_id }` (مدیر/منشی؛ مربی ۴۰۳)
+
+OTP / فراموشی رمز با پیامک در v1 نیست.
+
 ## توقف عضویت (freeze)
 
 منشی/مدیر می‌توانند عضویت **فعال** را چند روز متوقف کنند تا روزهای باقی‌مانده نسوزد (`end_date` به همان اندازه جلو می‌رود).
@@ -323,7 +352,7 @@ API: `GET /api/v1/trial-leads?status=` ، `PATCH /api/v1/trial-leads/{id}` — t
 
 API: `POST /api/v1/guests` — trainer → ۴۰۳
 
-## تنظیمات باشگاه، اعلان، پیامک (placeholder)
+## تنظیمات باشگاه، اعلان، پیامک
 
 ### تنظیمات (`/settings`)
 
@@ -348,9 +377,21 @@ API: `GET /api/v1/gym-settings` (staff)، `PATCH /api/v1/gym-settings` (manager)
 API: `GET /api/v1/notifications` ، `POST /api/v1/notifications/{id}/read` ، `POST /api/v1/notifications/read-all`  
 UI: زنگوله بعد از لاگین (صفحهٔ ورود / تنظیمات / پیامک)
 
-### قالب پیامک (`/sms-templates`)
+### قالب پیامک (`/manager/#sms` یا `/receptionist/#sms`)
 
-چند قالب ثابت + دکمهٔ ارسال **disabled** + متن «هنوز آماده نیست». بدون SDK و بدون کلید در گیت.
+پیش‌فرض خاموش است. بدون کلید، همان تگ «هنوز آماده نیست» و دکمهٔ مرده می‌ماند.
+
+اگر `SMS_PROVIDER=kavenegar` و `SMS_API_KEY` پر باشد:
+
+1. لاگین مدیر یا منشی → بخش پیامک
+2. جستجوی عضو → انتخاب → ارسال روی قالب (خوش‌آمد / انقضا / بدهی)
+3. موبایل فقط از پروندهٔ عضو روی سرور خوانده می‌شود؛ مربی → ۴۰۳
+
+**هشدار:** کلید واقعی اعتبار پنل را مصرف می‌کند و هزینه دارد. در تست خودکار، HTTP کاوه‌نگار mock می‌شود (بدون شبکه).
+
+API: `GET /api/v1/sms/status` ، `GET /api/v1/sms/templates` ، `POST /api/v1/sms/send` — `{ template_id, member_id }`
+
+جزئیات env: بخش «پیامک (کاوه‌نگار)» بالاتر در همین فایل.
 
 ### درگاه آنلاین
 
@@ -431,8 +472,8 @@ cd backend
 
 ## مرحلهٔ بعدی
 
-1. **کدنویسی بعدی:** پیامک واقعی (پرامپت C در `docs/prompts/next-coding-prompt.md`) — A و B **انجام شده‌اند**
-2. **کار دستی:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md) + env درگاه روی HTTPS
+1. **کدنویسی اجباری در صف نیست** — برش‌های A/B/C (ورود، درگاه، پیامک) انجام شده‌اند
+2. **کار دستی:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md) + env درگاه/پیامک روی HTTPS
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
 

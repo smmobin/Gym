@@ -18,7 +18,7 @@
 | داشبورد میز | API خلاصهٔ desk | **انجام‌شده:** `GET /api/v1/desk/summary` + کارت‌های عملیاتی در پنل منشی |
 | freeze عضویت | `status=frozen` + `freeze_*` روی `memberships` + `freeze_annual_cap_days` | **انجام‌شده:** `POST …/freeze` و `…/unfreeze`؛ سقف عضو‌محور؛ `end_date` جابه‌جا؛ check-in روی frozen ممنوع؛ UI در `/billing` |
 | رزرو کلاس ورزشکار | همان `class_bookings` | **انجام‌شده:** `GET/POST /athlete/group-classes…` + cancel؛ ظرفیت reuse از `book_member_core`؛ بدون waitlist |
-| درگاه پرداخت آنلاین | فیلدهای `gateway_*` / `purpose` / `renew_*` روی `payments` + enum failed/cancelled | **انجام‌شده (پرامپت B):** adapter زرین‌پال؛ `GET …/payments/gateway/status`؛ `POST …/athlete/payments/online/start`؛ callback/verify سروری؛ renew پس از paid؛ mock در تست. پیامک هنوز باز است |
-| پیامک واقعی | صفحهٔ `/sms-templates` placeholder | **باز:** Provider ایرانی + کلید فقط env؛ دکمهٔ مرده را زنده کن |
+| درگاه پرداخت آنلاین | فیلدهای `gateway_*` / `purpose` / `renew_*` روی `payments` + enum failed/cancelled | **انجام‌شده (پرامپت B):** adapter زرین‌پال؛ `GET …/payments/gateway/status`؛ `POST …/athlete/payments/online/start`؛ callback/verify سروری؛ renew پس از paid؛ mock در تست |
+| پیامک واقعی | بدون جدول جدا (قالب ثابت + env) | **انجام‌شده (پرامپت C):** adapter کاوه‌نگار؛ `SMS_PROVIDER`/`SMS_API_KEY`/`SMS_SENDER`؛ `GET /sms/status`؛ `POST /sms/send` (مدیر/منشی، موبایل از DB)؛ audit؛ UI زنده وقتی enabled؛ mock در تست. بدون OTP |
 
 این فایل فقط یادآور است؛ migration اول را بلاک نمی‌کند.

@@ -15,6 +15,7 @@ from app.api.v1 import (
     lockers,
     members,
     notifications,
+    sms,
     trainers,
     trial_leads,
     workout_plans,
@@ -28,6 +29,7 @@ api_router.include_router(members.router)
 api_router.include_router(attendances.router)
 api_router.include_router(billing.router)
 api_router.include_router(gateway.router)
+api_router.include_router(sms.router)
 api_router.include_router(expenses.router)
 api_router.include_router(gym_settings.router)
 api_router.include_router(notifications.router)
