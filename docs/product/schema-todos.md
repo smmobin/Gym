@@ -13,9 +13,12 @@
 | اعلان کارکنان | `staff_notifications` + `staff_notification_reads` | **انجام‌شده (v1):** اعلان سراسری desk + خوانده‌شده per-user؛ trial رویداد؛ انقضا/بدهی روی GET بدون کرون؛ renewal فقط seed تا لاگین ورزشکار |
 | تنظیمات باشگاه | جدول `gym_settings` از اول | **انجام‌شده:** `GET/PATCH /gym-settings`؛ attendance از قبل `day_end_time` را می‌خواند |
 | لاگین ورزشکار | `members.password_hash` + `athlete_sessions` + `athlete_notifications` | **انجام‌شده:** cookie `gym_athlete_session` جدا از staff؛ API `/athlete/*` فقط دادهٔ خودش؛ رمز توسط desk؛ بدون OTP/پیامک |
+| ورود یکپارچه | همان `users` + `members` + دو کوکی سشن | **انجام‌شده:** `POST /api/v1/auth/login` اول staff بعد athlete؛ پاسخ `kind`+`role`؛ UI فقط `/login/` بدون انتخاب نقش؛ اولویت staff اگر تداخل موبایل |
+| پنل مربی | نقش `trainer` + تخصیص شاگرد | **انجام‌شده:** UI `/trainer/`؛ فقط شاگردان خودش؛ برنامه/حضور محدود؛ بدون گزارش مالی مدیر |
+| داشبورد میز | API خلاصهٔ desk | **انجام‌شده:** `GET /api/v1/desk/summary` + کارت‌های عملیاتی در پنل منشی |
 | freeze عضویت | `status=frozen` + `freeze_*` روی `memberships` + `freeze_annual_cap_days` | **انجام‌شده:** `POST …/freeze` و `…/unfreeze`؛ سقف عضو‌محور؛ `end_date` جابه‌جا؛ check-in روی frozen ممنوع؛ UI در `/billing` |
 | رزرو کلاس ورزشکار | همان `class_bookings` | **انجام‌شده:** `GET/POST /athlete/group-classes…` + cancel؛ ظرفیت reuse از `book_member_core`؛ بدون waitlist |
-| درگاه پرداخت آنلاین | `PaymentMethod.ONLINE` + وضعیت پرداخت | **باز:** اتصال واقعی (sandbox)؛ بدون ذخیرهٔ کارت؛ کلید فقط env |
+| درگاه پرداخت آنلاین | `PaymentMethod.ONLINE` + وضعیت پرداخت | **باز (پرامپت B):** اتصال واقعی (sandbox)؛ بدون ذخیرهٔ کارت؛ کلید فقط env |
 | پیامک واقعی | صفحهٔ `/sms-templates` placeholder | **باز:** Provider ایرانی + کلید فقط env؛ دکمهٔ مرده را زنده کن |
 
 این فایل فقط یادآور است؛ migration اول را بلاک نمی‌کند.
