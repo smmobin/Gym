@@ -354,7 +354,7 @@ UI: زنگوله بعد از لاگین (صفحهٔ ورود / تنظیمات / 
 
 ### درگاه آنلاین
 
-در `#billing` روش «آنلاین» هست ولی صریحاً به درگاه وصل نیست.
+اگر `PAYMENT_GATEWAY_PROVIDER=zarinpal` و merchant پر باشد، ورزشکار از `/athlete/` پرداخت آزمایشی می‌کند؛ میز فقط فلگ وضعیت را می‌بیند. جزئیات: بخش «درگاه پرداخت آنلاین» بالاتر در همین فایل.
 
 ## کلاس‌های گروهی
 
@@ -431,9 +431,8 @@ cd backend
 
 ## مرحلهٔ بعدی
 
-1. **کدنویسی بعدی:** درگاه پرداخت sandbox (پرامپت B در `docs/prompts/next-coding-prompt.md`) — ورود یکپارچه و پنل مربی **انجام شده‌اند**
-2. **کار دستی:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md)
-3. بعداً: پیامک واقعی
+1. **کدنویسی بعدی:** پیامک واقعی (پرامپت C در `docs/prompts/next-coding-prompt.md`) — A و B **انجام شده‌اند**
+2. **کار دستی:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md) + env درگاه روی HTTPS
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
 
