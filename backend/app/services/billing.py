@@ -183,14 +183,25 @@ def compute_end_date(plan: MembershipPlan, start: date) -> date:
 def renew_membership(
     db: Session,
     *,
-    user: User,
+    user: User | None = None,
     member_id: int,
     plan_id: int,
     agreed_amount_toman: int,
     base_membership_id: int | None = None,
     notes: str | None = None,
+    require_desk: bool = True,
+    audit_action: str = "membership.renew",
 ) -> RenewResult:
-    ensure_desk_staff(user)
+    """
+    Create a renewal membership using renew_start_date / compute_end_date.
+
+    Desk path: require_desk=True (default) and a staff user.
+    Online gateway path: require_desk=False after server-side verify (no staff actor).
+    """
+    if require_desk:
+        if user is None:
+            raise BillingError(403, "دسترسی مجاز نیست.")
+        ensure_desk_staff(user)
     if agreed_amount_toman < 0:
         raise BillingError(422, "مبلغ توافقی نمی‌تواند منفی باشد.")
 
@@ -232,8 +243,8 @@ def renew_membership(
 
     write_audit(
         db,
-        actor_user_id=user.id,
-        action="membership.renew",
+        actor_user_id=user.id if user is not None else None,
+        action=audit_action,
         entity_type="membership",
         entity_id=row.id,
         summary=f"تمدید عضویت عضو {member.display_id} با طرح {plan.name}",
@@ -245,6 +256,7 @@ def renew_membership(
             "end_date": end.isoformat(),
             "base_membership_id": base.id if base else None,
             "status": status,
+            "via_gateway": not require_desk,
         },
     )
 

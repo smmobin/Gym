@@ -75,6 +75,7 @@ def test_alembic_current_revision() -> None:
         "a1b2c3d4e5f6",
         "b2c3d4e5f6a7",
         "c3d4e5f6a7b8",
+        "e5f6a7b8c9d0",
     }
 
 

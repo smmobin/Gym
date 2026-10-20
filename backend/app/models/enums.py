@@ -27,13 +27,22 @@ class PaymentMethod(StrEnum):
     CASH = "cash"
     POS = "pos"
     TRANSFER = "transfer"
-    ONLINE = "online"  # placeholder until gateway exists
+    ONLINE = "online"  # wired via payment_gateway adapter when env configured
 
 
 class PaymentStatus(StrEnum):
     PAID = "paid"
     PENDING = "pending"
     REFUNDED = "refunded"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class PaymentPurpose(StrEnum):
+    """Why an online pending payment was started (drives post-verify side effects)."""
+
+    DEBT = "debt"
+    RENEW = "renew"
 
 
 class AttendanceType(StrEnum):

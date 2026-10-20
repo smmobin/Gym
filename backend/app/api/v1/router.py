@@ -7,6 +7,7 @@ from app.api.v1 import (
     billing,
     desk,
     expenses,
+    gateway,
     group_classes,
     guests,
     gym_settings,
@@ -26,6 +27,7 @@ api_router.include_router(athlete.router)
 api_router.include_router(members.router)
 api_router.include_router(attendances.router)
 api_router.include_router(billing.router)
+api_router.include_router(gateway.router)
 api_router.include_router(expenses.router)
 api_router.include_router(gym_settings.router)
 api_router.include_router(notifications.router)

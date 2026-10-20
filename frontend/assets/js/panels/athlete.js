@@ -3,6 +3,29 @@ import { athleteLogout, requireAthlete } from '../auth-athlete.js'
 import { formatDateTime, formatDateTimeShort, formatToman } from '../format.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
 
+function payResultMessage() {
+  const params = new URLSearchParams(location.search)
+  const pay = params.get('pay')
+  if (!pay) return null
+  const receipt = params.get('receipt')
+  const map = {
+    ok: receipt ? `پرداخت موفق — رسید ${receipt}` : 'پرداخت موفق ثبت شد.',
+    cancelled: 'پرداخت لغو شد یا ناتمام ماند.',
+    failed: 'تأیید پرداخت ناموفق بود.',
+    error: params.get('detail') || 'خطا در بازگشت از درگاه.',
+  }
+  return { text: map[pay] || null, ok: pay === 'ok' }
+}
+
+async function startOnlinePayment(body) {
+  const res = await apiPost('/api/v1/athlete/payments/online/start', body)
+  if (res.payment_url) {
+    location.href = res.payment_url
+    return
+  }
+  throw new Error('آدرس درگاه دریافت نشد.')
+}
+
 async function main() {
   const member = await requireAthlete()
   if (!member) return
@@ -28,15 +51,45 @@ async function main() {
   const banner = document.querySelector('[data-api-banner]')
   const status = document.querySelector('[data-status]')
 
+  const payFlash = payResultMessage()
+  if (payFlash?.text) {
+    setStatus(/** @type {HTMLElement} */ (status), payFlash.text, payFlash.ok ? 'ok' : 'error')
+    const clean = location.pathname + (location.hash || '')
+    history.replaceState({}, '', clean)
+  }
+
   try {
-    const [memberships, payments, plans, notifications, classes] = await Promise.all([
-      apiGet('/api/v1/athlete/memberships'),
-      apiGet('/api/v1/athlete/payments'),
-      apiGet('/api/v1/athlete/workout-plans'),
-      apiGet('/api/v1/athlete/notifications'),
-      apiGet('/api/v1/athlete/group-classes'),
-    ])
-    showApiDown((banner), false)
+    const [memberships, payments, plans, notifications, classes, gateway, renewPlans] =
+      await Promise.all([
+        apiGet('/api/v1/athlete/memberships'),
+        apiGet('/api/v1/athlete/payments'),
+        apiGet('/api/v1/athlete/workout-plans'),
+        apiGet('/api/v1/athlete/notifications'),
+        apiGet('/api/v1/athlete/group-classes'),
+        apiGet('/api/v1/payments/gateway/status'),
+        apiGet('/api/v1/athlete/membership-plans').catch(() => ({ items: [] })),
+      ])
+    showApiDown(/** @type {HTMLElement} */ (banner), false)
+
+    const gatewayOn = !!gateway?.enabled
+    const gwLabel = document.querySelector('[data-gateway-label]')
+    if (gwLabel) gwLabel.textContent = gateway?.label || ''
+    const payHint = document.querySelector('[data-gateway-pay-hint]')
+    if (payHint) {
+      payHint.textContent = gatewayOn
+        ? gateway.label
+        : 'درگاه آنلاین هنوز پیکربندی نشده؛ برای تمدید از درخواست میز استفاده کنید.'
+    }
+    document.querySelector('[data-online-renew]')?.toggleAttribute('hidden', !gatewayOn)
+    document.querySelector('[data-online-debt]')?.toggleAttribute('hidden', !gatewayOn)
+    const deskRenew = document.querySelector('[data-desk-renew]')
+    if (deskRenew && gatewayOn) {
+      const hint = document.querySelector('[data-desk-renew-hint]')
+      if (hint) {
+        hint.textContent =
+          'درگاه فعال است؛ ترجیحاً پرداخت آنلاین. درخواست میز فقط اگر درگاه در دسترس نبود.'
+      }
+    }
 
     const debt = memberships.debt_toman || 0
     const memItems = memberships.items || []
@@ -179,6 +232,67 @@ async function main() {
         )
       }
     })
+
+    if (gatewayOn) {
+      const renewPlanSel = /** @type {HTMLSelectElement | null} */ (
+        document.querySelector('[data-renew-plan]')
+      )
+      const renewAmount = /** @type {HTMLInputElement | null} */ (
+        document.querySelector('[data-renew-amount]')
+      )
+      const planOpts = renewPlans.items || []
+      if (renewPlanSel) {
+        renewPlanSel.innerHTML = planOpts
+          .map(
+            (p) =>
+              `<option value="${p.id}" data-price="${p.base_price_toman}">${p.name} (${formatToman(p.base_price_toman)})</option>`,
+          )
+          .join('')
+        const syncAmount = () => {
+          const opt = renewPlanSel.selectedOptions[0]
+          if (renewAmount && opt) renewAmount.value = opt.getAttribute('data-price') || ''
+        }
+        renewPlanSel.addEventListener('change', syncAmount)
+        syncAmount()
+      }
+
+      const debtAmount = /** @type {HTMLInputElement | null} */ (
+        document.querySelector('[data-debt-amount]')
+      )
+      if (debtAmount && debt > 0) debtAmount.value = String(debt)
+
+      document.querySelector('[data-pay-renew]')?.addEventListener('click', async () => {
+        try {
+          const planId = Number(renewPlanSel?.value)
+          const amount = Number(renewAmount?.value || 0)
+          await startOnlinePayment({
+            purpose: 'renew',
+            plan_id: planId,
+            amount_toman: amount,
+            base_membership_id: active?.id || null,
+          })
+        } catch (err) {
+          setStatus(
+            /** @type {HTMLElement} */ (status),
+            err instanceof ApiError ? err.message : 'شروع پرداخت ناموفق',
+            'error',
+          )
+        }
+      })
+
+      document.querySelector('[data-pay-debt]')?.addEventListener('click', async () => {
+        try {
+          const amount = Number(debtAmount?.value || 0)
+          await startOnlinePayment({ purpose: 'debt', amount_toman: amount })
+        } catch (err) {
+          setStatus(
+            /** @type {HTMLElement} */ (status),
+            err instanceof ApiError ? err.message : 'شروع پرداخت ناموفق',
+            'error',
+          )
+        }
+      })
+    }
   } catch (err) {
     showApiDown(/** @type {HTMLElement} */ (banner), true)
     setStatus(

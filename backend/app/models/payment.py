@@ -21,6 +21,7 @@ class Payment(Base):
     """
     Amount is set at insert time only.
     There is no application helper to mutate `amount_toman`; status may move to refunded.
+    Gateway fields store provider authority/ref for online pending → paid flow.
     """
 
     __tablename__ = "payments"
@@ -55,8 +56,27 @@ class Payment(Base):
         DateTime(timezone=True), nullable=True
     )
 
+    # Online gateway (nullable for cash/pos/transfer desk payments)
+    gateway_provider: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    gateway_authority: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, unique=True, index=True
+    )
+    gateway_ref_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    purpose: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    renew_plan_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("membership_plans.id"), nullable=True
+    )
+    renew_base_membership_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("memberships.id"), nullable=True
+    )
+    renewed_membership_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("memberships.id"), nullable=True
+    )
+
     member: Mapped[Member] = relationship(back_populates="payments")
-    membership: Mapped[Optional[Membership]] = relationship()
+    membership: Mapped[Optional[Membership]] = relationship(
+        foreign_keys=[membership_id],
+    )
     created_by: Mapped[Optional[User]] = relationship()
 
     def mark_refunded(self, *, at: Optional[datetime] = None) -> None:

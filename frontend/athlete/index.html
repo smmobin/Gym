@@ -70,9 +70,20 @@
           <article class="panel">
             <header class="panel-head"><h2>اشتراک من</h2></header>
             <div data-memberships></div>
-            <label class="full" style="margin-top:1rem">یادداشت برای منشی<textarea data-renew-note></textarea></label>
-            <button type="button" class="btn wide" data-renew style="margin-top:0.75rem">درخواست تمدید</button>
-            <p class="hint">فقط اعلان برای منشی ساخته می‌شود؛ تمدید خودکار نیست.</p>
+            <p class="hint" data-gateway-label style="margin-top:1rem"></p>
+            <div data-online-renew hidden>
+              <label class="full">طرح تمدید
+                <select data-renew-plan></select>
+              </label>
+              <label>مبلغ (تومان)<input type="number" min="100" data-renew-amount /></label>
+              <button type="button" class="btn wide" data-pay-renew style="margin-top:0.75rem">پرداخت آنلاین تمدید (آزمایشی)</button>
+              <p class="hint">پس از پرداخت موفق در درگاه، تمدید خودکار ثبت می‌شود.</p>
+            </div>
+            <div data-desk-renew>
+              <label class="full" style="margin-top:1rem">یادداشت برای منشی<textarea data-renew-note></textarea></label>
+              <button type="button" class="btn wide" data-renew style="margin-top:0.75rem">درخواست تمدید</button>
+              <p class="hint" data-desk-renew-hint>فقط اعلان برای منشی ساخته می‌شود؛ تمدید خودکار نیست.</p>
+            </div>
           </article>
         </div>
 
@@ -87,6 +98,12 @@
           <article class="panel">
             <header class="panel-head"><h2>پرداخت‌های من</h2></header>
             <div data-payments></div>
+            <div data-online-debt hidden style="margin-top:1rem">
+              <header class="panel-head"><h3>پرداخت بدهی آنلاین (آزمایشی)</h3></header>
+              <label>مبلغ (تومان)<input type="number" min="100" data-debt-amount /></label>
+              <button type="button" class="btn" data-pay-debt style="margin-top:0.5rem">پرداخت آنلاین</button>
+            </div>
+            <p class="hint" data-gateway-pay-hint style="margin-top:0.75rem"></p>
           </article>
         </div>
 

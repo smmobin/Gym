@@ -18,7 +18,7 @@
 | داشبورد میز | API خلاصهٔ desk | **انجام‌شده:** `GET /api/v1/desk/summary` + کارت‌های عملیاتی در پنل منشی |
 | freeze عضویت | `status=frozen` + `freeze_*` روی `memberships` + `freeze_annual_cap_days` | **انجام‌شده:** `POST …/freeze` و `…/unfreeze`؛ سقف عضو‌محور؛ `end_date` جابه‌جا؛ check-in روی frozen ممنوع؛ UI در `/billing` |
 | رزرو کلاس ورزشکار | همان `class_bookings` | **انجام‌شده:** `GET/POST /athlete/group-classes…` + cancel؛ ظرفیت reuse از `book_member_core`؛ بدون waitlist |
-| درگاه پرداخت آنلاین | `PaymentMethod.ONLINE` + وضعیت پرداخت | **باز (پرامپت B):** اتصال واقعی (sandbox)؛ بدون ذخیرهٔ کارت؛ کلید فقط env |
+| درگاه پرداخت آنلاین | فیلدهای `gateway_*` / `purpose` / `renew_*` روی `payments` + enum failed/cancelled | **انجام‌شده (پرامپت B):** adapter زرین‌پال؛ `GET …/payments/gateway/status`؛ `POST …/athlete/payments/online/start`؛ callback/verify سروری؛ renew پس از paid؛ mock در تست. پیامک هنوز باز است |
 | پیامک واقعی | صفحهٔ `/sms-templates` placeholder | **باز:** Provider ایرانی + کلید فقط env؛ دکمهٔ مرده را زنده کن |
 
 این فایل فقط یادآور است؛ migration اول را بلاک نمی‌کند.

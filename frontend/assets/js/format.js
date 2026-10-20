@@ -48,8 +48,14 @@ export const MEMBER_STATUS = {
 export const PAYMENT_METHOD_LABEL = {
   cash: 'نقد',
   card: 'کارت',
+  pos: 'کارت‌خوان',
   transfer: 'انتقال',
-  online: 'آنلاین (بدون درگاه)',
+  online: 'آنلاین',
+}
+
+/** @param {boolean} [gatewayEnabled] */
+export function onlineMethodLabel(gatewayEnabled) {
+  return gatewayEnabled ? 'آنلاین (درگاه)' : 'آنلاین (بدون درگاه)'
 }
 
 export const ATTENDANCE_TYPE_LABEL = {

@@ -166,7 +166,9 @@ API ورزشکار (همه فقط «خودش»):
 - `GET /api/v1/athlete/workout-plans`
 - `GET /api/v1/athlete/group-classes` ، `POST …/group-classes/{id}/book` ، `GET /athlete/class-bookings` ، `POST …/class-bookings/{id}/cancel`
 - `GET /api/v1/athlete/notifications` ، `POST …/notifications/{id}/read`
-- `POST /api/v1/athlete/renewal-requests` → اعلان desk از نوع `renewal_request` (بدون تمدید خودکار)
+- `POST /api/v1/athlete/renewal-requests` → اعلان desk از نوع `renewal_request` (بدون تمدید خودکار؛ وقتی درگاه خاموش است)
+- `GET /api/v1/athlete/membership-plans` ، `POST /api/v1/athlete/payments/online/start` — وقتی درگاه از env فعال باشد
+- `GET /api/v1/payments/gateway/status` — فلگ غیرحساس فعال/sandbox
 - `PATCH /api/v1/athlete/profile` — فقط نام/نام‌خانوادگی (موبایل عوض نمی‌شود)
 
 ## اعضا (بعد از لاگین)
@@ -194,7 +196,7 @@ API: `POST /api/v1/attendances/check-in` ، `POST /api/v1/attendances/{id}/check
 1. لاگین منشی → http://127.0.0.1:5173/receptionist/#billing یا لاگین مدیر → http://127.0.0.1:5173/manager/#billing
 2. عضو را جستجو کنید → بدهی و عضویت‌ها را ببینید
 3. تمدید: طرح + مبلغ توافقی (صفر مجاز) → شروع از **پایان اشتراک مرجع**
-4. پرداخت: مبلغ + روش (نقد/کارت/انتقال/آنلاین بدون درگاه) → رسید `R-…` → دکمهٔ چاپ
+4. پرداخت: مبلغ + روش (نقد/کارت‌خوان/انتقال/آنلاین) → رسید `R-…` → دکمهٔ چاپ
 5. برگشت: فقط وضعیت `refunded`؛ مبلغ ردیف عوض نمی‌شود
 
 **سیاست تاریخ تمدید:** اگر اشتراک مرجع هنوز تمام نشده (`end_date >= امروز تهران`)، `start_date` عضویت جدید = همان `end_date` (روز باقی‌مانده نسوزد). اگر منقضی باشد، شروع از امروز. بدون مرجع: شروع از امروز. `end_date` = `start_date + duration_days` طرح.
@@ -202,6 +204,40 @@ API: `POST /api/v1/attendances/check-in` ، `POST /api/v1/attendances/{id}/check
 API: `GET /api/v1/membership-plans` ، `GET/POST …/members/{id}/memberships` (renew) ، `POST /api/v1/memberships/{id}/cancel` ، `POST …/freeze` ، `POST …/unfreeze` ، `GET …/members/{id}/payments` ، `POST /api/v1/payments` ، `POST /api/v1/payments/{id}/refund`
 
 مربی روی این مسیرها ۴۰۳ می‌گیرد.
+
+## درگاه پرداخت آنلاین (sandbox زرین‌پال)
+
+پیش‌فرض خاموش است (`PAYMENT_GATEWAY_PROVIDER=none`). بدون merchant، UI ورزشکار همان «درخواست تمدید میز» را نشان می‌دهد و API شروع پرداخت → ۴۰۳ فارسی.
+
+### فعال‌سازی لوکال (تست)
+
+1. در `backend/.env` (از `.env.example` کپی کن؛ **مرچنت واقعی در گیت نگذار**):
+
+```env
+PAYMENT_GATEWAY_PROVIDER=zarinpal
+PAYMENT_GATEWAY_MERCHANT_ID=00000000-0000-0000-0000-000000000000
+PAYMENT_GATEWAY_SANDBOX=true
+PAYMENT_GATEWAY_CALLBACK_URL=http://127.0.0.1:8000/api/v1/payments/gateway/callback
+PAYMENT_GATEWAY_FRONT_RETURN_URL=http://127.0.0.1:5173/athlete/#pay
+```
+
+در sandbox زرین‌پال، merchant می‌تواند یک UUID دلخواه ۳۶ کاراکتری باشد.
+
+2. `alembic upgrade head` (ستون‌های gateway روی `payments`)
+3. بک و فرانت را بالا بیاور؛ لاگین ورزشکار `09121111001` / `ChangeMe123`
+4. بخش اشتراک یا پرداخت‌ها → «پرداخت آنلاین (آزمایشی)» → هدایت به StartPay سندباکس
+5. پس از بازگشت، سرور verify می‌کند؛ موفق → `paid` + در صورت `purpose=renew` تمدید با همان منطق `renew_start_date` / `compute_end_date`
+
+**امنیت:** فقط سرور verify می‌کند؛ کلاینت را برای paid/renew باور نمی‌کنیم. `GET /api/v1/payments/gateway/status` فقط `enabled/provider/sandbox/label` می‌دهد (بدون کلید).
+
+API:
+- `GET /api/v1/payments/gateway/status`
+- `GET /api/v1/athlete/membership-plans`
+- `POST /api/v1/athlete/payments/online/start` — `{ purpose: debt|renew, amount_toman?, plan_id?, base_membership_id? }`
+- `GET /api/v1/payments/gateway/callback?Authority=&Status=` — بازگشت زرین‌پال
+- اختیاری میز: `POST /api/v1/payments/online/start?member_id=`
+
+مبالغ اپلیکیشن تومان‌اند؛ به درگاه به‌صورت ریال (`×۱۰`) فرستاده می‌شوند.
 
 ## توقف عضویت (freeze)
 

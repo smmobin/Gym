@@ -1,5 +1,5 @@
 import { ApiError, apiGet, apiPost } from './api.js'
-import { formatToman, PAYMENT_METHOD_LABEL } from './format.js'
+import { formatToman, onlineMethodLabel, PAYMENT_METHOD_LABEL } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch } from './members.js'
 import { setStatus } from './ui.js'
@@ -47,15 +47,15 @@ export function mountBilling(root, user) {
           <label>روش
             <select name="method">
               <option value="cash">نقد</option>
-              <option value="card" selected>کارت</option>
+              <option value="pos" selected>کارت‌خوان</option>
               <option value="transfer">انتقال</option>
-              <option value="online">آنلاین (بدون درگاه)</option>
+              <option value="online" data-online-option>آنلاین (بدون درگاه)</option>
             </select>
           </label>
           <label>عضویت مرتبط (اختیاری)<select data-pay-m><option value="">—</option></select></label>
           <button class="btn" type="submit" data-need-lock>ثبت پرداخت</button>
         </form>
-        <p class="hint">روش آنلاین فقط ثبت می‌شود؛ درگاه واقعی وصل نیست.</p>
+        <p class="hint" data-online-hint>روش آنلاین فقط ثبت می‌شود؛ درگاه واقعی وصل نیست.</p>
         <div class="print-receipt" data-receipt hidden></div>
       </article>
     </div>
@@ -74,6 +74,23 @@ export function mountBilling(root, user) {
       b.disabled = !lockHeld
     })
   })
+
+  async function loadGatewayLabel() {
+    try {
+      const gw = await apiGet('/api/v1/payments/gateway/status')
+      const opt = root.querySelector('[data-online-option]')
+      const hint = root.querySelector('[data-online-hint]')
+      if (opt) opt.textContent = onlineMethodLabel(!!gw.enabled)
+      if (hint) {
+        hint.textContent = gw.enabled
+          ? `${gw.label} — ثبت دستی online همچنان ممکن است؛ پرداخت واقعی ورزشکار از پنل خودش است.`
+          : 'روش آنلاین فقط ثبت می‌شود؛ درگاه واقعی وصل نیست.'
+      }
+      PAYMENT_METHOD_LABEL.online = onlineMethodLabel(!!gw.enabled)
+    } catch {
+      /* keep placeholder labels */
+    }
+  }
 
   async function loadPlans() {
     const data = await apiGet('/api/v1/membership-plans')
@@ -254,4 +271,5 @@ export function mountBilling(root, user) {
   void loadPlans().catch((err) =>
     setStatus(status, err instanceof ApiError ? err.message : 'بارگذاری طرح‌ها ناموفق', 'error'),
   )
+  void loadGatewayLabel()
 }

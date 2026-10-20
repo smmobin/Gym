@@ -44,6 +44,16 @@ class Settings(BaseSettings):
     # Destructive seed must never run on real member data without explicit override
     allow_destructive_seed: bool = False
 
+    # Online payment gateway (secrets only via env — never commit real merchant ids)
+    # provider: none | zarinpal (extensible via adapter factory)
+    payment_gateway_provider: str = "none"
+    payment_gateway_merchant_id: str = ""
+    payment_gateway_sandbox: bool = True
+    # Server callback that Zarinpal redirects to after pay (must be reachable; HTTPS in prod)
+    payment_gateway_callback_url: str = ""
+    # Optional browser return after our callback (e.g. http://127.0.0.1:5173/athlete/#pay)
+    payment_gateway_front_return_url: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
@@ -63,6 +73,14 @@ class Settings(BaseSettings):
         if key.lower() in {s.lower() for s in _WEAK_SECRETS}:
             return True
         return len(key) < 32
+
+    @property
+    def payment_gateway_enabled(self) -> bool:
+        """True only when a real provider is named and merchant id is present."""
+        provider = (self.payment_gateway_provider or "").strip().lower()
+        if provider in {"", "none", "off", "disabled"}:
+            return False
+        return bool((self.payment_gateway_merchant_id or "").strip())
 
 
 @lru_cache
