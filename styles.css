@@ -1408,7 +1408,8 @@ label > .date-picker { width: 100%; }
   padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
+  overflow-y: auto;
 }
 .brand {
   display: flex;
@@ -1426,7 +1427,7 @@ label > .date-picker { width: 100%; }
 }
 .brand strong { display: block; letter-spacing: 0.02em; }
 .brand small { color: var(--muted); font-size: 0.75rem; }
-.nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+.nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 0 0 auto; }
 .nav-label {
   margin: 0.85rem 0.55rem 0.35rem;
   color: var(--muted);
@@ -1444,7 +1445,12 @@ label > .date-picker { width: 100%; }
   color: var(--accent);
   font-weight: 600;
 }
-.sidebar-foot { display: grid; gap: 0.5rem; }
+.sidebar-foot {
+  display: grid;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  margin-top: 0.35rem;
+}
 .sidebar-foot a, .home-link {
   text-decoration: none;
   color: var(--muted);
