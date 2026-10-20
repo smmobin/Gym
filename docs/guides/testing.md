@@ -58,6 +58,7 @@ npm run build
 - `auth-staff.test.js` — ورود یکپارچه + `panelPathForRole` / جلوگیری از next نقش اشتباه
 - `trial.test.js` — ارسال جلسه آزمایشی
 - `athlete-book.test.js` — رزرو کلاس ورزشکار
+- `dashboard.test.js` — خلاصه داشبورد مدیر (بازه ماه، آمار مالی، برچسب هزینه)
 
 بک‌اند (نمونهٔ مرتبط با ورود یکپارچه): `test_auth.py` — staff هر نقش، athlete، رمز غلط، اولویت staff اگر موبایل در هر دو جدول.
 

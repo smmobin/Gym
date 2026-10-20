@@ -2,6 +2,7 @@ import { requireStaff } from '../auth-staff.js'
 import { mountAttendance } from '../attendance.js'
 import { mountBilling } from '../billing.js'
 import { mountClasses } from '../classes.js'
+import { mountDashboard } from '../dashboard.js'
 import { mountGuests } from '../guests.js'
 import { mountLockers } from '../lockers.js'
 import { mountMembers } from '../members.js'
@@ -20,6 +21,7 @@ async function main() {
   await initStaffShell({ user, defaultHash: 'dash', allowReports: true })
 
   const mounts = {
+    dash: () => mountDashboard(el('mount-dashboard'), user),
     members: () => mountMembers(el('mount-members'), user),
     checkin: () => mountAttendance(el('mount-attendance'), user),
     billing: () => mountBilling(el('mount-billing'), user),
@@ -36,11 +38,18 @@ async function main() {
 
   const loaded = new Set()
   function ensure(hash) {
-    if (loaded.has(hash)) return
-    const fn = mounts[hash]
+    const key = hash || 'dash'
+    // Dashboard always refreshes so summary stays current after finance edits.
+    if (key === 'dash') {
+      mounts.dash()
+      loaded.add('dash')
+      return
+    }
+    if (loaded.has(key)) return
+    const fn = mounts[key]
     if (fn) {
       fn()
-      loaded.add(hash)
+      loaded.add(key)
     }
   }
   ensure((location.hash || '#dash').slice(1))

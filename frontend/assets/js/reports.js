@@ -2,13 +2,18 @@ import { ApiError, apiGet, apiPost } from './api.js'
 import { formatToman } from './format.js'
 import { setStatus } from './ui.js'
 
-function monthRangeTehran() {
-  const now = new Date()
+/** Calendar month range in local timezone (ISO YYYY-MM-DD). */
+export function monthRangeTehran(now = new Date()) {
   const y = now.getFullYear()
   const m = now.getMonth()
   const from = new Date(y, m, 1)
   const to = new Date(y, m + 1, 0)
-  const iso = (d) => d.toISOString().slice(0, 10)
+  const iso = (d) => {
+    const yy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yy}-${mm}-${dd}`
+  }
   return { from: iso(from), to: iso(to) }
 }
 
