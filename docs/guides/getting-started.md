@@ -395,9 +395,9 @@ cd backend
 
 ## مرحلهٔ بعدی
 
-1. **پرامپت A (صف رسمی با صاحب):** ورود یکپارچه + پنل مربی — متن در `docs/prompts/next-coding-prompt.md` (حتی اگر بخشی از کد از قبل باشد، سازنده باید audit کند)
-2. بعد از تأیید صاحب در چت مدیر محصول → **پرامپت B:** درگاه پرداخت sandbox
-3. **کار دستی:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md)
+1. **کدنویسی بعدی:** درگاه پرداخت sandbox (پرامپت B در `docs/prompts/next-coding-prompt.md`) — ورود یکپارچه و پنل مربی **انجام شده‌اند**
+2. **کار دستی:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md)
+3. بعداً: پیامک واقعی
 
 وضعیت زنده: `docs/product/roadmap-status.md`.
 
