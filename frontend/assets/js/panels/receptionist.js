@@ -13,8 +13,8 @@ import { mountWorkouts } from '../workouts.js'
 import { initStaffShell } from './shell.js'
 
 async function main() {
-  // Desk only — trainers use /trainer/; managers may still open desk tools
-  const user = await requireStaff(['manager', 'receptionist'])
+  // Receptionist panel only — managers use /manager/; trainers use /trainer/
+  const user = await requireStaff(['receptionist'])
   if (!user) return
 
   await initStaffShell({ user, defaultHash: 'dash' })

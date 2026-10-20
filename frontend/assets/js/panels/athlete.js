@@ -168,7 +168,7 @@ async function main() {
         const res = await apiPost('/api/v1/athlete/renewal-requests', { note: note || null })
         setStatus(
           /** @type {HTMLElement} */ (status),
-          res.detail || 'درخواست تمدید برای میز ارسال شد.',
+          res.detail || 'درخواست تمدید برای منشی ارسال شد.',
           'ok',
         )
       } catch (err) {

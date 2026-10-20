@@ -5,7 +5,7 @@ import { setStatus } from './ui.js'
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountLockers(root, user) {
   if (user.role !== 'manager' && user.role !== 'receptionist') {
-    root.innerHTML = '<p class="status-msg error">دسترسی کمد فقط برای میز است.</p>'
+    root.innerHTML = '<p class="status-msg error">دسترسی کمد فقط برای منشی یا مدیر است.</p>'
     return
   }
   root.innerHTML = `

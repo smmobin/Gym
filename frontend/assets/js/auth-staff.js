@@ -78,7 +78,7 @@ export function resolvePostLoginPath(result, next) {
   if (result.kind === 'athlete') {
     allowed = ['/athlete']
   } else if (result.role === 'manager') {
-    allowed = ['/manager', '/receptionist']
+    allowed = ['/manager']
   } else if (result.role === 'receptionist') {
     allowed = ['/receptionist']
   } else if (result.role === 'trainer') {

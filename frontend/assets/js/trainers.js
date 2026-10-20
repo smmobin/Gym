@@ -6,7 +6,7 @@ import { setStatus } from './ui.js'
 export function mountTrainers(root, user) {
   if (user.role !== 'manager' && user.role !== 'receptionist') {
     root.innerHTML =
-      '<p class="status-msg error">واگذاری مربی فقط برای میز است. مربیان به بخش برنامه بروند.</p>'
+      '<p class="status-msg error">واگذاری مربی فقط برای منشی یا مدیر است. مربیان به بخش برنامه بروند.</p>'
     return
   }
   root.innerHTML = `

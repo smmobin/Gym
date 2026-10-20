@@ -5,7 +5,7 @@ import { setStatus } from './ui.js'
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountGuests(root, user) {
   if (user.role !== 'manager' && user.role !== 'receptionist') {
-    root.innerHTML = '<p class="status-msg error">فقط میز می‌تواند مهمان روزانه ثبت کند.</p>'
+    root.innerHTML = '<p class="status-msg error">فقط منشی یا مدیر می‌تواند مهمان روزانه ثبت کند.</p>'
     return
   }
   root.innerHTML = `

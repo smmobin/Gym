@@ -23,7 +23,7 @@ export function mountTrialPublicForm(form, statusEl) {
         preferred_time_note: preferred || null,
         message: String(fd.get('message') || '').trim() || null,
       })
-      setStatus(statusEl, data.message || 'درخواست ثبت شد. میز با شما تماس می‌گیرد.', 'ok')
+      setStatus(statusEl, data.message || 'درخواست ثبت شد. منشی با شما تماس می‌گیرد.', 'ok')
       form.reset()
     } catch (err) {
       setStatus(statusEl, err instanceof ApiError ? err.message : 'ارسال ناموفق بود.', 'error')
@@ -41,7 +41,7 @@ const STATUS_LABEL = {
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountTrialLeads(root, user) {
   if (user.role !== 'manager' && user.role !== 'receptionist') {
-    root.innerHTML = '<p class="status-msg error">صف آزمایشی فقط برای میز است.</p>'
+    root.innerHTML = '<p class="status-msg error">صف آزمایشی فقط برای منشی یا مدیر است.</p>'
     return
   }
   root.innerHTML = `

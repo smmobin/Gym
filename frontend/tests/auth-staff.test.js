@@ -78,6 +78,12 @@ describe('unified login helpers', () => {
     expect(path).toBe('/receptionist/')
   })
 
+  it('resolvePostLoginPath ignores receptionist next for manager', () => {
+    expect(
+      resolvePostLoginPath({ kind: 'staff', role: 'manager' }, '/receptionist/'),
+    ).toBe('/manager/')
+  })
+
   it('resolvePostLoginPath sends athlete home', () => {
     expect(
       resolvePostLoginPath({ kind: 'athlete', role: 'athlete' }, '/receptionist/'),
