@@ -1677,6 +1677,13 @@ td { overflow-wrap: anywhere; }
   padding: 0.85rem 0;
   border-bottom: 1px solid var(--line);
 }
+a.row-item {
+  color: inherit;
+  text-decoration: none;
+}
+a.row-item:hover h3 {
+  color: var(--accent);
+}
 .workout:last-child, .row-item:last-child { border-bottom: none; }
 .workout h3, .row-item h3 { margin: 0; font-size: 0.98rem; }
 .workout p, .row-item p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.84rem; }

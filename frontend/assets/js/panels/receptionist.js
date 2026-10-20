@@ -2,6 +2,7 @@ import { requireStaff } from '../auth-staff.js'
 import { mountAttendance } from '../attendance.js'
 import { mountBilling } from '../billing.js'
 import { mountClasses } from '../classes.js'
+import { mountDeskDashboard } from '../desk-dashboard.js'
 import { mountGuests } from '../guests.js'
 import { mountLockers } from '../lockers.js'
 import { mountMembers } from '../members.js'
@@ -20,6 +21,7 @@ async function main() {
   await initStaffShell({ user, defaultHash: 'dash' })
 
   const mounts = {
+    dash: () => mountDeskDashboard(el('mount-desk-dashboard'), user),
     members: () => mountMembers(el('mount-members'), user),
     checkin: () => mountAttendance(el('mount-attendance'), user),
     billing: () => mountBilling(el('mount-billing'), user),
@@ -37,6 +39,12 @@ async function main() {
   const loaded = new Set()
   function ensure(hash) {
     const key = hash || 'dash'
+    // Always refresh desk summary when returning to dashboard.
+    if (key === 'dash') {
+      mounts.dash()
+      loaded.add('dash')
+      return
+    }
     if (loaded.has(key)) return
     const fn = mounts[key]
     if (fn) {
@@ -47,17 +55,6 @@ async function main() {
 
   ensure((location.hash || '#dash').slice(1))
   window.addEventListener('hashchange', () => ensure(location.hash.slice(1)))
-
-  // dash stats from today attendance count (light)
-  try {
-    const { apiGet } = await import('../api.js')
-    const today = await apiGet('/api/v1/attendances/today')
-    const items = today.items || today.attendances || []
-    const elStat = document.querySelector('[data-stat-today]')
-    if (elStat) elStat.textContent = String(items.length).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
-  } catch {
-    // ignore
-  }
 }
 
 /** @param {string} id */
