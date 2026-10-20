@@ -17,7 +17,7 @@ export function mountTrainers(root, user) {
       <div class="member-pick" data-pick></div>
       <p class="hint" data-sel>عضوی انتخاب نشده</p>
       <label>مربی<select data-trainers></select></label>
-      <button type="button" class="btn" data-assign>وصل مربی</button>
+      <button type="button" class="btn" data-assign style="margin-top:1rem">وصل مربی</button>
       <div class="list" data-list style="margin-top:1rem"></div>
     </article>
   `
