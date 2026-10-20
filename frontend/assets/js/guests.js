@@ -37,6 +37,7 @@ export function mountGuests(root, user) {
   const method = /** @type {HTMLSelectElement} */ (root.querySelector('[data-method]'))
   payNow?.addEventListener('change', () => {
     method.disabled = !payNow.checked
+    globalThis.GymCustomSelect?.sync?.(method)
   })
 
   root.querySelector('[data-form]')?.addEventListener('submit', async (e) => {

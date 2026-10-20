@@ -28,9 +28,12 @@ export function mountTrainers(root, user) {
   async function loadTrainers() {
     const data = await apiGet('/api/v1/trainers')
     trainers = (data.items || []).filter((t) => t.is_active)
-    root.querySelector('[data-trainers]').innerHTML = trainers
+    const sel = root.querySelector('[data-trainers]')
+    if (!sel) return
+    sel.innerHTML = trainers
       .map((t) => `<option value="${t.id}">${t.full_name} — ${t.mobile}</option>`)
       .join('')
+    globalThis.GymCustomSelect?.sync?.(sel)
   }
 
   async function loadAssignments() {

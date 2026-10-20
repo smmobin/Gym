@@ -83,6 +83,7 @@ export function mountBilling(root, user) {
       sel.innerHTML = plans
         .map((p) => `<option value="${p.id}">${p.name} (${formatToman(p.base_price_toman)})</option>`)
         .join('')
+      globalThis.GymCustomSelect?.sync?.(sel)
       const amount = root.querySelector('[data-renew] [name=amount]')
       if (amount && plans[0]) amount.value = String(plans[0].base_price_toman)
       sel.addEventListener('change', () => {
@@ -121,7 +122,8 @@ export function mountBilling(root, user) {
           .filter((m) => m.status === 'active' || m.status === 'frozen')
           .map((m) => `<option value="${m.id}">#${m.id} · ${m.plan_name || m.plan_id} · ${m.status}</option>`)
           .join('')
-      sel.value = cur
+      if ([...sel.options].some((o) => o.value === cur)) sel.value = cur
+      globalThis.GymCustomSelect?.sync?.(sel)
     }
     fill(root.querySelector('[data-freeze-m]'))
     fill(root.querySelector('[data-pay-m]'))

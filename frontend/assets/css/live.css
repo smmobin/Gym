@@ -149,8 +149,15 @@
   flex: 0 0 auto;
 }
 .panel:has(.member-search.is-open),
-.panel:has(.member-pick.is-open) {
+.panel:has(.member-pick.is-open),
+.panel:has(.custom-select.is-open),
+.panel:has(.time-picker.is-open) {
   overflow: visible;
+}
+.form-grid:has(.custom-select.is-open),
+label:has(.custom-select.is-open) {
+  position: relative;
+  z-index: 20;
 }
 .inline-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
 .panel-head {
