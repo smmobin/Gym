@@ -24,16 +24,19 @@
     <label for="nav-toggle" class="nav-burger" aria-label="باز کردن منو">
       <span></span><span></span><span></span>
     </label>
-    <nav class="site-links">
+    <nav class="site-links" aria-label="منوی اصلی">
       <a href="#programs">رشته‌ها</a>
       <a href="#plans">عضویت</a>
       <a href="#schedule">کلاس‌ها</a>
       <a href="#coaches">مربیان</a>
       <a href="#facility">فضا</a>
-      <a href="/login/">ورود به سامانه</a>
-      <a class="btn nav-cta-mobile" href="#trial">جلسه آزمایشی</a>
+      <a class="btn ghost nav-cta-mobile" href="/login/" aria-label="ورود به سامانه">ورود به سامانه</a>
+      <a class="btn nav-cta-mobile" href="#trial" aria-label="رزرو جلسه آزمایشی">جلسه آزمایشی</a>
     </nav>
-    <a class="btn nav-cta-desktop" href="#trial">جلسه آزمایشی</a>
+    <div class="nav-cta-desktop nav-cta-pair" role="group" aria-label="اقدامات سریع">
+      <a class="btn ghost" href="/login/" aria-label="ورود به سامانه">ورود به سامانه</a>
+      <a class="btn" href="#trial" aria-label="رزرو جلسه آزمایشی">جلسه آزمایشی</a>
+    </div>
   </header>
   <label for="nav-toggle" class="nav-backdrop" aria-hidden="true"></label>
 
@@ -310,32 +313,18 @@
         <div class="map-placeholder" aria-hidden="true">نقشه نمایشی · میدان ولیعصر</div>
       </div>
     </section>
-
-    <section class="section" id="roles">
-      <div class="section-intro reveal">
-        <p class="eyebrow">سامانه GYM CONTROL</p>
-        <h2>ورود به سامانه</h2>
-        <p>یک صفحهٔ ورود با موبایل و رمز — نقش را سرور تشخیص می‌دهد (مدیر، منشی، مربی یا ورزشکار).</p>
-      </div>
-      <div class="roles reveal" style="justify-content:center">
-        <a class="role-card" href="/login/">
-          <h2>ورود یکپارچه</h2>
-          <p>بدون انتخاب نقش روی صفحه. حساب‌های دمو روی صفحهٔ ورود نوشته شده‌اند.</p>
-          <span>ورود به سامانه ←</span>
-        </a>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
     <div>
       <strong class="en">GYM CONTROL</strong>
-      <p>لندینگ محصول · ورود یکپارچه از /login/</p>
+      <p>باشگاه آذر</p>
     </div>
     <div class="footer-links">
       <a href="#plans">عضویت</a>
       <a href="#schedule">کلاس‌ها</a>
       <a href="#coaches">مربیان</a>
+      <a href="#trial">جلسه آزمایشی</a>
       <a href="/login/">ورود</a>
     </div>
   </footer>

@@ -15,7 +15,8 @@
 | Cookie `Secure` | با `APP_ENV=production` خودکار روشن می‌شود — نیاز به **HTTPS** |
 | `CORS_ORIGINS` | دامنهٔ واقعی HTTPS فرانت (نه localhost) |
 | `DATABASE_URL` | Postgres هاست؛ رمز قوی؛ فقط در پنل هاست / `.env` سرور |
-| Seed | **اجرا نشود** روی DB واقعی؛ در prod اسکریپت seed مسدود است مگر `ALLOW_DESTRUCTIVE_SEED=true` |
+| Seed / wipe | **اجرا نشود** روی DB واقعی؛ `seed` و `wipe_dev_data` در prod مسدودند مگر `ALLOW_DESTRUCTIVE_SEED=true` |
+| UI | صفحهٔ لاگین/لندینگ نباید حساب دمو یا رمز نمونه نشان دهد؛ اولین مدیر با `bootstrap_manager` |
 | `/docs` | در production خاموش است |
 | بکاپ | حداقل یک dump موفق + یک‌بار تمرین restore — [backup.md](backup.md) |
 | Bind | پشت پروکسی: `uvicorn … --host 0.0.0.0`؛ مستقیم به اینترنت بدون TLS ممنوع |

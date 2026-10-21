@@ -61,8 +61,8 @@ DEV_STAFF_PASSWORD = "ChangeMe123"
 DEV_ATHLETE_PASSWORD = "ChangeMe123"
 
 
-def _clear_domain(session: Session) -> None:
-    """Wipe domain tables in FK-safe order (dev reset)."""
+def clear_domain_data(session: Session) -> None:
+    """Wipe domain tables in FK-safe order (dev reset / wipe). Does not drop schema."""
     for model in (
         ClassBooking,
         GroupClass,
@@ -89,6 +89,11 @@ def _clear_domain(session: Session) -> None:
     ):
         session.execute(delete(model))
     session.commit()
+
+
+def _clear_domain(session: Session) -> None:
+    """Alias kept for callers inside this module."""
+    clear_domain_data(session)
 
 
 def seed(session: Session | None = None) -> dict[str, int]:
