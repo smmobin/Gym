@@ -107,6 +107,134 @@ def list_active_plans(db: Session) -> list[MembershipPlan]:
     )
 
 
+def list_plans(db: Session, *, include_inactive: bool = False) -> list[MembershipPlan]:
+    """Active plans for renew select; with include_inactive=True for management UI."""
+    stmt = select(MembershipPlan).order_by(MembershipPlan.id.asc())
+    if not include_inactive:
+        stmt = stmt.where(MembershipPlan.is_active.is_(True))
+    return list(db.scalars(stmt).all())
+
+
+def create_plan(
+    db: Session,
+    *,
+    user: User,
+    name: str,
+    description: str | None,
+    duration_days: int | None,
+    session_count: int | None,
+    base_price_toman: int,
+    includes_locker: bool,
+    is_active: bool = True,
+) -> MembershipPlan:
+    ensure_desk_staff(user)
+    if base_price_toman < 0:
+        raise BillingError(422, "قیمت پایه نمی‌تواند منفی باشد.")
+    if duration_days is None and session_count is None:
+        raise BillingError(422, "حداقل یکی از مدت (روز) یا تعداد جلسه باید >۰ باشد.")
+    if duration_days is not None and duration_days <= 0:
+        raise BillingError(422, "مدت طرح باید بزرگ‌تر از صفر باشد.")
+    if session_count is not None and session_count <= 0:
+        raise BillingError(422, "تعداد جلسه باید بزرگ‌تر از صفر باشد.")
+
+    plan = MembershipPlan(
+        name=name,
+        description=description,
+        duration_days=duration_days,
+        session_count=session_count,
+        base_price_toman=base_price_toman,
+        includes_locker=includes_locker,
+        is_active=is_active,
+    )
+    db.add(plan)
+    db.flush()
+    write_audit(
+        db,
+        actor_user_id=user.id,
+        action="plan.create",
+        entity_type="membership_plan",
+        entity_id=plan.id,
+        summary=f"ساخت طرح {name}",
+        payload={
+            "name": name,
+            "duration_days": duration_days,
+            "session_count": session_count,
+            "base_price_toman": base_price_toman,
+            "includes_locker": includes_locker,
+            "is_active": is_active,
+        },
+    )
+    return plan
+
+
+def update_plan(
+    db: Session,
+    *,
+    user: User,
+    plan_id: int,
+    name: str | None = None,
+    description: str | None = None,
+    duration_days: int | None = None,
+    session_count: int | None = None,
+    base_price_toman: int | None = None,
+    includes_locker: bool | None = None,
+    is_active: bool | None = None,
+    clear_duration_days: bool = False,
+    clear_session_count: bool = False,
+) -> MembershipPlan:
+    """Update plan fields. Changing base_price does NOT rewrite past memberships/payments."""
+    ensure_desk_staff(user)
+    plan = db.get(MembershipPlan, plan_id)
+    if plan is None:
+        raise BillingError(404, "طرح یافت نشد.")
+
+    if name is not None:
+        plan.name = name
+    if description is not None:
+        plan.description = description
+    if clear_duration_days:
+        plan.duration_days = None
+    elif duration_days is not None:
+        if duration_days <= 0:
+            raise BillingError(422, "مدت طرح باید بزرگ‌تر از صفر باشد.")
+        plan.duration_days = duration_days
+    if clear_session_count:
+        plan.session_count = None
+    elif session_count is not None:
+        if session_count <= 0:
+            raise BillingError(422, "تعداد جلسه باید بزرگ‌تر از صفر باشد.")
+        plan.session_count = session_count
+    if plan.duration_days is None and plan.session_count is None:
+        raise BillingError(422, "حداقل یکی از مدت (روز) یا تعداد جلسه باید >۰ باشد.")
+    if base_price_toman is not None:
+        if base_price_toman < 0:
+            raise BillingError(422, "قیمت پایه نمی‌تواند منفی باشد.")
+        plan.base_price_toman = base_price_toman
+    if includes_locker is not None:
+        plan.includes_locker = includes_locker
+    if is_active is not None:
+        plan.is_active = is_active
+
+    db.flush()
+    write_audit(
+        db,
+        actor_user_id=user.id,
+        action="plan.deactivate" if is_active is False else "plan.update",
+        entity_type="membership_plan",
+        entity_id=plan.id,
+        summary=f"ویرایش طرح {plan.name}",
+        payload={
+            "name": plan.name,
+            "duration_days": plan.duration_days,
+            "session_count": plan.session_count,
+            "base_price_toman": plan.base_price_toman,
+            "includes_locker": plan.includes_locker,
+            "is_active": plan.is_active,
+        },
+    )
+    return plan
+
+
 def list_member_memberships(db: Session, member_id: int) -> list[Membership]:
     load_member(db, member_id)
     return list(

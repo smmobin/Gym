@@ -87,10 +87,32 @@ alembic upgrade head
 
 این دستور جدول‌های نسخهٔ اول را روی Postgres `gym_control` می‌سازد (یا به آخرین نسخه می‌رساند).
 
-## دادهٔ فیک (Seed)
+## شروع بدون seed (دادهٔ واقعی از صفر)
+
+اگر دیتابیس خالی است و نمی‌خواهی دادهٔ نمایشی بریزی:
+
+1. `alembic upgrade head`
+2. ساخت **اولین مدیر** فقط با CLI (UI ساخت مدیر نیست؛ فقط وقتی صفر مدیر وجود دارد):
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.db.bootstrap_manager --mobile 09xxxxxxxxx --password "YourStrongPass" --name "نام مدیر"
+```
+
+رمز را در گیت یا چت عمومی نگذار. اگر از قبل مدیری باشد، دستور خطا می‌دهد (exit code 2).
+
+3. لاگین در http://127.0.0.1:5173/login/ با همان موبایل/رمز
+4. از `/manager/#staff` منشی و مربی بساز؛ از `/manager/#plans` طرح بساز
+5. منشی بعد از لاگین می‌تواند از `/receptionist/#staff` فقط مربی و از `/receptionist/#plans` طرح بسازد
+
+**حذف در UI = غیرفعال** (`is_active=false`) — ردیف از دیتابیس پاک نمی‌شود.
+
+اگر موبایل کارمند با عضو یکی باشد، در ورود **اولویت کارکنان** است.
+
+## دادهٔ فیک (Seed) — اختیاری برای دمو
 
 اسکریپت seed داده‌های **ساختگی** می‌ریزد (حدود ۹ عضو، چند طرح، عضویت، پرداخت، حضور، کمد، کلاس، مربی، هزینه، صف آزمایشی).  
-هر بار اجرا، داده‌های دامنه را پاک و دوباره پر می‌کند — فقط برای محیط توسعه.
+هر بار اجرا، داده‌های دامنه را پاک و دوباره پر می‌کند — فقط برای محیط توسعه/دمو. برای باشگاه واقعی با دادهٔ زنده **اجرا نکن**.
 
 ```powershell
 cd backend
@@ -106,13 +128,13 @@ cd backend
 ```
 
 بعد از seed می‌توانی با `psql` یا هر کلاینت Postgres جدول‌هایی مثل `members` / `payments` را ببینی.  
-فرانت `frontend/` به همین seed وصل است؛ ماکت HTML ریشه به seed وصل نیست.
+فرانت `frontend/` به همین seed وصل است؛ ماکت HTML ریشه به seed وصل نیست. تست‌های خودکار هم از seed به‌عنوان fixture استفاده می‌کنند.
 
 جزئیات TODOهای باز مدل: [schema-todos.md](../product/schema-todos.md)
 
 ## ورود یکپارچه (توسعه)
 
-بعد از `alembic upgrade head` و `python -m app.db.seed` فقط **یک** صفحهٔ ورود دارید:
+بعد از `alembic upgrade head` — با bootstrap مدیر یا با seed — فقط **یک** صفحهٔ ورود دارید:
 
 **http://127.0.0.1:5173/login/** — فقط موبایل + رمز؛ بدون radio/dropdown نقش.
 
@@ -139,7 +161,11 @@ cd backend
 - خروج کارکنان: `POST /api/v1/auth/logout`؛ ورزشکار: `POST /api/v1/athlete/auth/logout`
 - «من کیستم» کارکنان: `GET /api/v1/auth/me`؛ ورزشکار: `GET /api/v1/athlete/auth/me`
 - نمونه نقش اداری: `GET /api/v1/auth/staff-ping` فقط مدیر و منشی (مربی → ۴۰۳)
-- مدیر می‌تواند رمز کارکنان را عوض کند: `POST /api/v1/auth/users/{id}/password`
+- مدیر می‌تواند رمز کارکنان را عوض کند: `POST /api/v1/auth/users/{id}/password` یا از `/manager/#staff` (رمز اختیاری هنگام ویرایش)
+- منشی فقط مربی‌هایی که می‌سازد/مدیریت می‌کند را از `/receptionist/#staff` ویرایش/رمز می‌کند
+- کارکنان: `GET/POST /api/v1/staff` ، `PATCH /api/v1/staff/{id}` ، `POST …/deactivate|activate` — مدیر: منشی+مربی؛ منشی: فقط مربی؛ مربی → ۴۰۳
+- طرح‌ها: `GET /api/v1/membership-plans` (فعال؛ `?include_inactive=1` برای مدیریت) ، `POST/PATCH /api/v1/membership-plans` — منشی و مدیر؛ مربی → ۴۰۳
+- UI: `/manager/#staff` ، `/manager/#plans` ، `/receptionist/#staff` ، `/receptionist/#plans`
 - ست رمز ورزشکار از منشی: `/receptionist/#members` (یا مدیر از `/manager/#members`) یا `POST /api/v1/members/{id}/athlete-password`
 
 نکته: برای cookie در مرورگر، فرانت و بک را با یک host یکسان باز کن (هر دو `127.0.0.1` یا هر دو `localhost`). پروکسی Vite روی `/api` این کار را ساده می‌کند.
@@ -201,7 +227,7 @@ API: `POST /api/v1/attendances/check-in` ، `POST /api/v1/attendances/{id}/check
 
 **سیاست تاریخ تمدید:** اگر اشتراک مرجع هنوز تمام نشده (`end_date >= امروز تهران`)، `start_date` عضویت جدید = همان `end_date` (روز باقی‌مانده نسوزد). اگر منقضی باشد، شروع از امروز. بدون مرجع: شروع از امروز. `end_date` = `start_date + duration_days` طرح.
 
-API: `GET /api/v1/membership-plans` ، `GET/POST …/members/{id}/memberships` (renew) ، `POST /api/v1/memberships/{id}/cancel` ، `POST …/freeze` ، `POST …/unfreeze` ، `GET …/members/{id}/payments` ، `POST /api/v1/payments` ، `POST /api/v1/payments/{id}/refund`
+API: `GET /api/v1/membership-plans` (فقط فعال برای select تمدید) ، مدیریت طرح‌ها از `#plans` با `include_inactive=1` ، `GET/POST …/members/{id}/memberships` (renew) ، `POST /api/v1/memberships/{id}/cancel` ، `POST …/freeze` ، `POST …/unfreeze` ، `GET …/members/{id}/payments` ، `POST /api/v1/payments` ، `POST /api/v1/payments/{id}/refund`
 
 مربی روی این مسیرها ۴۰۳ می‌گیرد.
 
@@ -473,7 +499,7 @@ cd backend
 
 ## مرحلهٔ بعدی
 
-1. **کدنویسی اجباری در صف نیست** — برش‌های A/B/C (ورود، درگاه، پیامک) انجام شده‌اند
+1. **برش D (کارکنان + طرح + bootstrap)** در کد انجام شده — از صفر: CLI مدیر → UI کارکنان/طرح
 2. **کار دستی:** استقرار طبق [deploy.md](deploy.md) + restore در [backup.md](backup.md) + env درگاه/پیامک روی HTTPS
 
 وضعیت زنده: `docs/product/roadmap-status.md`.

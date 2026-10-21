@@ -6,8 +6,10 @@ import { mountDeskDashboard } from '../desk-dashboard.js'
 import { mountGuests } from '../guests.js'
 import { mountLockers } from '../lockers.js'
 import { mountMembers } from '../members.js'
+import { mountPlans } from '../plans.js'
 import { mountSettings } from '../settings.js'
 import { mountSmsTemplates } from '../sms-templates.js'
+import { mountStaff } from '../staff.js'
 import { mountTrainers } from '../trainers.js'
 import { mountTrialLeads } from '../trial.js'
 import { mountWorkouts } from '../workouts.js'
@@ -25,6 +27,8 @@ async function main() {
     members: () => mountMembers(el('mount-members'), user),
     checkin: () => mountAttendance(el('mount-attendance'), user),
     billing: () => mountBilling(el('mount-billing'), user),
+    plans: () => mountPlans(el('mount-plans'), user),
+    staff: () => mountStaff(el('mount-staff'), user),
     classes: () => mountClasses(el('mount-classes'), user),
     lockers: () => mountLockers(el('mount-lockers'), user),
     trainers: () => mountTrainers(el('mount-trainers'), user),

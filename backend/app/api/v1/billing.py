@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_roles
@@ -18,8 +18,11 @@ from app.schemas.billing import (
     FreezeMembershipResponse,
     MembershipListResponse,
     MembershipOut,
+    MembershipPlanCreateRequest,
     MembershipPlanListResponse,
+    MembershipPlanMutationResponse,
     MembershipPlanOut,
+    MembershipPlanUpdateRequest,
     PaymentListResponse,
     PaymentMutationResponse,
     PaymentOut,
@@ -84,13 +87,76 @@ def _raise_freeze(err: freeze_svc.FreezeError) -> None:
 def list_plans(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_DESK)),
+    include_inactive: bool = Query(
+        False,
+        description="If true, include inactive plans (management UI). Default: active only.",
+    ),
 ) -> MembershipPlanListResponse:
     billing_svc.ensure_desk_staff(user)
-    items = billing_svc.list_active_plans(db)
+    items = billing_svc.list_plans(db, include_inactive=include_inactive)
     return MembershipPlanListResponse(
         items=[MembershipPlanOut.model_validate(p) for p in items],
         total=len(items),
     )
+
+
+@router.post(
+    "/membership-plans",
+    response_model=MembershipPlanMutationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_plan(
+    body: MembershipPlanCreateRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> MembershipPlanMutationResponse:
+    try:
+        plan = billing_svc.create_plan(
+            db,
+            user=user,
+            name=body.name,
+            description=body.description,
+            duration_days=body.duration_days,
+            session_count=body.session_count,
+            base_price_toman=body.base_price_toman,
+            includes_locker=body.includes_locker,
+            is_active=body.is_active,
+        )
+        db.commit()
+        db.refresh(plan)
+    except billing_svc.BillingError as err:
+        db.rollback()
+        _raise(err)
+        raise  # pragma: no cover
+    return MembershipPlanMutationResponse(plan=MembershipPlanOut.model_validate(plan))
+
+
+@router.patch("/membership-plans/{plan_id}", response_model=MembershipPlanMutationResponse)
+def update_plan(
+    plan_id: int,
+    body: MembershipPlanUpdateRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> MembershipPlanMutationResponse:
+    data = body.model_dump(exclude_unset=True)
+    clear_duration = bool(data.pop("clear_duration_days", False))
+    clear_sessions = bool(data.pop("clear_session_count", False))
+    try:
+        plan = billing_svc.update_plan(
+            db,
+            user=user,
+            plan_id=plan_id,
+            clear_duration_days=clear_duration,
+            clear_session_count=clear_sessions,
+            **data,
+        )
+        db.commit()
+        db.refresh(plan)
+    except billing_svc.BillingError as err:
+        db.rollback()
+        _raise(err)
+        raise  # pragma: no cover
+    return MembershipPlanMutationResponse(plan=MembershipPlanOut.model_validate(plan))
 
 
 @router.get("/members/{member_id}/memberships", response_model=MembershipListResponse)

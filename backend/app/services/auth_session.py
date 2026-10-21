@@ -46,3 +46,21 @@ def revoke_session_by_token(db: Session, *, token: str) -> bool:
     row.revoked_at = datetime.now(tz=timezone.utc)
     db.flush()
     return True
+
+
+def revoke_all_sessions_for_user(db: Session, *, user_id: int) -> int:
+    """Invalidate every active staff session for a user (e.g. after deactivate)."""
+    now = datetime.now(tz=timezone.utc)
+    rows = list(
+        db.scalars(
+            select(StaffSession).where(
+                StaffSession.user_id == user_id,
+                StaffSession.revoked_at.is_(None),
+            )
+        ).all()
+    )
+    for row in rows:
+        row.revoked_at = now
+    if rows:
+        db.flush()
+    return len(rows)

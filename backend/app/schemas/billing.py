@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class MembershipPlanOut(BaseModel):
@@ -24,6 +24,88 @@ class MembershipPlanOut(BaseModel):
 class MembershipPlanListResponse(BaseModel):
     items: list[MembershipPlanOut]
     total: int
+
+
+class MembershipPlanCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: Optional[str] = Field(default=None, max_length=5000)
+    duration_days: Optional[int] = Field(default=None, ge=1)
+    session_count: Optional[int] = Field(default=None, ge=1)
+    base_price_toman: int = Field(ge=0)
+    includes_locker: bool = False
+    is_active: bool = True
+
+    @field_validator("name")
+    @classmethod
+    def name_ok(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("نام طرح اجباری است.")
+        return cleaned
+
+    @field_validator("description")
+    @classmethod
+    def desc_ok(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+    @model_validator(mode="after")
+    def need_duration_or_sessions(self) -> MembershipPlanCreateRequest:
+        if self.duration_days is None and self.session_count is None:
+            raise ValueError("حداقل یکی از مدت (روز) یا تعداد جلسه باید >۰ باشد.")
+        return self
+
+
+class MembershipPlanUpdateRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    description: Optional[str] = Field(default=None, max_length=5000)
+    duration_days: Optional[int] = Field(default=None, ge=1)
+    session_count: Optional[int] = Field(default=None, ge=1)
+    base_price_toman: Optional[int] = Field(default=None, ge=0)
+    includes_locker: Optional[bool] = None
+    is_active: Optional[bool] = None
+    clear_duration_days: bool = False
+    clear_session_count: bool = False
+
+    @field_validator("name")
+    @classmethod
+    def name_ok(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("نام طرح اجباری است.")
+        return cleaned
+
+    @field_validator("description")
+    @classmethod
+    def desc_ok(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+    @model_validator(mode="after")
+    def at_least_one(self) -> MembershipPlanUpdateRequest:
+        if (
+            self.name is None
+            and self.description is None
+            and self.duration_days is None
+            and self.session_count is None
+            and self.base_price_toman is None
+            and self.includes_locker is None
+            and self.is_active is None
+            and not self.clear_duration_days
+            and not self.clear_session_count
+        ):
+            raise ValueError("حداقل یک فیلد برای ویرایش لازم است.")
+        return self
+
+
+class MembershipPlanMutationResponse(BaseModel):
+    plan: MembershipPlanOut
 
 
 class MembershipOut(BaseModel):
