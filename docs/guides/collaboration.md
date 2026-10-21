@@ -94,6 +94,7 @@
 - [project-rules.md](project-rules.md) — DoD، مرز پروتوتایپ/محصول، پول، برش عمودی، API، audit، بکاپ
 - [security.md](security.md) — اصول امنیت، OWASP، پلتفرم‌های تست امنیت
 - [product-manager.md](product-manager.md) — چت جدا برای مدیر محصول: مرحلهٔ بعد + پرامپت سازنده + به‌روز کردن docs
+- [qa.md](qa.md) — چت جدا برای کنترل کیفیت: شکار باگ + دفتر باگ + پرامپت رفع
 - [principled-project-playbook.md](principled-project-playbook.md) — الگوی ۱۰مرحله‌ای برای تکرار همین نظم در پروژه‌های بعدی
 
 قانون Cursor: `.cursor/rules/project-invariants.mdc`

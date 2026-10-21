@@ -12,6 +12,8 @@
 | [product/schema-todos.md](product/schema-todos.md) | TODOهای باز مدل داده (قفل پرونده، خروج خودکار، …) |
 | [prompts/next-coding-prompt.md](prompts/next-coding-prompt.md) | پرامپت سازنده؛ A/B/C انجام شده — صف خالی تا PM بعدی |
 | [guides/product-manager.md](guides/product-manager.md) | چطور چت مدیر محصول را راه بیندازی |
+| [guides/qa.md](guides/qa.md) | چطور چت کنترل کیفیت (QA) را راه بیندازی |
+| [qa/bug-log.md](qa/bug-log.md) | دفتر باگ زندهٔ QA |
 | [guides/principled-project-playbook.md](guides/principled-project-playbook.md) | الگوی کامل قابل‌تکرار: پروتوتایپ، docs، مشخصات، ساختار، تست، برش‌ها، دیپلوی |
 | [adr/README.md](adr/README.md) | ADR چیست + فهرست تصمیم‌های معماری |
 | [adr/0001-frontend-stack.md](adr/0001-frontend-stack.md) | فرانت React (Superseded) |
