@@ -168,6 +168,19 @@ def test_assign_without_includes_locker_rejected(client: TestClient) -> None:
     assert response.status_code == 400
     detail = response.json()["detail"]
     assert "شامل‌کمد" in detail or "اجاره" in detail
+    assert "مالی" in detail or "تمدید" in detail
+
+
+def test_eligible_members_includes_sara_not_ali(client: TestClient) -> None:
+    _login(client)
+    res = client.get("/api/v1/lockers/eligible-members")
+    assert res.status_code == 200
+    body = res.json()
+    ids = {row["display_id"] for row in body["items"]}
+    assert "M-1002" in ids  # سارا — طرح سه‌ماهه + کمد
+    assert "M-1001" not in ids  # علی — بدون includes_locker
+    _login(client, "09120000003")
+    assert client.get("/api/v1/lockers/eligible-members").status_code == 403
 
 
 def test_assign_occupied_locker_409(client: TestClient) -> None:

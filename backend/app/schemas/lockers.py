@@ -84,3 +84,17 @@ class MemberLockerResponse(BaseModel):
     member_id: int
     locker: Optional[LockerOut] = None
     assignment: Optional[AssignmentOut] = None
+
+
+class EligibleLockerMemberOut(BaseModel):
+    id: int
+    display_id: str
+    first_name: str
+    last_name: str
+    mobile: str
+    plan_name: Optional[str] = None
+
+
+class EligibleLockerMemberListResponse(BaseModel):
+    items: list[EligibleLockerMemberOut]
+    total: int

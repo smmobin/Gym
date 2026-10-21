@@ -14,6 +14,8 @@ from app.schemas.lockers import (
     AssignRequest,
     AssignResponse,
     AssignmentOut,
+    EligibleLockerMemberListResponse,
+    EligibleLockerMemberOut,
     LockerCreate,
     LockerListResponse,
     LockerOut,
@@ -61,6 +63,23 @@ def list_lockers(
         _raise(err)
         raise  # pragma: no cover
     return LockerListResponse(items=[_locker_out(p) for p in items], total=len(items))
+
+
+@router.get("/lockers/eligible-members", response_model=EligibleLockerMemberListResponse)
+def list_eligible_locker_members(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> EligibleLockerMemberListResponse:
+    """Desk UX: who can receive a locker now (active + includes_locker plan)."""
+    try:
+        items = locker_svc.list_eligible_members(db, user=user)
+    except locker_svc.LockerError as err:
+        _raise(err)
+        raise  # pragma: no cover
+    return EligibleLockerMemberListResponse(
+        items=[EligibleLockerMemberOut(**row) for row in items],
+        total=len(items),
+    )
 
 
 @router.post(

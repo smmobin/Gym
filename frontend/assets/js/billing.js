@@ -98,7 +98,10 @@ export function mountBilling(root, user) {
     const sel = root.querySelector('[data-plans]')
     if (sel) {
       sel.innerHTML = plans
-        .map((p) => `<option value="${p.id}">${p.name} (${formatToman(p.base_price_toman)})</option>`)
+        .map((p) => {
+          const lockerTag = p.includes_locker ? ' · شامل کمد' : ''
+          return `<option value="${p.id}">${p.name}${lockerTag} (${formatToman(p.base_price_toman)})</option>`
+        })
         .join('')
       globalThis.GymCustomSelect?.sync?.(sel)
       const amount = root.querySelector('[data-renew] [name=amount]')
@@ -121,13 +124,17 @@ export function mountBilling(root, user) {
       `سقف توقف سالانه: ${(mem.remaining_freeze_days_this_year ?? 0).toLocaleString('fa-IR')} از ${(mem.freeze_annual_cap_days ?? 0).toLocaleString('fa-IR')} روز باقی‌مانده`
     root.querySelector('[data-memberships]').innerHTML = memberships.length
       ? memberships
-          .map(
-            (m) => `<div class="row-item"><div>
+          .map((m) => {
+            const plan = plans.find((p) => p.id === m.plan_id)
+            const lockerBadge = plan?.includes_locker
+              ? '<span class="badge ok">شامل کمد</span>'
+              : ''
+            return `<div class="row-item"><div>
           <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
           <p>${m.start_date} تا ${m.end_date} · ${formatToman(m.agreed_amount_toman)} · ${m.status}
           ${m.freeze_ends_at ? ` · توقف تا ${m.freeze_ends_at}` : ''}</p></div>
-          <span class="badge">${m.status}</span></div>`,
-          )
+          <span class="badge">${m.status}</span>${lockerBadge}</div>`
+          })
           .join('')
       : '<p class="hint">عضویت ندارد.</p>'
     const fill = (sel) => {

@@ -2,6 +2,95 @@ import { ApiError, apiGet, apiPost } from './api.js'
 import { bindMemberSearch } from './members.js'
 import { setStatus } from './ui.js'
 
+/**
+ * Plan names that include a locker (for hints / errors).
+ * @param {Array<{ name?: string, includes_locker?: boolean }>} plans
+ */
+export function lockerPlanNames(plans) {
+  return (plans || [])
+    .filter((p) => p.includes_locker)
+    .map((p) => p.name || 'طرح')
+}
+
+/**
+ * Clear Persian message when member lacks an active locker-including membership.
+ * @param {{ memberLabel?: string, planNames?: string[] }} [opts]
+ */
+export function ineligibleLockerAssignMessage(opts = {}) {
+  const who = (opts.memberLabel || 'این عضو').trim() || 'این عضو'
+  const names = opts.planNames || []
+  const plansPart = names.length
+    ? `طرح‌های شامل‌کمد الان: ${names.join('، ')}.`
+    : 'هیچ طرح فعال شامل‌کمدی در فهرست نیست — اول در مالی طرح مناسب بسازید/فعال کنید.'
+  return (
+    `${who} عضویت فعال با طرح شامل‌کمد ندارد. اجارهٔ جدا برای کمد در نسخهٔ اول نیست. ` +
+    `${plansPart} قدم بعد: بخش مالی (#billing) → تمدید با طرح دارای برچسب «شامل کمد».`
+  )
+}
+
+/**
+ * HTML for membership eligibility under the assign panel.
+ * @param {Array<{ id: number, plan_id: number, plan_name?: string, status: string, start_date?: string, end_date?: string }>} memberships
+ * @param {Set<number>} lockerPlanIds
+ */
+export function membershipEligibilityHtml(memberships, lockerPlanIds) {
+  const rows = memberships || []
+  if (!rows.length) {
+    return '<p class="hint">این عضو هیچ عضویت فعالی ندارد. اول در مالی تمدید کنید.</p>'
+  }
+  return rows
+    .map((m) => {
+      const ok = m.status === 'active' && lockerPlanIds.has(m.plan_id)
+      const badge = ok
+        ? '<span class="badge ok">واجد کمد</span>'
+        : '<span class="badge warn">بدون کمد</span>'
+      return `<div class="row-item"><div>
+        <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
+        <p>${m.status} · ${m.start_date || '—'} تا ${m.end_date || '—'}</p>
+      </div>${badge}</div>`
+    })
+    .join('')
+}
+
+/**
+ * @param {Array<{ id: number, code: string, is_free: boolean, is_active: boolean, current_assignment?: any }>} lockers
+ */
+export function lockersTableRowsHtml(lockers) {
+  return (lockers || [])
+    .map((l) => {
+      const a = l.current_assignment
+      return `<tr>
+            <td data-label="کد">${l.code}</td>
+            <td data-label="وضعیت"><span class="badge ${l.is_free ? 'ok' : 'warn'}">${l.is_free ? 'آزاد' : 'اشغال'}${!l.is_active ? ' · غیرفعال' : ''}</span></td>
+            <td data-label="عضو">${a ? `${a.member_name || a.member_display_id}` : '—'}</td>
+            <td>
+              <button type="button" class="btn small ghost" data-sel="${l.id}">انتخاب</button>
+              ${!l.is_free ? `<button type="button" class="btn small" data-rel="${l.id}">آزادسازی</button>` : ''}
+            </td>
+          </tr>`
+    })
+    .join('')
+}
+
+/**
+ * @param {Array<{ id: number, display_id?: string, first_name?: string, last_name?: string, plan_name?: string }>} items
+ */
+export function eligibleMembersHintHtml(items) {
+  const list = items || []
+  if (!list.length) {
+    return '<p class="hint" data-eligible-list>الان هیچ عضوی با عضویت فعال شامل‌کمد نیست.</p>'
+  }
+  const lines = list
+    .slice(0, 12)
+    .map((m) => {
+      const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.display_id
+      const plan = m.plan_name ? ` · ${m.plan_name}` : ''
+      return `<li><strong>${name}</strong> (${m.display_id || m.id})${plan}</li>`
+    })
+    .join('')
+  return `<div data-eligible-list><p class="hint">اعضای واجد شرایط الان (عضویت فعال + شامل کمد):</p><ul>${lines}</ul></div>`
+}
+
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountLockers(root, user) {
   if (user.role !== 'manager' && user.role !== 'receptionist') {
@@ -26,71 +115,148 @@ export function mountLockers(root, user) {
     <article class="panel" style="margin-top:1rem">
       <header class="panel-head"><h2>واگذاری</h2></header>
       <p class="hint" data-sel-label>کمدی انتخاب نشده</p>
+      <p class="hint" data-plans-hint></p>
+      <div data-eligible-wrap></div>
       <label>جستجوی عضو<input type="search" data-q /></label>
       <div class="member-pick" data-pick></div>
+      <p class="hint" data-member-label>عضوی انتخاب نشده</p>
+      <div class="list" data-eligibility></div>
       <button type="button" class="btn" data-assign>واگذاری</button>
-      <p class="hint">فقط با عضویت فعال طرح شامل‌کمد. اجارهٔ جدا در v1 نیست.</p>
+      <p class="hint">فقط عضویت فعال با طرح شامل‌کمد. اجارهٔ جدا در v1 نیست.
+        اگر عضو واجد نیست، از <a href="#billing">مالی / تمدید</a> طرح «شامل کمد» بدهید.</p>
     </article>
   `
   const status = root.querySelector('[data-status]')
+  const tbody = root.querySelector('[data-tbody]')
+  const plansHint = root.querySelector('[data-plans-hint]')
+  const eligibleWrap = root.querySelector('[data-eligible-wrap]')
+  const eligibilityEl = root.querySelector('[data-eligibility]')
+  const memberLabel = root.querySelector('[data-member-label]')
   /** @type {any[]} */ let lockers = []
   /** @type {any | null} */ let selected = null
   /** @type {any | null} */ let member = null
   /** @type {any[]} */ let plans = []
+  /** @type {any[]} */ let memberMemberships = []
+
+  function lockerPlanIdSet() {
+    return new Set(plans.filter((p) => p.includes_locker).map((p) => p.id))
+  }
+
+  function refreshPlansHint() {
+    if (!plansHint) return
+    const names = lockerPlanNames(plans)
+    plansHint.textContent = names.length
+      ? `طرح‌های شامل‌کمد: ${names.join('، ')}`
+      : 'هیچ طرح شامل‌کمدی در فهرست فعال نیست.'
+  }
+
+  function bindTableActions() {
+    if (!tbody) return
+    tbody.querySelectorAll('[data-sel]').forEach((b) =>
+      b.addEventListener('click', () => {
+        selected = lockers.find((x) => x.id === Number(b.getAttribute('data-sel')))
+        root.querySelector('[data-sel-label]').textContent = selected
+          ? `کمد ${selected.code}`
+          : 'کمدی انتخاب نشده'
+      }),
+    )
+    tbody.querySelectorAll('[data-rel]').forEach((b) =>
+      b.addEventListener('click', async () => {
+        try {
+          await apiPost(`/api/v1/lockers/${b.getAttribute('data-rel')}/release`)
+          setStatus(status, 'آزاد شد.', 'ok')
+          await load()
+        } catch (err) {
+          setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
+        }
+      }),
+    )
+  }
+
+  function renderTable() {
+    if (!tbody) return
+    tbody.innerHTML = lockersTableRowsHtml(lockers)
+    bindTableActions()
+  }
+
+  function renderEligibility() {
+    if (!eligibilityEl) return
+    if (!member) {
+      eligibilityEl.innerHTML = ''
+      return
+    }
+    eligibilityEl.innerHTML = membershipEligibilityHtml(memberMemberships, lockerPlanIdSet())
+  }
+
+  async function loadLockersOnly() {
+    const lData = await apiGet('/api/v1/lockers')
+    lockers = lData.items || []
+    renderTable()
+    return lockers
+  }
+
+  async function loadPlansAndEligible() {
+    try {
+      const pData = await apiGet('/api/v1/membership-plans')
+      plans = pData.items || []
+      refreshPlansHint()
+    } catch {
+      refreshPlansHint()
+    }
+    if (eligibleWrap) {
+      try {
+        const elig = await apiGet('/api/v1/lockers/eligible-members')
+        eligibleWrap.innerHTML = eligibleMembersHintHtml(elig.items || [])
+      } catch {
+        eligibleWrap.innerHTML =
+          '<p class="hint">لیست واجدین بارگذاری نشد؛ با جستجو و برچسب عضویت‌ها هم می‌توانید ببینید.</p>'
+      }
+    }
+  }
 
   async function load() {
     try {
-      const [lData, pData] = await Promise.all([
-        apiGet('/api/v1/lockers'),
-        apiGet('/api/v1/membership-plans'),
-      ])
-      lockers = lData.items || []
-      plans = pData.items || []
-      const tbody = root.querySelector('[data-tbody]')
-      tbody.innerHTML = lockers
-        .map((l) => {
-          const a = l.current_assignment
-          return `<tr>
-            <td data-label="کد">${l.code}</td>
-            <td data-label="وضعیت"><span class="badge ${l.is_free ? 'ok' : 'warn'}">${l.is_free ? 'آزاد' : 'اشغال'}${!l.is_active ? ' · غیرفعال' : ''}</span></td>
-            <td data-label="عضو">${a ? `${a.member_name || a.member_display_id}` : '—'}</td>
-            <td>
-              <button type="button" class="btn small ghost" data-sel="${l.id}">انتخاب</button>
-              ${!l.is_free ? `<button type="button" class="btn small" data-rel="${l.id}">آزادسازی</button>` : ''}
-            </td>
-          </tr>`
-        })
-        .join('')
-      tbody.querySelectorAll('[data-sel]').forEach((b) =>
-        b.addEventListener('click', () => {
-          selected = lockers.find((x) => x.id === Number(b.getAttribute('data-sel')))
-          root.querySelector('[data-sel-label]').textContent = selected
-            ? `کمد ${selected.code}`
-            : 'کمدی انتخاب نشده'
-        }),
-      )
-      tbody.querySelectorAll('[data-rel]').forEach((b) =>
-        b.addEventListener('click', async () => {
-          try {
-            await apiPost(`/api/v1/lockers/${b.getAttribute('data-rel')}/release`)
-            setStatus(status, 'آزاد شد.', 'ok')
-            await load()
-          } catch (err) {
-            setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
-          }
-        }),
-      )
+      await loadLockersOnly()
       setStatus(status, `${lockers.length.toLocaleString('fa-IR')} کمد`, 'ok')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
     }
+    await loadPlansAndEligible()
+    if (member) renderEligibility()
   }
 
   bindMemberSearch(
     /** @type {HTMLElement} */ (root.querySelector('[data-pick]')),
     /** @type {HTMLInputElement} */ (root.querySelector('[data-q]')),
-    (m) => {
+    async (m) => {
       member = m
+      const name = `${m.first_name || ''} ${m.last_name || ''}`.trim()
+      if (memberLabel) {
+        memberLabel.textContent = `${name} — ${m.display_id || ''} — ${m.mobile || ''}`
+      }
+      memberMemberships = []
+      renderEligibility()
+      try {
+        const mem = await apiGet(`/api/v1/members/${m.id}/memberships`)
+        memberMemberships = mem.items || []
+        renderEligibility()
+        const ids = lockerPlanIdSet()
+        const ok = memberMemberships.some((row) => row.status === 'active' && ids.has(row.plan_id))
+        if (!ok) {
+          setStatus(
+            status,
+            ineligibleLockerAssignMessage({
+              memberLabel: name || m.display_id,
+              planNames: lockerPlanNames(plans),
+            }),
+            'error',
+          )
+        } else {
+          setStatus(status, 'این عضو برای واگذاری کمد واجد شرایط است.', 'ok')
+        }
+      } catch (err) {
+        setStatus(status, err instanceof ApiError ? err.message : 'بارگذاری عضویت ناموفق', 'error')
+      }
     },
   )
 
@@ -101,17 +267,25 @@ export function mountLockers(root, user) {
     }
     try {
       const mem = await apiGet(`/api/v1/members/${member.id}/memberships`)
-      const lockerPlanIds = new Set(plans.filter((p) => p.includes_locker).map((p) => p.id))
+      memberMemberships = mem.items || []
+      renderEligibility()
+      const ids = lockerPlanIdSet()
       const eligible = (mem.items || []).filter(
-        (m) => m.status === 'active' && lockerPlanIds.has(m.plan_id),
+        (m) => m.status === 'active' && ids.has(m.plan_id),
       )
       if (!eligible.length) {
-        setStatus(status, 'این عضو عضویت فعال با طرح شامل‌کمد ندارد.', 'error')
+        const name = `${member.first_name || ''} ${member.last_name || ''}`.trim()
+        setStatus(
+          status,
+          ineligibleLockerAssignMessage({
+            memberLabel: name || member.display_id,
+            planNames: lockerPlanNames(plans),
+          }),
+          'error',
+        )
         return
       }
-      const body = { member_id: member.id }
-      if (eligible.length > 1) body.membership_id = eligible[0].id
-      else body.membership_id = eligible[0].id
+      const body = { member_id: member.id, membership_id: eligible[0].id }
       await apiPost(`/api/v1/lockers/${selected.id}/assign`, body)
       setStatus(status, 'واگذاری انجام شد.', 'ok')
       await load()
@@ -124,10 +298,44 @@ export function mountLockers(root, user) {
     e.preventDefault()
     const code = String(new FormData(/** @type {HTMLFormElement} */ (e.target)).get('code') || '').trim()
     try {
-      await apiPost('/api/v1/lockers', { code })
-      setStatus(status, 'کمد ساخته شد.', 'ok')
-      /** @type {HTMLFormElement} */ (e.target).reset()
-      await load()
+      const created = await apiPost('/api/v1/lockers', { code })
+      // Optimistic row first so the table never depends on a second fetch (BUG-003)
+      if (created?.id) {
+        lockers = [...lockers.filter((x) => x.id !== created.id), created]
+        renderTable()
+      }
+      try {
+        /** @type {HTMLFormElement} */ (e.target).reset()
+      } catch {
+        /* ignore reset issues in odd DOM environments */
+      }
+      setStatus(
+        status,
+        `کمد ${created?.code || code} ساخته شد · ${lockers.length.toLocaleString('fa-IR')} کمد`,
+        'ok',
+      )
+      try {
+        await loadLockersOnly()
+        // If reload raced/stale and dropped the new row, keep it visible
+        if (created?.id && !lockers.some((x) => x.id === created.id)) {
+          lockers = [...lockers, created]
+          renderTable()
+        }
+        setStatus(
+          status,
+          `کمد ${created.code || code} ساخته شد · ${lockers.length.toLocaleString('fa-IR')} کمد`,
+          'ok',
+        )
+      } catch (reloadErr) {
+        setStatus(
+          status,
+          reloadErr instanceof ApiError
+            ? `کمد ساخته شد (جدول به‌روز شد) ولی همگام‌سازی کامل ناموفق: ${reloadErr.message}`
+            : 'کمد ساخته شد؛ اگر ردیف را نمی‌بینید بازخوانی را بزنید.',
+          'error',
+        )
+      }
+      void loadPlansAndEligible()
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'ساخت ناموفق', 'error')
     }

@@ -174,6 +174,39 @@ def _locker_eligible_memberships(db: Session, member_id: int) -> list[Membership
     return list(db.scalars(stmt).all())
 
 
+def list_eligible_members(db: Session, *, user: User) -> list[dict]:
+    """Members who currently have an active membership on a locker-including plan."""
+    ensure_desk_staff(user)
+    stmt = (
+        select(Member, MembershipPlan.name)
+        .join(Membership, Membership.member_id == Member.id)
+        .join(MembershipPlan, Membership.plan_id == MembershipPlan.id)
+        .where(
+            Membership.status == MembershipStatus.ACTIVE.value,
+            MembershipPlan.includes_locker.is_(True),
+            Member.status != MemberStatus.ARCHIVED.value,
+        )
+        .order_by(Member.display_id.asc(), Membership.id.asc())
+    )
+    seen: set[int] = set()
+    out: list[dict] = []
+    for member, plan_name in db.execute(stmt).all():
+        if member.id in seen:
+            continue
+        seen.add(member.id)
+        out.append(
+            {
+                "id": member.id,
+                "display_id": member.display_id,
+                "first_name": member.first_name,
+                "last_name": member.last_name,
+                "mobile": member.mobile,
+                "plan_name": plan_name,
+            }
+        )
+    return out
+
+
 def _resolve_membership(
     db: Session,
     *,
@@ -185,7 +218,8 @@ def _resolve_membership(
         raise LockerError(
             400,
             "این عضو عضویت فعال با طرح شامل‌کمد ندارد. "
-            "در نسخهٔ اول اجارهٔ جدا برای کمد وجود ندارد.",
+            "اجارهٔ جدا برای کمد در نسخهٔ اول نیست. "
+            "قدم بعد: در بخش مالی، عضویت را با طرح دارای «شامل کمد» تمدید کنید.",
         )
 
     if membership_id is not None:

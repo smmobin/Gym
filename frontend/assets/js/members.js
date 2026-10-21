@@ -38,6 +38,7 @@ export function mountMembers(root, user) {
           <label>موبایل *<input name="mobile" required /></label>
           <label class="full">یادداشت<textarea name="notes"></textarea></label>
           <button class="btn" type="submit">ثبت</button>
+          <p class="hint full">برای کمد: بعد از ثبت، در <a href="#billing">مالی</a> طرح با برچسب «شامل کمد» تمدید کنید؛ واگذاری از <a href="#lockers">کمدها</a> است (اجارهٔ جدا در v1 نیست).</p>
         </form>
       </article>
       <article class="panel">
