@@ -7,6 +7,9 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   { value: 'other', label: 'سایر' },
 ]
 
+/** Sentinel in <select> for typing a brand-new category. */
+export const EXPENSE_CATEGORY_CUSTOM = '__custom__'
+
 const LABEL_TO_VALUE = Object.fromEntries(
   DEFAULT_EXPENSE_CATEGORIES.map((c) => [c.label, c.value]),
 )
@@ -30,6 +33,7 @@ export function expenseCategoryLabel(value) {
 export function normalizeExpenseCategoryInput(raw) {
   const value = String(raw || '').trim()
   if (!value) return ''
+  if (value === EXPENSE_CATEGORY_CUSTOM) return ''
   if (VALUE_TO_LABEL[value]) return value
   if (LABEL_TO_VALUE[value]) return LABEL_TO_VALUE[value]
   return value
@@ -61,16 +65,50 @@ export function mergeExpenseCategories(extra = []) {
 }
 
 /**
- * Fill a <datalist> with category options (labels shown to the user).
- * @param {HTMLDataListElement | null} listEl
+ * Fill a <select> for GymCustomSelect (labels shown; values stored).
+ * @param {HTMLSelectElement | null} selectEl
  * @param {Array<{ value: string, label: string }>} categories
+ * @param {{ includeCustom?: boolean, placeholder?: string }} [opts]
  */
-export function fillExpenseCategoryDatalist(listEl, categories) {
-  if (!listEl) return
-  listEl.innerHTML = ''
+export function fillExpenseCategorySelect(selectEl, categories, opts = {}) {
+  if (!selectEl) return
+  const includeCustom = opts.includeCustom !== false
+  const placeholder = opts.placeholder || 'انتخاب دسته…'
+  const previous = selectEl.value
+  selectEl.innerHTML = ''
+
+  const empty = document.createElement('option')
+  empty.value = ''
+  empty.textContent = placeholder
+  empty.disabled = true
+  empty.selected = true
+  selectEl.appendChild(empty)
+
   for (const c of categories) {
     const opt = document.createElement('option')
-    opt.value = c.label
-    listEl.appendChild(opt)
+    opt.value = c.value
+    opt.textContent = c.label
+    selectEl.appendChild(opt)
+  }
+
+  if (includeCustom) {
+    const custom = document.createElement('option')
+    custom.value = EXPENSE_CATEGORY_CUSTOM
+    custom.textContent = 'دستهٔ جدید…'
+    selectEl.appendChild(custom)
+  }
+
+  const canRestore =
+    previous &&
+    previous !== EXPENSE_CATEGORY_CUSTOM &&
+    [...selectEl.options].some((o) => o.value === previous)
+  if (canRestore) {
+    selectEl.value = previous
+  }
+
+  if (typeof window !== 'undefined' && window.GymCustomSelect?.sync) {
+    window.GymCustomSelect.sync(selectEl)
+  } else if (typeof window !== 'undefined' && window.GymCustomSelect?.refresh) {
+    window.GymCustomSelect.refresh(selectEl.parentElement || document)
   }
 }

@@ -1,14 +1,21 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   DEFAULT_EXPENSE_CATEGORIES,
+  EXPENSE_CATEGORY_CUSTOM,
   expenseCategoryLabel,
-  fillExpenseCategoryDatalist,
+  fillExpenseCategorySelect,
   mergeExpenseCategories,
   normalizeExpenseCategoryInput,
 } from '../assets/js/expense-categories.js'
 
 describe('expense categories', () => {
+  afterEach(() => {
+    document.body.innerHTML = ''
+    // @ts-expect-error test cleanup
+    delete globalThis.GymCustomSelect
+  })
+
   it('has built-in Persian defaults', () => {
     expect(DEFAULT_EXPENSE_CATEGORIES.map((c) => c.value)).toEqual([
       'rent',
@@ -26,6 +33,7 @@ describe('expense categories', () => {
     expect(normalizeExpenseCategoryInput('purchase')).toBe('purchase')
     expect(normalizeExpenseCategoryInput('  تعمیرات  ')).toBe('تعمیرات')
     expect(normalizeExpenseCategoryInput('')).toBe('')
+    expect(normalizeExpenseCategoryInput(EXPENSE_CATEGORY_CUSTOM)).toBe('')
   })
 
   it('merges customs into the list without duplicating defaults', () => {
@@ -40,13 +48,27 @@ describe('expense categories', () => {
     expect(merged.some((c) => c.value === 'قبوض')).toBe(false)
   })
 
-  it('fills datalist with labels', () => {
-    const list = document.createElement('datalist')
-    fillExpenseCategoryDatalist(list, [
+  it('fills a select with labels, stored values, and custom sentinel', () => {
+    const sync = vi.fn()
+    globalThis.GymCustomSelect = { sync, refresh: vi.fn() }
+
+    const select = document.createElement('select')
+    document.body.appendChild(select)
+    fillExpenseCategorySelect(select, [
       { value: 'rent', label: 'اجاره' },
       { value: 'تعمیرات', label: 'تعمیرات' },
     ])
-    const values = [...list.querySelectorAll('option')].map((o) => o.value)
-    expect(values).toEqual(['اجاره', 'تعمیرات'])
+
+    const opts = [...select.options]
+    expect(opts[0].value).toBe('')
+    expect(opts[0].disabled).toBe(true)
+    expect(opts.map((o) => o.value)).toEqual(['', 'rent', 'تعمیرات', EXPENSE_CATEGORY_CUSTOM])
+    expect(opts.map((o) => o.textContent)).toEqual([
+      'انتخاب دسته…',
+      'اجاره',
+      'تعمیرات',
+      'دستهٔ جدید…',
+    ])
+    expect(sync).toHaveBeenCalledWith(select)
   })
 })
