@@ -1,4 +1,5 @@
-import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
+import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { formatToman } from './format.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -6,6 +7,7 @@ import { setStatus } from './ui.js'
 /**
  * Membership plan management (create / edit / soft-deactivate).
  * Soft-delete only: is_active=false. Billing renew select still uses active-only GET.
+ * List auto-refreshes; retries with backoff on network/API errors (no manual reload).
  *
  * @param {HTMLElement} root
  * @param {{ role: string }} user
@@ -16,9 +18,6 @@ export function mountPlans(root, user) {
   root.innerHTML = `
     <article class="panel">
       <header class="panel-head"><h2>طرح‌های عضویت</h2></header>
-      <div class="inline-actions">
-        <button type="button" class="btn ghost" data-reload>بازخوانی</button>
-      </div>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap" style="margin-top:1rem">
         <table class="responsive-table"><thead>
@@ -149,20 +148,36 @@ export function mountPlans(root, user) {
     }
   }
 
-  async function load() {
-    setStatus(status, 'بارگذاری…', 'loading')
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'بارگذاری…', 'loading')
     try {
       const data = await apiGet('/api/v1/membership-plans?include_inactive=1')
       items = data.items || []
-      pager.reset()
+      if (!silent) pager.reset()
       renderTable()
+      if (selectedId != null && items.some((p) => p.id === selectedId)) {
+        select(selectedId)
+      }
       setStatus(status, `${items.length.toLocaleString('fa-IR')} طرح`, 'ok')
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'بارگذاری ناموفق', 'error')
+      setStatus(
+        status,
+        apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'),
+        'error',
+      )
+      throw err
     }
   }
 
-  root.querySelector('[data-reload]')?.addEventListener('click', () => void load())
+  const autoRefresh = createAutoRefresh(root, load, {
+    intervalMs: 30_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
+  })
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -177,9 +192,9 @@ export function mountPlans(root, user) {
       await apiPost('/api/v1/membership-plans', body)
       /** @type {HTMLFormElement} */ (e.target).reset()
       setStatus(status, 'طرح ثبت شد.', 'ok')
-      await load()
+      await autoRefresh.refresh()
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ثبت ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
     }
   })
 
@@ -202,10 +217,9 @@ export function mountPlans(root, user) {
     try {
       await apiPatch(`/api/v1/membership-plans/${selectedId}`, patch)
       setStatus(status, 'ذخیره شد.', 'ok')
-      await load()
-      select(selectedId)
+      await autoRefresh.refresh()
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ذخیره ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
     }
   })
 
@@ -216,10 +230,9 @@ export function mountPlans(root, user) {
     try {
       await apiPatch(`/api/v1/membership-plans/${selectedId}`, { is_active: false })
       setStatus(status, 'غیرفعال شد.', 'ok')
-      await load()
-      select(selectedId)
+      await autoRefresh.refresh()
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'عملیات ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
     }
   })
 
@@ -228,14 +241,11 @@ export function mountPlans(root, user) {
     try {
       await apiPatch(`/api/v1/membership-plans/${selectedId}`, { is_active: true })
       setStatus(status, 'فعال شد.', 'ok')
-      await load()
-      select(selectedId)
+      await autoRefresh.refresh()
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'عملیات ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
     }
   })
-
-  void load()
 }
 
 /** @param {string} s */

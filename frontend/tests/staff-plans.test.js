@@ -5,6 +5,7 @@ import { mountStaff } from '../assets/js/staff.js'
 
 describe('mountStaff / mountPlans', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     document.body.innerHTML = ''
   })
@@ -140,7 +141,7 @@ describe('mountStaff / mountPlans', () => {
     expect(roleSelect.innerHTML).not.toContain('receptionist')
   })
 
-  it('mountPlans loads include_inactive and soft-delete hint', async () => {
+  it('mountPlans loads include_inactive without manual reload button', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -177,7 +178,8 @@ describe('mountStaff / mountPlans', () => {
     })
     expect(fetchMock.mock.calls[0][0]).toContain('include_inactive=1')
     expect(root.textContent).not.toContain('حذف = غیرفعال')
-    expect(root.textContent).toContain('بازخوانی')
+    expect(root.textContent).not.toContain('بازخوانی')
+    expect(root.querySelector('[data-reload]')).toBeNull()
     expect(root.textContent).toContain('شامل کمد')
     expect(root.textContent).toContain('غیرفعال')
     const lockerLabels = root.querySelectorAll('label.check input[name="includes_locker"]')
@@ -185,5 +187,49 @@ describe('mountStaff / mountPlans', () => {
     lockerLabels.forEach((input) => {
       expect(input.closest('label')?.classList.contains('full')).toBe(false)
     })
+  })
+
+  it('mountPlans auto-retries after network error', async () => {
+    vi.useFakeTimers()
+    let calls = 0
+    const fetchMock = vi.fn(async () => {
+      calls += 1
+      if (calls === 1) {
+        return { ok: false, status: 503, json: async () => ({ detail: 'unavailable' }) }
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [
+            {
+              id: 1,
+              name: 'ماهانه',
+              duration_days: 30,
+              session_count: null,
+              base_price_toman: 1000000,
+              includes_locker: false,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        }),
+      }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountPlans(root, { role: 'manager' })
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-status]')?.className).toMatch(/error/)
+    })
+    expect(root.querySelector('[data-status]')?.textContent).toMatch(/تلاش مجدد|ناموفق|unavailable/i)
+
+    await vi.advanceTimersByTimeAsync(2_500)
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-tbody]')?.textContent).toContain('ماهانه')
+    })
+    expect(root.querySelector('[data-status]')?.className).toMatch(/ok/)
   })
 })

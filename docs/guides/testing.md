@@ -60,6 +60,8 @@ npm run build
 - `athlete-book.test.js` — رزرو کلاس ورزشکار
 - `dashboard.test.js` — خلاصه داشبورد مدیر (بازه ماه، آمار مالی، برچسب هزینه)
 - `desk-dashboard.test.js` — داشبورد عملیاتی منشی (آمار امروز + لیست اقدام)
+- `auto-refresh.test.js` — `createAutoRefresh`: backoff پس از خطا + توقف وقتی `[data-section]` مخفی است
+- `staff-plans.test.js` — کارکنان + طرح‌ها (بدون دکمهٔ بازخوانی؛ retry خودکار پس از خطای شبکه)
 
 بک‌اند (نمونهٔ مرتبط با ورود یکپارچه): `test_auth.py` — staff هر نقش، athlete، رمز غلط، اولویت staff اگر موبایل در هر دو جدول.
 
