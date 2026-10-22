@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatToman } from './format.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -25,6 +26,7 @@ export function mountPlans(root, user) {
           <tr><th>نام</th><th>مدت / جلسه</th><th>قیمت پایه</th><th>کمد</th><th>وضعیت</th><th></th></tr>
         </thead><tbody data-tbody></tbody></table>
       </div>
+      <div data-pager class="list-pager-host" hidden></div>
     </article>
     ${
       canWrite
@@ -68,6 +70,7 @@ export function mountPlans(root, user) {
 
   const status = root.querySelector('[data-status]')
   const tbody = root.querySelector('[data-tbody]')
+  const pager = createListPager(root.querySelector('[data-pager]'))
   /** @type {any[]} */
   let items = []
   /** @type {number | null} */
@@ -82,15 +85,16 @@ export function mountPlans(root, user) {
 
   function renderTable() {
     if (!tbody) return
-    tbody.innerHTML = items
-      .map((p) => {
-        const badge = p.is_active
-          ? '<span class="badge">فعال</span>'
-          : '<span class="badge">غیرفعال</span>'
-        const action = canWrite
-          ? `<button type="button" class="btn small ghost" data-pick="${p.id}">انتخاب</button>`
-          : ''
-        return `<tr>
+    pager.paint(items, (rows) => {
+      tbody.innerHTML = rows
+        .map((p) => {
+          const badge = p.is_active
+            ? '<span class="badge">فعال</span>'
+            : '<span class="badge">غیرفعال</span>'
+          const action = canWrite
+            ? `<button type="button" class="btn small ghost" data-pick="${p.id}">انتخاب</button>`
+            : ''
+          return `<tr>
           <td data-label="نام">${escapeHtml(p.name)}</td>
           <td data-label="مدت / جلسه">${durationLabel(p)}</td>
           <td data-label="قیمت پایه">${formatToman(p.base_price_toman)}</td>
@@ -98,10 +102,11 @@ export function mountPlans(root, user) {
           <td data-label="وضعیت">${badge}</td>
           <td data-label="اقدام">${action}</td>
         </tr>`
+        })
+        .join('')
+      tbody.querySelectorAll('[data-pick]').forEach((btn) => {
+        btn.addEventListener('click', () => select(Number(btn.getAttribute('data-pick'))))
       })
-      .join('')
-    tbody.querySelectorAll('[data-pick]').forEach((btn) => {
-      btn.addEventListener('click', () => select(Number(btn.getAttribute('data-pick'))))
     })
   }
 
@@ -150,6 +155,7 @@ export function mountPlans(root, user) {
     try {
       const data = await apiGet('/api/v1/membership-plans?include_inactive=1')
       items = data.items || []
+      pager.reset()
       renderTable()
       setStatus(status, `${items.length.toLocaleString('fa-IR')} طرح`, 'ok')
     } catch (err) {

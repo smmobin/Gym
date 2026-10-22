@@ -1,6 +1,7 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatDateTimeShort } from './format.js'
 import { bindMemberSearch } from './members.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
@@ -16,6 +17,7 @@ export function mountClasses(root, user) {
         <thead><tr><th>عنوان</th><th>زمان</th><th>ظرفیت</th><th>جنسیت</th><th></th></tr></thead>
         <tbody data-tbody></tbody>
       </table></div>
+      <div data-pager class="list-pager-host" hidden></div>
     </article>
     <div class="grid-2" style="margin-top:1rem">
       <article class="panel">
@@ -52,19 +54,17 @@ export function mountClasses(root, user) {
     </div>
   `
   const status = root.querySelector('[data-status]')
+  const pager = createListPager(root.querySelector('[data-pager]'))
   /** @type {any[]} */ let classes = []
   /** @type {any | null} */ let selected = null
   /** @type {any | null} */ let pickMember = null
 
-  async function load() {
-    setStatus(status, 'بارگذاری…', 'loading')
-    try {
-      const data = await apiGet('/api/v1/group-classes')
-      classes = data.items || []
-      const tbody = root.querySelector('[data-tbody]')
-      tbody.innerHTML = classes
-        .map(
-          (c) => `<tr>
+  function paintClassRows(rows) {
+    const tbody = root.querySelector('[data-tbody]')
+    if (!tbody) return
+    tbody.innerHTML = rows
+      .map(
+        (c) => `<tr>
           <td data-label="عنوان">${c.title}${c.trainer_schedule_conflict ? ' ⚠' : ''}</td>
           <td data-label="زمان">${formatDateTimeShort(c.starts_at)}</td>
           <td data-label="ظرفیت">${(c.booked_count ?? 0).toLocaleString('fa-IR')} / ${(c.capacity ?? 0).toLocaleString('fa-IR')} (باقی ${c.remaining})</td>
@@ -72,14 +72,23 @@ export function mountClasses(root, user) {
           <td><button type="button" class="btn small" data-id="${c.id}">انتخاب</button>
           ${canWrite ? `<button type="button" class="btn small ghost" data-edit="${c.id}">ویرایش</button>` : ''}</td>
         </tr>`,
-        )
-        .join('')
-      tbody.querySelectorAll('[data-id]').forEach((b) =>
-        b.addEventListener('click', () => void selectClass(Number(b.getAttribute('data-id')))),
       )
-      tbody.querySelectorAll('[data-edit]').forEach((b) =>
-        b.addEventListener('click', () => fillEdit(Number(b.getAttribute('data-edit')))),
-      )
+      .join('')
+    tbody.querySelectorAll('[data-id]').forEach((b) =>
+      b.addEventListener('click', () => void selectClass(Number(b.getAttribute('data-id')))),
+    )
+    tbody.querySelectorAll('[data-edit]').forEach((b) =>
+      b.addEventListener('click', () => fillEdit(Number(b.getAttribute('data-edit')))),
+    )
+  }
+
+  async function load() {
+    setStatus(status, 'بارگذاری…', 'loading')
+    try {
+      const data = await apiGet('/api/v1/group-classes')
+      classes = data.items || []
+      pager.reset()
+      pager.paint(classes, paintClassRows)
       setStatus(status, `${classes.length.toLocaleString('fa-IR')} کلاس`, 'ok')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')

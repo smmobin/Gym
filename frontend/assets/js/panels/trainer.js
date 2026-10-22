@@ -1,6 +1,7 @@
 import { apiGet } from '../api.js'
 import { requireStaff } from '../auth-staff.js'
 import { mountAttendance } from '../attendance.js'
+import { createListPager } from '../pagination.js'
 import { mountWorkouts } from '../workouts.js'
 import { setStatus } from '../ui.js'
 import { initStaffShell } from './shell.js'
@@ -58,27 +59,32 @@ function mountTrainees(root) {
       </header>
       <div class="status-msg" data-status hidden></div>
       <div class="list" data-list></div>
+      <div data-pager class="list-pager-host" hidden></div>
     </article>
   `
   const status = root.querySelector('[data-status]')
   const list = root.querySelector('[data-list]')
+  const pager = createListPager(root.querySelector('[data-pager]'))
 
   async function load() {
     try {
       const data = await apiGet('/api/v1/members')
       const items = data.items || data.members || []
-      list.innerHTML = items.length
-        ? items
-            .map(
-              (m) => `<div class="row-item"><div>
+      pager.reset()
+      pager.paint(items, (rows) => {
+        list.innerHTML = rows.length
+          ? rows
+              .map(
+                (m) => `<div class="row-item"><div>
             <h3>${m.first_name} ${m.last_name}</h3>
             <p class="hint">${m.display_id} · <span dir="ltr">${m.mobile}</span> · ${m.status}</p>
           </div>
           <a class="btn small ghost" href="#workouts">برنامه</a>
           </div>`,
-            )
-            .join('')
-        : '<p class="hint">شاگرد تخصیص‌یافته‌ای ندارید.</p>'
+              )
+              .join('')
+          : '<p class="hint">شاگرد تخصیص‌یافته‌ای ندارید.</p>'
+      })
     } catch (err) {
       setStatus(status, err?.message || 'خطا در بارگذاری شاگردان', 'error')
       list.innerHTML = ''

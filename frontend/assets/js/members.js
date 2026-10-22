@@ -1,6 +1,7 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { MEMBER_STATUS } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
+import { createListPager } from './pagination.js'
 import { enhancePasswordFields } from './password-toggle.js'
 import { renderMemberPick, setStatus } from './ui.js'
 
@@ -26,6 +27,7 @@ export function mountMembers(root, user) {
           <tr><th>شناسه</th><th>نام</th><th>موبایل</th><th>وضعیت</th><th></th></tr>
         </thead><tbody data-tbody></tbody></table>
       </div>
+      <div data-pager class="list-pager-host" hidden></div>
     </article>
     ${
       canWrite
@@ -68,6 +70,7 @@ export function mountMembers(root, user) {
 
   const status = root.querySelector('[data-status]')
   const tbody = root.querySelector('[data-tbody]')
+  const pager = createListPager(root.querySelector('[data-pager]'))
   /** @type {any[]} */
   let items = []
   /** @type {number | null} */
@@ -105,6 +108,7 @@ export function mountMembers(root, user) {
       const qs = params.toString()
       const data = await apiGet(qs ? `/api/v1/members?${qs}` : '/api/v1/members')
       items = data.items || []
+      pager.reset()
       renderTable()
       setStatus(status, `${items.length.toLocaleString('fa-IR')} عضو`, 'ok')
     } catch (err) {
@@ -114,19 +118,21 @@ export function mountMembers(root, user) {
 
   function renderTable() {
     if (!tbody) return
-    tbody.innerHTML = items
-      .map(
-        (m) => `<tr>
+    pager.paint(items, (rows) => {
+      tbody.innerHTML = rows
+        .map(
+          (m) => `<tr>
         <td data-label="شناسه">${m.display_id}</td>
         <td data-label="نام">${m.first_name} ${m.last_name}</td>
         <td data-label="موبایل">${m.mobile}</td>
         <td data-label="وضعیت"><span class="badge">${MEMBER_STATUS[m.status] || m.status}</span></td>
         <td data-label="اقدام"><button type="button" class="btn small ghost" data-pick="${m.id}">انتخاب</button></td>
       </tr>`,
-      )
-      .join('')
-    tbody.querySelectorAll('[data-pick]').forEach((btn) => {
-      btn.addEventListener('click', () => select(Number(btn.getAttribute('data-pick'))))
+        )
+        .join('')
+      tbody.querySelectorAll('[data-pick]').forEach((btn) => {
+        btn.addEventListener('click', () => select(Number(btn.getAttribute('data-pick'))))
+      })
     })
   }
 

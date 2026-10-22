@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { ROLE_LABEL } from './format.js'
+import { createListPager } from './pagination.js'
 import { enhancePasswordFields } from './password-toggle.js'
 import { setStatus } from './ui.js'
 
@@ -31,6 +32,7 @@ export function mountStaff(root, user) {
           <tr><th>نام</th><th>موبایل</th><th>نقش</th><th>وضعیت</th><th></th></tr>
         </thead><tbody data-tbody></tbody></table>
       </div>
+      <div data-pager class="list-pager-host" hidden></div>
     </article>
     ${
       canWrite
@@ -73,6 +75,7 @@ export function mountStaff(root, user) {
 
   const status = root.querySelector('[data-status]')
   const tbody = root.querySelector('[data-tbody]')
+  const pager = createListPager(root.querySelector('[data-pager]'))
   /** @type {any[]} */
   let items = []
   /** @type {number | null} */
@@ -93,26 +96,28 @@ export function mountStaff(root, user) {
 
   function renderTable() {
     if (!tbody) return
-    tbody.innerHTML = items
-      .map((u) => {
-        const editable = canEditRow(u)
-        const badge = u.is_active
-          ? '<span class="badge">فعال</span>'
-          : '<span class="badge">غیرفعال</span>'
-        const action = editable
-          ? `<button type="button" class="btn small ghost" data-pick="${u.id}">انتخاب</button>`
-          : '<span class="hint">فقط‌خواندنی</span>'
-        return `<tr>
+    pager.paint(items, (rows) => {
+      tbody.innerHTML = rows
+        .map((u) => {
+          const editable = canEditRow(u)
+          const badge = u.is_active
+            ? '<span class="badge">فعال</span>'
+            : '<span class="badge">غیرفعال</span>'
+          const action = editable
+            ? `<button type="button" class="btn small ghost" data-pick="${u.id}">انتخاب</button>`
+            : '<span class="hint">فقط‌خواندنی</span>'
+          return `<tr>
           <td data-label="نام">${escapeHtml(u.full_name)}</td>
           <td data-label="موبایل">${escapeHtml(u.mobile)}</td>
           <td data-label="نقش">${ROLE_LABEL[u.role] || u.role}</td>
           <td data-label="وضعیت">${badge}</td>
           <td data-label="اقدام">${action}</td>
         </tr>`
+        })
+        .join('')
+      tbody.querySelectorAll('[data-pick]').forEach((btn) => {
+        btn.addEventListener('click', () => select(Number(btn.getAttribute('data-pick'))))
       })
-      .join('')
-    tbody.querySelectorAll('[data-pick]').forEach((btn) => {
-      btn.addEventListener('click', () => select(Number(btn.getAttribute('data-pick'))))
     })
   }
 
@@ -141,6 +146,7 @@ export function mountStaff(root, user) {
     try {
       const data = await apiGet('/api/v1/staff')
       items = data.items || []
+      pager.reset()
       renderTable()
       setStatus(status, `${items.length.toLocaleString('fa-IR')} نفر`, 'ok')
     } catch (err) {

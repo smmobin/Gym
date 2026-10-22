@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPost } from './api.js'
 import { bindMemberSearch } from './members.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -107,6 +108,7 @@ export function mountLockers(root, user) {
         <thead><tr><th>کد</th><th>وضعیت</th><th>عضو</th><th></th></tr></thead>
         <tbody data-tbody></tbody>
       </table></div>
+      <div data-pager class="list-pager-host" hidden></div>
       <form data-create class="form-grid" style="margin-top:1rem">
         <label>کد کمد جدید<input name="code" placeholder="L-06" required /></label>
         <button class="btn" type="submit">ساخت کمد</button>
@@ -128,6 +130,7 @@ export function mountLockers(root, user) {
   `
   const status = root.querySelector('[data-status]')
   const tbody = root.querySelector('[data-tbody]')
+  const pager = createListPager(root.querySelector('[data-pager]'))
   const plansHint = root.querySelector('[data-plans-hint]')
   const eligibleWrap = root.querySelector('[data-eligible-wrap]')
   const eligibilityEl = root.querySelector('[data-eligibility]')
@@ -175,8 +178,10 @@ export function mountLockers(root, user) {
 
   function renderTable() {
     if (!tbody) return
-    tbody.innerHTML = lockersTableRowsHtml(lockers)
-    bindTableActions()
+    pager.paint(lockers, (rows) => {
+      tbody.innerHTML = lockersTableRowsHtml(rows)
+      bindTableActions()
+    })
   }
 
   function renderEligibility() {
@@ -191,6 +196,7 @@ export function mountLockers(root, user) {
   async function loadLockersOnly() {
     const lData = await apiGet('/api/v1/lockers')
     lockers = lData.items || []
+    pager.reset()
     renderTable()
     return lockers
   }

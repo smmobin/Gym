@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -60,24 +61,21 @@ export function mountTrialLeads(root, user) {
       </header>
       <div class="status-msg" data-status hidden></div>
       <div class="list trial-list" data-list></div>
+      <div data-pager class="list-pager-host" hidden></div>
       <p class="hint">برای ساخت عضو/مهمان از بخش مهمان روزانه استفاده کنید — تبدیل خودکار نیست.</p>
     </article>
   `
   const status = root.querySelector('[data-status]')
   const list = root.querySelector('[data-list]')
+  const pager = createListPager(root.querySelector('[data-pager]'))
   const filter = /** @type {HTMLSelectElement} */ (root.querySelector('[data-filter]'))
 
-  async function load() {
-    setStatus(status, 'بارگذاری…', 'loading')
-    try {
-      const qs = filter.value ? `?status=${filter.value}` : ''
-      const data = await apiGet(`/api/v1/trial-leads${qs}`)
-      const items = data.items || []
-      list.innerHTML = items.length
-        ? items
-            .map((t) => {
-              const statusKey = String(t.status || 'new')
-              return `<div class="row-item trial-row">
+  function paintTrials(rows) {
+    list.innerHTML = rows.length
+      ? rows
+          .map((t) => {
+            const statusKey = String(t.status || 'new')
+            return `<div class="row-item trial-row">
           <div class="trial-row-main">
             <h3>${t.full_name} <span class="trial-mobile" dir="ltr">${t.mobile}</span></h3>
             <p>${t.preferred_time_note || '—'}${t.message ? ` · ${t.message}` : ''}</p>
@@ -92,23 +90,33 @@ export function mountTrialLeads(root, user) {
             </select>
           </div>
         </div>`
-            })
-            .join('')
-        : '<p class="hint">ردیفی نیست.</p>'
-      list.querySelectorAll('select[data-id]').forEach((sel) => {
-        sel.addEventListener('change', async () => {
-          try {
-            await apiPatch(`/api/v1/trial-leads/${sel.getAttribute('data-id')}`, {
-              status: /** @type {HTMLSelectElement} */ (sel).value,
-            })
-            setStatus(status, 'وضعیت به‌روز شد.', 'ok')
-          } catch (err) {
-            setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
-            await load()
-          }
-        })
+          })
+          .join('')
+      : '<p class="hint">ردیفی نیست.</p>'
+    list.querySelectorAll('select[data-id]').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        try {
+          await apiPatch(`/api/v1/trial-leads/${sel.getAttribute('data-id')}`, {
+            status: /** @type {HTMLSelectElement} */ (sel).value,
+          })
+          setStatus(status, 'وضعیت به‌روز شد.', 'ok')
+        } catch (err) {
+          setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
+          await load()
+        }
       })
-      globalThis.GymCustomSelect?.refresh?.(list)
+    })
+    globalThis.GymCustomSelect?.refresh?.(list)
+  }
+
+  async function load() {
+    setStatus(status, 'بارگذاری…', 'loading')
+    try {
+      const qs = filter.value ? `?status=${filter.value}` : ''
+      const data = await apiGet(`/api/v1/trial-leads${qs}`)
+      const items = data.items || []
+      pager.reset()
+      pager.paint(items, paintTrials)
       setStatus(status, `${items.length.toLocaleString('fa-IR')} درخواست`, 'ok')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
