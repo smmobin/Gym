@@ -95,7 +95,7 @@ export function mountDashboard(root, user) {
       }
       const expEl = root.querySelector('[data-expenses]')
       if (expEl) expEl.innerHTML = buildRecentExpensesHtml(expenses.items || [])
-      setStatus(status, profit.note || 'خلاصه ماه جاری به‌روز شد.', 'ok')
+      setStatus(status, '') // hide success banner; hint under expenses panel is enough
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا در بارگذاری داشبورد', 'error')
     }
