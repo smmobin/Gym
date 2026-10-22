@@ -24,7 +24,7 @@ export function mountGuests(root, user) {
             <option value="online">آنلاین</option>
           </select>
         </label>
-        <label><input type="checkbox" name="pay_now" data-pay checked /> پرداخت هم‌اکنون</label>
+        <label class="check"><input type="checkbox" name="pay_now" data-pay checked /> پرداخت هم‌اکنون</label>
         <button class="btn" type="submit">ثبت مهمان</button>
       </form>
       <div class="status-msg" data-status hidden></div>
