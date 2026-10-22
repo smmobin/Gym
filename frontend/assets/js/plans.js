@@ -16,7 +16,6 @@ export function mountPlans(root, user) {
   root.innerHTML = `
     <article class="panel">
       <header class="panel-head"><h2>طرح‌های عضویت</h2></header>
-      <p class="hint">حذف = غیرفعال‌سازی. تغییر قیمت پایه، عضویت/پرداخت گذشته را عوض نمی‌کند — فقط تمدید بعدی قیمت جدید را پیشنهاد می‌دهد. در مالی فقط طرح‌های فعال دیده می‌شوند.</p>
       <div class="inline-actions">
         <button type="button" class="btn ghost" data-reload>بازخوانی</button>
       </div>
