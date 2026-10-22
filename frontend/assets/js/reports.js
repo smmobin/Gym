@@ -36,7 +36,6 @@ export function mountReports(root, user) {
       </form>
       <div class="status-msg" data-status hidden></div>
       <div class="stats" data-summary style="margin-top:1rem"></div>
-      <p class="hint">درآمد = فقط پرداخت‌های paid. بدهی ≠ درآمد.</p>
     </article>
     <div class="grid-2" style="margin-top:1rem">
       <article class="panel">
