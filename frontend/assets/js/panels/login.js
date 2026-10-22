@@ -8,9 +8,11 @@ import {
   unifiedLogin,
 } from '../auth-staff.js'
 import { mountNotificationBell } from '../notifications.js'
+import { enhancePasswordFields } from '../password-toggle.js'
 import { setStatus } from '../ui.js'
 
 async function main() {
+  enhancePasswordFields(document)
   const form = document.querySelector('[data-login-form]')
   const logged = document.querySelector('[data-logged]')
   const status = document.querySelector('[data-status]')

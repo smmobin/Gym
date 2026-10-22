@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { ROLE_LABEL } from './format.js'
+import { enhancePasswordFields } from './password-toggle.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -219,6 +220,7 @@ export function mountStaff(root, user) {
     }
   })
 
+  enhancePasswordFields(root)
   void load()
 }
 

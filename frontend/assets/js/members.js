@@ -1,6 +1,7 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { MEMBER_STATUS } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
+import { enhancePasswordFields } from './password-toggle.js'
 import { renderMemberPick, setStatus } from './ui.js'
 
 /**
@@ -218,6 +219,7 @@ export function mountMembers(root, user) {
     }
   })
 
+  enhancePasswordFields(root)
   void load()
   return { reload: load }
 }
