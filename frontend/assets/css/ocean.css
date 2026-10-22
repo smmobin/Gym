@@ -493,6 +493,7 @@ select {
 .trial-form textarea,
 .trial-form select,
 label > input:not([type="checkbox"]):not([type="radio"]),
+label > .password-field,
 label > textarea,
 label > select,
 .select-block {
@@ -583,6 +584,7 @@ select:-webkit-autofill {
   transition: background-color 99999s ease-out;
 }
 label:has(> input:not([type="checkbox"]):not([type="radio"])):not(.custom-select),
+label:has(> .password-field):not(.custom-select),
 label:has(> textarea):not(.custom-select),
 label:has(> select):not(.custom-select) {
   display: grid;
@@ -593,6 +595,7 @@ label:has(> select):not(.custom-select) {
   min-width: 0;
 }
 .panel > label:has(> input),
+.panel > label:has(> .password-field),
 .panel > label:has(> textarea),
 .panel > label:has(> select) {
   margin-block: 0.65rem 0.85rem;
@@ -1743,51 +1746,73 @@ a.row-item:hover h3 {
 }
 .form-grid textarea { min-height: 90px; }
 
-/* Password show/hide — icon on inline-end (left in RTL) */
+/*
+ * Password show/hide — icon overlays the LEFT inside the same input box.
+ * Grid stack (not absolute-only) so the button cannot fall into normal flow
+ * under the field and look like a separate control.
+ */
 .password-field {
-  position: relative;
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-items: stretch;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
 }
 .password-field > input {
+  grid-area: 1 / 1;
   width: 100%;
-  padding-inline-end: 2.75rem;
+  max-width: 100%;
+  margin: 0;
   box-sizing: border-box;
+  /* reserve space on the physical left for the eye; outer box size stays the same */
+  padding-left: 2.55rem;
+  padding-right: var(--field-pad-x);
 }
-.password-toggle {
-  position: absolute;
-  inset-inline-end: 0.35rem;
-  top: 50%;
-  transform: translateY(-50%);
+.password-field > .password-toggle {
+  grid-area: 1 / 1;
+  justify-self: left; /* inside the box, physical left (چپ) */
+  align-self: center;
+  z-index: 2;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  margin-left: 0.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  line-height: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
-.password-toggle:hover {
+.password-field > .password-toggle:hover {
   color: var(--text);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-.password-toggle:focus-visible {
+.password-field > .password-toggle:focus {
   outline: none;
-  color: var(--accent);
-  box-shadow: var(--field-focus-ring);
 }
-.password-toggle[aria-pressed="true"] {
+.password-field > .password-toggle:focus-visible {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: none;
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 1px;
+}
+.password-field > .password-toggle[aria-pressed="true"] {
   color: var(--accent);
 }
 .password-toggle-icon {
   display: block;
+  width: 1.15rem;
+  height: 1.15rem;
   pointer-events: none;
 }
 .hint { color: var(--muted); font-size: 0.82rem; line-height: 1.7; margin: 0.75rem 0 0; }
