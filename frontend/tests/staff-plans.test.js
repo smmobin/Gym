@@ -190,7 +190,7 @@ describe('mountStaff / mountPlans', () => {
   })
 
   it('mountPlans auto-retries after network error', async () => {
-    vi.useFakeTimers()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     let calls = 0
     const fetchMock = vi.fn(async () => {
       calls += 1
@@ -231,5 +231,6 @@ describe('mountStaff / mountPlans', () => {
       expect(root.querySelector('[data-tbody]')?.textContent).toContain('ماهانه')
     })
     expect(root.querySelector('[data-status]')?.className).toMatch(/ok/)
+    vi.clearAllTimers()
   })
 })

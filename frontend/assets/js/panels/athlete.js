@@ -1,6 +1,7 @@
 import { apiGet, apiPost, ApiError } from '../api.js'
 import { athleteLogout, requireAthlete } from '../auth-athlete.js'
 import { formatDateTime, formatDateTimeShort, formatToman } from '../format.js'
+import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-input.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
 
 function payResultMessage() {
@@ -240,6 +241,10 @@ async function main() {
       const renewAmount = /** @type {HTMLInputElement | null} */ (
         document.querySelector('[data-renew-amount]')
       )
+      const debtAmount = /** @type {HTMLInputElement | null} */ (
+        document.querySelector('[data-debt-amount]')
+      )
+      enhanceMoneyInputs(document)
       const planOpts = renewPlans.items || []
       if (renewPlanSel) {
         renewPlanSel.innerHTML = planOpts
@@ -250,21 +255,18 @@ async function main() {
           .join('')
         const syncAmount = () => {
           const opt = renewPlanSel.selectedOptions[0]
-          if (renewAmount && opt) renewAmount.value = opt.getAttribute('data-price') || ''
+          if (renewAmount && opt) setMoneyInput(renewAmount, opt.getAttribute('data-price') || 0)
         }
         renewPlanSel.addEventListener('change', syncAmount)
         syncAmount()
       }
 
-      const debtAmount = /** @type {HTMLInputElement | null} */ (
-        document.querySelector('[data-debt-amount]')
-      )
-      if (debtAmount && debt > 0) debtAmount.value = String(debt)
+      if (debtAmount && debt > 0) setMoneyInput(debtAmount, debt)
 
       document.querySelector('[data-pay-renew]')?.addEventListener('click', async () => {
         try {
           const planId = Number(renewPlanSel?.value)
-          const amount = Number(renewAmount?.value || 0)
+          const amount = parseMoneyInput(renewAmount?.value || 0)
           await startOnlinePayment({
             purpose: 'renew',
             plan_id: planId,
@@ -282,7 +284,7 @@ async function main() {
 
       document.querySelector('[data-pay-debt]')?.addEventListener('click', async () => {
         try {
-          const amount = Number(debtAmount?.value || 0)
+          const amount = parseMoneyInput(debtAmount?.value || 0)
           await startOnlinePayment({ purpose: 'debt', amount_toman: amount })
         } catch (err) {
           setStatus(

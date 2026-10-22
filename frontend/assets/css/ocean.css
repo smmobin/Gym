@@ -1879,6 +1879,14 @@ a.row-item:hover h3 {
 }
 .form-grid textarea { min-height: 90px; }
 
+/* Toman amounts: LTR digits with thousand separators, aligned for RTL forms */
+input[data-money] {
+  direction: ltr;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
 /*
  * Password show/hide — icon overlays the LEFT inside the same input box.
  * Grid stack (not absolute-only) so the button cannot fall into normal flow

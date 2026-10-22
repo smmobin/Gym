@@ -75,7 +75,7 @@
               <label class="full">طرح تمدید
                 <select data-renew-plan></select>
               </label>
-              <label>مبلغ (تومان)<input type="number" min="100" data-renew-amount /></label>
+              <label>مبلغ (تومان)<input data-money data-renew-amount inputmode="numeric" /></label>
               <button type="button" class="btn wide" data-pay-renew style="margin-top:0.75rem">پرداخت آنلاین تمدید (آزمایشی)</button>
               <p class="hint">پس از پرداخت موفق در درگاه، تمدید خودکار ثبت می‌شود.</p>
             </div>
@@ -100,7 +100,7 @@
             <div data-payments></div>
             <div data-online-debt hidden style="margin-top:1rem">
               <header class="panel-head"><h3>پرداخت بدهی آنلاین (آزمایشی)</h3></header>
-              <label>مبلغ (تومان)<input type="number" min="100" data-debt-amount /></label>
+              <label>مبلغ (تومان)<input data-money data-debt-amount inputmode="numeric" /></label>
               <button type="button" class="btn" data-pay-debt style="margin-top:0.5rem">پرداخت آنلاین</button>
             </div>
             <p class="hint" data-gateway-pay-hint style="margin-top:0.75rem"></p>

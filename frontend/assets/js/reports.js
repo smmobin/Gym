@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPost } from './api.js'
 import { formatToman } from './format.js'
+import { enhanceMoneyInputs, moneyFromForm } from './money-input.js'
 import { setStatus } from './ui.js'
 
 /** Calendar month range in local timezone (ISO YYYY-MM-DD). */
@@ -46,7 +47,7 @@ export function mountReports(root, user) {
         <header class="panel-head"><h2>ثبت هزینه</h2></header>
         <form data-expense class="form-grid">
           <label>دسته<input name="category" required placeholder="اجاره / حقوق / …" /></label>
-          <label>مبلغ (تومان)<input name="amount_toman" type="number" min="1" required /></label>
+          <label>مبلغ (تومان)<input data-money name="amount_toman" inputmode="numeric" required /></label>
           <label>تاریخ<input name="expense_date" type="date" value="${range.to}" required /></label>
           <label class="full">یادداشت<textarea name="note"></textarea></label>
           <button class="btn" type="submit">ثبت</button>
@@ -55,6 +56,7 @@ export function mountReports(root, user) {
     </div>
   `
   const status = root.querySelector('[data-status]')
+  enhanceMoneyInputs(root)
 
   async function load(from, to) {
     setStatus(status, 'بارگذاری…', 'loading')
@@ -98,7 +100,7 @@ export function mountReports(root, user) {
     try {
       await apiPost('/api/v1/expenses', {
         category: String(fd.get('category')).trim(),
-        amount_toman: Number(fd.get('amount_toman')),
+        amount_toman: moneyFromForm(fd, 'amount_toman'),
         expense_date: String(fd.get('expense_date')),
         note: String(fd.get('note') || '').trim() || null,
       })
@@ -108,6 +110,7 @@ export function mountReports(root, user) {
       const to = /** @type {HTMLInputElement} */ (rangeForm.querySelector('[name=to]')).value
       await load(from, to)
       /** @type {HTMLFormElement} */ (e.target).reset()
+      enhanceMoneyInputs(root)
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'ثبت ناموفق', 'error')
     }

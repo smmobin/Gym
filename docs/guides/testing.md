@@ -62,6 +62,7 @@ npm run build
 - `desk-dashboard.test.js` — داشبورد عملیاتی منشی (آمار امروز + لیست اقدام)
 - `auto-refresh.test.js` — `createAutoRefresh`: backoff پس از خطا + توقف وقتی `[data-section]` مخفی است
 - `staff-plans.test.js` — کارکنان + طرح‌ها (بدون دکمهٔ بازخوانی؛ retry خودکار پس از خطای شبکه)
+- `money-input.test.js` — جداکنندهٔ هزارگان فیلدهای تومان (`data-money`) + پارس رقم فارسی/لاتین
 
 بک‌اند (نمونهٔ مرتبط با ورود یکپارچه): `test_auth.py` — staff هر نقش، athlete، رمز غلط، اولویت staff اگر موبایل در هر دو جدول.
 

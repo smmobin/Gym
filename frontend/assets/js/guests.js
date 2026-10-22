@@ -1,5 +1,6 @@
 import { ApiError, apiPost } from './api.js'
 import { formatToman, PAYMENT_METHOD_LABEL } from './format.js'
+import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { setStatus } from './ui.js'
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
@@ -15,7 +16,7 @@ export function mountGuests(root, user) {
         <label>نام *<input name="first_name" required /></label>
         <label>نام خانوادگی *<input name="last_name" required /></label>
         <label>موبایل *<input name="mobile" required /></label>
-        <label>مبلغ توافقی (تومان)<input name="agreed_amount_toman" type="number" min="0" value="0" required /></label>
+        <label>مبلغ توافقی (تومان)<input data-money name="agreed_amount_toman" inputmode="numeric" value="0" required /></label>
         <label>روش پرداخت
           <select name="payment_method" data-method>
             <option value="cash">نقد</option>
@@ -33,6 +34,7 @@ export function mountGuests(root, user) {
     </article>
   `
   const status = root.querySelector('[data-status]')
+  enhanceMoneyInputs(root)
   const payNow = /** @type {HTMLInputElement} */ (root.querySelector('[data-pay]'))
   const method = /** @type {HTMLSelectElement} */ (root.querySelector('[data-method]'))
   payNow?.addEventListener('change', () => {
@@ -49,7 +51,7 @@ export function mountGuests(root, user) {
         first_name: String(fd.get('first_name')).trim(),
         last_name: String(fd.get('last_name')).trim(),
         mobile: String(fd.get('mobile')).trim(),
-        agreed_amount_toman: Number(fd.get('agreed_amount_toman')),
+        agreed_amount_toman: moneyFromForm(fd, 'agreed_amount_toman'),
         payment_method: String(fd.get('payment_method')),
         pay_now: !!fd.get('pay_now'),
       })
@@ -69,6 +71,8 @@ export function mountGuests(root, user) {
           }`
       }
       /** @type {HTMLFormElement} */ (e.target).reset()
+      const amountEl = /** @type {HTMLInputElement | null} */ (root.querySelector('[name=agreed_amount_toman]'))
+      if (amountEl) setMoneyInput(amountEl, 0)
       payNow.checked = true
       method.disabled = false
     } catch (err) {

@@ -2,6 +2,7 @@ import { ApiError, apiGet, apiPost } from './api.js'
 import { formatToman, onlineMethodLabel, PAYMENT_METHOD_LABEL } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch } from './members.js'
+import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { setStatus } from './ui.js'
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
@@ -27,7 +28,7 @@ export function mountBilling(root, user) {
         <div class="list" data-memberships></div>
         <form data-renew class="form-grid" style="margin-top:1rem">
           <label>طرح<select data-plans required></select></label>
-          <label>مبلغ توافقی (تومان)<input name="amount" type="number" min="0" required /></label>
+          <label>مبلغ توافقی (تومان)<input data-money name="amount" inputmode="numeric" required /></label>
           <button class="btn" type="submit" data-need-lock>تمدید</button>
         </form>
         <form data-freeze class="form-grid" style="margin-top:1rem">
@@ -43,7 +44,7 @@ export function mountBilling(root, user) {
         <header class="panel-head"><h2>پرداخت‌ها</h2></header>
         <div class="list" data-payments></div>
         <form data-pay class="form-grid" style="margin-top:1rem">
-          <label>مبلغ (تومان)<input name="amount" type="number" min="1" required /></label>
+          <label>مبلغ (تومان)<input data-money name="amount" inputmode="numeric" required /></label>
           <label>روش
             <select name="method">
               <option value="cash">نقد</option>
@@ -62,6 +63,7 @@ export function mountBilling(root, user) {
   `
 
   const status = root.querySelector('[data-status]')
+  enhanceMoneyInputs(root)
   /** @type {any} */ let selected = null
   /** @type {any[]} */ let plans = []
   /** @type {any[]} */ let memberships = []
@@ -104,11 +106,13 @@ export function mountBilling(root, user) {
         })
         .join('')
       globalThis.GymCustomSelect?.sync?.(sel)
-      const amount = root.querySelector('[data-renew] [name=amount]')
-      if (amount && plans[0]) amount.value = String(plans[0].base_price_toman)
+      const amount = /** @type {HTMLInputElement | null} */ (
+        root.querySelector('[data-renew] [name=amount]')
+      )
+      if (amount && plans[0]) setMoneyInput(amount, plans[0].base_price_toman)
       sel.addEventListener('change', () => {
         const p = plans.find((x) => String(x.id) === sel.value)
-        if (p && amount) amount.value = String(p.base_price_toman)
+        if (p && amount) setMoneyInput(amount, p.base_price_toman)
       })
     }
   }
@@ -198,7 +202,7 @@ export function mountBilling(root, user) {
     try {
       const data = await apiPost(`/api/v1/members/${selected.id}/memberships/renew`, {
         plan_id: planId,
-        agreed_amount_toman: Number(fd.get('amount')),
+        agreed_amount_toman: moneyFromForm(fd, 'amount'),
       })
       setStatus(
         status,
@@ -253,7 +257,7 @@ export function mountBilling(root, user) {
     const membershipId = /** @type {HTMLSelectElement} */ (root.querySelector('[data-pay-m]')).value
     const body = {
       member_id: selected.id,
-      amount_toman: Number(fd.get('amount')),
+      amount_toman: moneyFromForm(fd, 'amount'),
       method: String(fd.get('method')),
       status: 'paid',
     }

@@ -1,6 +1,7 @@
 import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { formatToman } from './format.js'
+import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
@@ -37,7 +38,7 @@ export function mountPlans(root, user) {
           <label class="full">توضیح<textarea name="description"></textarea></label>
           <label>مدت (روز)<input type="number" name="duration_days" min="1" placeholder="اختیاری" /></label>
           <label>تعداد جلسه<input type="number" name="session_count" min="1" placeholder="اختیاری" /></label>
-          <label>قیمت پایه (تومان)<input type="number" name="base_price_toman" min="0" value="0" required /></label>
+          <label>قیمت پایه (تومان)<input data-money name="base_price_toman" inputmode="numeric" value="0" required /></label>
           <label class="check"><input type="checkbox" name="includes_locker" /> شامل کمد</label>
           <p class="hint full">حداقل یکی از مدت یا تعداد جلسه باید پر شود. قیمت صفر = هدیه/آزاد.</p>
           <button class="btn" type="submit">ثبت طرح</button>
@@ -51,7 +52,7 @@ export function mountPlans(root, user) {
           <label class="full">توضیح<textarea name="description"></textarea></label>
           <label>مدت (روز)<input type="number" name="duration_days" min="1" /></label>
           <label>تعداد جلسه<input type="number" name="session_count" min="1" /></label>
-          <label>قیمت پایه (تومان)<input type="number" name="base_price_toman" min="0" /></label>
+          <label>قیمت پایه (تومان)<input data-money name="base_price_toman" inputmode="numeric" /></label>
           <label class="check"><input type="checkbox" name="includes_locker" /> شامل کمد</label>
           <div class="inline-actions full">
             <button class="btn" type="submit" data-save disabled>ذخیره</button>
@@ -119,7 +120,7 @@ export function mountPlans(root, user) {
     form.description.value = p.description || ''
     form.duration_days.value = p.duration_days != null ? String(p.duration_days) : ''
     form.session_count.value = p.session_count != null ? String(p.session_count) : ''
-    form.base_price_toman.value = String(p.base_price_toman)
+    setMoneyInput(/** @type {HTMLInputElement} */ (form.base_price_toman), p.base_price_toman)
     form.includes_locker.checked = !!p.includes_locker
     root.querySelectorAll('[data-save],[data-deactivate],[data-activate]').forEach((b) => {
       b.disabled = false
@@ -143,7 +144,7 @@ export function mountPlans(root, user) {
       description: String(fd.get('description') || '').trim() || null,
       duration_days,
       session_count,
-      base_price_toman: Number(fd.get('base_price_toman') || 0),
+      base_price_toman: moneyFromForm(fd, 'base_price_toman'),
       includes_locker: fd.get('includes_locker') === 'on',
     }
   }
@@ -173,6 +174,8 @@ export function mountPlans(root, user) {
     }
   }
 
+  enhanceMoneyInputs(root)
+
   const autoRefresh = createAutoRefresh(root, load, {
     intervalMs: 30_000,
     retryBaseMs: 2_500,
@@ -191,6 +194,10 @@ export function mountPlans(root, user) {
     try {
       await apiPost('/api/v1/membership-plans', body)
       /** @type {HTMLFormElement} */ (e.target).reset()
+      const priceEl = /** @type {HTMLInputElement | null} */ (
+        /** @type {HTMLFormElement} */ (e.target).querySelector('[name=base_price_toman]')
+      )
+      if (priceEl) setMoneyInput(priceEl, 0)
       setStatus(status, 'طرح ثبت شد.', 'ok')
       await autoRefresh.refresh()
     } catch (err) {
