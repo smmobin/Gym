@@ -16,6 +16,8 @@ from app.schemas.trainers import (
     AssignTrainerResponse,
     EndAssignmentResponse,
     TrainerListResponse,
+    TrainerMemberOut,
+    TrainerMembersResponse,
     TrainerOut,
 )
 from app.services import trainers as trainer_svc
@@ -51,6 +53,34 @@ def list_trainers(
     return TrainerListResponse(
         items=[TrainerOut.model_validate(t) for t in items],
         total=len(items),
+    )
+
+
+@router.get(
+    "/trainers/{trainer_user_id}/members",
+    response_model=TrainerMembersResponse,
+)
+def list_trainer_members(
+    trainer_user_id: int,
+    include_history: bool = Query(default=False),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_DESK)),
+) -> TrainerMembersResponse:
+    try:
+        trainer, rows = trainer_svc.list_trainer_members(
+            db,
+            user=user,
+            trainer_user_id=trainer_user_id,
+            include_history=include_history,
+        )
+    except trainer_svc.TrainerError as err:
+        _raise(err)
+        raise  # pragma: no cover
+    return TrainerMembersResponse(
+        trainer_user_id=trainer.id,
+        trainer_full_name=trainer.full_name,
+        items=[TrainerMemberOut(**trainer_svc.trainer_member_out_fields(r)) for r in rows],
+        total=len(rows),
     )
 
 

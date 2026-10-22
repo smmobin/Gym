@@ -51,3 +51,24 @@ class AssignTrainerResponse(BaseModel):
 
 class EndAssignmentResponse(BaseModel):
     assignment: AssignmentOut
+
+
+class TrainerMemberOut(BaseModel):
+    """Active (or historical) assignment row from the trainer's perspective."""
+
+    id: int
+    member_id: int
+    member_display_id: Optional[str] = None
+    member_first_name: str
+    member_last_name: str
+    member_mobile: str
+    assigned_at: datetime
+    ended_at: Optional[datetime] = None
+    is_active: bool
+
+
+class TrainerMembersResponse(BaseModel):
+    trainer_user_id: int
+    trainer_full_name: Optional[str] = None
+    items: list[TrainerMemberOut]
+    total: int

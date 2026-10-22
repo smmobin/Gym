@@ -64,6 +64,7 @@ npm run build
 - `staff-plans.test.js` — کارکنان + طرح‌ها (بدون دکمهٔ بازخوانی؛ retry خودکار پس از خطای شبکه)
 - `money-input.test.js` — جداکنندهٔ هزارگان فیلدهای تومان (`data-money`) + پارس رقم فارسی/لاتین
 - `live-search.test.js` / `members-live-search.test.js` — جستجوی زنده (debounce) بدون دکمهٔ جستجو/بازخوانی
+- `trainers-roster.test.js` — با انتخاب مربی، لیست شاگردان همان مربی (`GET /trainers/{id}/members`)
 
 بک‌اند (نمونهٔ مرتبط با ورود یکپارچه): `test_auth.py` — staff هر نقش، athlete، رمز غلط، اولویت staff اگر موبایل در هر دو جدول.
 

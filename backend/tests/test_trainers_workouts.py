@@ -106,6 +106,29 @@ def test_desk_lists_active_trainers(client: TestClient) -> None:
         assert item["is_active"] is True
 
 
+def test_desk_lists_members_for_selected_trainer(client: TestClient) -> None:
+    _login(client)
+    trainer_id = _trainer_user_id("09120000003")
+    response = client.get(f"/api/v1/trainers/{trainer_id}/members")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["trainer_user_id"] == trainer_id
+    assert data["total"] >= 1
+    display_ids = {m["member_display_id"] for m in data["items"]}
+    # seed: trainer1 → ali (M-1001), negar (M-1004)
+    assert "M-1001" in display_ids or "M-1004" in display_ids
+    for item in data["items"]:
+        assert item["is_active"] is True
+        assert item["member_first_name"]
+        assert item["member_mobile"]
+
+
+def test_trainer_cannot_list_trainer_members_endpoint(client: TestClient) -> None:
+    _login(client, "09120000003")
+    trainer_id = _trainer_user_id("09120000003")
+    assert client.get(f"/api/v1/trainers/{trainer_id}/members").status_code == 403
+
+
 def test_assign_duplicate_active_409_then_end_and_reassign(client: TestClient) -> None:
     _login(client)
     member_id = _member_id("M-1006")  # maryam — no seed trainer

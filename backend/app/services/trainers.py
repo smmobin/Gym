@@ -86,6 +86,50 @@ def assignment_out_fields(assignment: TrainerMemberAssignment) -> dict:
     }
 
 
+def trainer_member_out_fields(assignment: TrainerMemberAssignment) -> dict:
+    member = assignment.member
+    return {
+        "id": assignment.id,
+        "member_id": assignment.member_id,
+        "member_display_id": member.display_id if member is not None else None,
+        "member_first_name": member.first_name if member is not None else "",
+        "member_last_name": member.last_name if member is not None else "",
+        "member_mobile": member.mobile if member is not None else "",
+        "assigned_at": assignment.assigned_at,
+        "ended_at": assignment.ended_at,
+        "is_active": assignment.ended_at is None,
+    }
+
+
+def list_trainer_members(
+    db: Session,
+    *,
+    user: User,
+    trainer_user_id: int,
+    include_history: bool = False,
+) -> tuple[User, list[TrainerMemberAssignment]]:
+    """Desk staff: list members currently (or historically) assigned to a trainer."""
+    ensure_desk_staff(user)
+    trainer = db.get(User, trainer_user_id)
+    if trainer is None or trainer.role != StaffRole.TRAINER.value:
+        raise TrainerError(404, "مربی یافت نشد.")
+    stmt = (
+        select(TrainerMemberAssignment)
+        .options(
+            joinedload(TrainerMemberAssignment.member),
+            joinedload(TrainerMemberAssignment.trainer),
+        )
+        .where(TrainerMemberAssignment.trainer_user_id == trainer_user_id)
+    )
+    if not include_history:
+        stmt = stmt.where(TrainerMemberAssignment.ended_at.is_(None))
+    stmt = stmt.order_by(
+        TrainerMemberAssignment.ended_at.is_(None).desc(),
+        TrainerMemberAssignment.assigned_at.desc(),
+    )
+    return trainer, list(db.scalars(stmt).unique().all())
+
+
 def list_member_assignments(
     db: Session,
     *,
