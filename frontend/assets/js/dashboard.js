@@ -58,7 +58,7 @@ export function mountDashboard(root, user) {
   root.innerHTML = `
     <div class="status-msg" data-status hidden></div>
     <div class="stats" data-stats></div>
-    <article class="panel" style="margin-top:calc(0.25rem + 3px)">
+    <article class="panel" style="margin-top:13px">
       <header class="panel-head">
         <h2>آخرین هزینه‌های ماه</h2>
         <a class="btn ghost small" href="#finance">گزارش کامل و ثبت هزینه</a>
