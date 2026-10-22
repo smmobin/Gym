@@ -48,6 +48,67 @@ describe('mountStaff / mountPlans', () => {
     expect(root.textContent).toContain('حذف = غیرفعال')
   })
 
+  it('mountStaff create 201 shows success not ثبت ناموفق', async () => {
+    const fetchMock = vi.fn(async (url, opts) => {
+      const method = (opts?.method || 'GET').toUpperCase()
+      if (method === 'POST' && String(url).includes('/api/v1/staff')) {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            user: {
+              id: 9,
+              mobile: '09129999099',
+              full_name: 'منشی جدید',
+              role: 'receptionist',
+              is_active: true,
+            },
+          }),
+        }
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [
+            {
+              id: 9,
+              mobile: '09129999099',
+              full_name: 'منشی جدید',
+              role: 'receptionist',
+              is_active: true,
+            },
+          ],
+          total: 1,
+        }),
+      }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountStaff(root, { role: 'manager', id: 1 })
+    await vi.waitFor(() => expect(root.querySelector('[data-create]')).toBeTruthy())
+
+    const form = /** @type {HTMLFormElement} */ (root.querySelector('[data-create]'))
+    /** @param {string} name @param {string} value */
+    const set = (name, value) => {
+      const el = form.querySelector(`[name="${name}"]`)
+      if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) el.value = value
+    }
+    set('full_name', 'منشی جدید')
+    set('mobile', '09129999099')
+    set('role', 'receptionist')
+    set('password', 'Password12')
+    form.requestSubmit()
+
+    await vi.waitFor(() => {
+      const st = root.querySelector('[data-status]')
+      expect(st?.textContent).not.toContain('ثبت ناموفق')
+      expect(st?.className).toMatch(/ok/)
+    })
+    expect(root.querySelector('[data-status]')?.textContent).not.toMatch(/ناموفق/)
+  })
+
   it('mountStaff receptionist only offers trainer role', async () => {
     vi.stubGlobal(
       'fetch',

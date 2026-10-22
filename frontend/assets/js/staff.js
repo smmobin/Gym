@@ -158,31 +158,51 @@ export function mountStaff(root, user) {
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
+    const form = /** @type {HTMLFormElement} */ (e.target)
+    // Guard double-submit: first POST may be 201, second 409 — old catch showed «ثبت ناموفق».
+    if (form.dataset.busy === '1') return
+    form.dataset.busy = '1'
+    const submitBtn = /** @type {HTMLButtonElement | null} */ (form.querySelector('[type="submit"]'))
+    if (submitBtn) submitBtn.disabled = true
+    const fd = new FormData(form)
     setStatus(status, 'در حال ثبت…', 'loading')
+    let createdOk = false
     try {
-      await apiPost('/api/v1/staff', {
+      const res = await apiPost('/api/v1/staff', {
         full_name: String(fd.get('full_name') || '').trim(),
         mobile: String(fd.get('mobile') || '').trim(),
         role: String(fd.get('role') || '').trim(),
         password: String(fd.get('password') || ''),
       })
-      /** @type {HTMLFormElement} */ (e.target).reset()
+      form.reset()
       if (!isManager) {
-        const roleSel = /** @type {HTMLFormElement} */ (e.target).querySelector('[name=role]')
-        if (roleSel) roleSel.value = 'trainer'
+        const roleSel = form.querySelector('[name=role]')
+        if (roleSel instanceof HTMLSelectElement) roleSel.value = 'trainer'
+      }
+      if (res?.user) {
+        items = [...items.filter((u) => u.id !== res.user.id), res.user]
+        pager.reset()
+        renderTable()
       }
       setStatus(status, 'ثبت شد.', 'ok')
-      await load()
+      createdOk = true
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
+    } finally {
+      form.dataset.busy = '0'
+      if (submitBtn) submitBtn.disabled = false
     }
+    // Reload outside create catch so list-refresh errors are not shown as «ثبت ناموفق».
+    if (createdOk) await load()
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     if (!selectedId) return
-    const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
+    const form = /** @type {HTMLFormElement} */ (e.target)
+    if (form.dataset.busy === '1') return
+    form.dataset.busy = '1'
+    const fd = new FormData(form)
     const password = String(fd.get('password') || '')
     /** @type {Record<string, unknown>} */
     const body = {
@@ -191,13 +211,19 @@ export function mountStaff(root, user) {
       role: String(fd.get('role') || '').trim(),
     }
     if (password) body.password = password
+    let savedOk = false
     try {
       await apiPatch(`/api/v1/staff/${selectedId}`, body)
       setStatus(status, 'ذخیره شد.', 'ok')
-      await load()
-      select(selectedId)
+      savedOk = true
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
+    } finally {
+      form.dataset.busy = '0'
+    }
+    if (savedOk) {
+      await load()
+      select(selectedId)
     }
   })
 
@@ -207,11 +233,12 @@ export function mountStaff(root, user) {
     try {
       await apiPost(`/api/v1/staff/${selectedId}/deactivate`)
       setStatus(status, 'غیرفعال شد.', 'ok')
-      await load()
-      select(selectedId)
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
+      return
     }
+    await load()
+    select(selectedId)
   })
 
   root.querySelector('[data-activate]')?.addEventListener('click', async () => {
@@ -219,11 +246,12 @@ export function mountStaff(root, user) {
     try {
       await apiPost(`/api/v1/staff/${selectedId}/activate`)
       setStatus(status, 'فعال شد.', 'ok')
-      await load()
-      select(selectedId)
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
+      return
     }
+    await load()
+    select(selectedId)
   })
 
   enhancePasswordFields(root)
