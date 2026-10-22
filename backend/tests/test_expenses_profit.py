@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
-from app.db.seed import DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import Member, Payment
 from app.models.enums import PaymentMethod, PaymentStatus
@@ -19,7 +19,7 @@ from app.services.reports import default_month_range, today_tehran
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)
@@ -166,7 +166,7 @@ def test_profit_summary_ok(client: TestClient) -> None:
 
 
 def test_income_only_paid_excludes_refund(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     today = today_tehran()
     start, end = today, today

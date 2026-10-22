@@ -11,14 +11,14 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
-from app.db.seed import DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import Member, MemberFileLock, User
 
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)
@@ -195,7 +195,7 @@ def test_payment_blocked_when_other_holds_lock(client: TestClient) -> None:
 
 
 def test_renew_blocked_when_other_holds_lock(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _clear_locks()
     member = _member("M-1002")
     manager = TestClient(app)

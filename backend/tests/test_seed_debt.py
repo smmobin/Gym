@@ -8,9 +8,15 @@ from sqlalchemy.orm import Session
 import pytest
 
 from app.core.db import SessionLocal
+from app.db.seed import wipe_and_seed
 from app.models import Member, Membership, Payment
 from app.models.enums import PaymentStatus
 from app.services.debt import member_debt
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _reseed_debt_module() -> None:
+    wipe_and_seed()
 
 
 @pytest.fixture

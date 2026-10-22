@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
 from app.core.security import hash_password, verify_password
-from app.db.seed import DEV_ATHLETE_PASSWORD, DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_ATHLETE_PASSWORD, DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import Member, MemberStatus, User
 
@@ -80,7 +80,7 @@ def test_unified_login_athlete(client: TestClient) -> None:
 
 def test_unified_login_staff_priority_over_member_same_mobile(client: TestClient) -> None:
     """If mobile exists in users, staff wins — athlete password must not succeed."""
-    seed()
+    wipe_and_seed()
     login_rate_limiter.reset()
     db = SessionLocal()
     try:
@@ -106,7 +106,7 @@ def test_unified_login_staff_priority_over_member_same_mobile(client: TestClient
     as_athlete_pw = _login(client, mobile="09120000002", password="AthleteOnly99")
     assert as_athlete_pw.status_code == 401
 
-    seed()  # restore clean seed for other tests
+    wipe_and_seed()  # restore clean seed for other tests
     login_rate_limiter.reset()
 
 

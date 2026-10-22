@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
-from app.db.seed import DEV_ATHLETE_PASSWORD, seed
+from app.db.seed import DEV_ATHLETE_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import Member, Membership, MembershipPlan, Payment
 from app.models.enums import PaymentPurpose, PaymentStatus
@@ -20,10 +20,10 @@ from app.services.payment_gateway.base import PaymentRequestResult, PaymentVerif
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
     yield
     # Leave DB as a clean seed so later modules (e.g. debt assertions) stay stable
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)

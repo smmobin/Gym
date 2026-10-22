@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
-from app.db.seed import DEV_ATHLETE_PASSWORD, DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_ATHLETE_PASSWORD, DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import ClassBooking, GroupClass, Member
 from app.models.enums import BookingStatus
@@ -17,7 +17,7 @@ from app.services.class_booking import remaining_capacity
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)
@@ -190,7 +190,7 @@ def test_athlete_capacity_full_409(client: TestClient) -> None:
     assert "ظرفیت" in res.json()["detail"]
 
     # restore for other tests
-    seed()
+    wipe_and_seed()
 
 
 def test_unauthenticated_athlete_classes_401(client: TestClient) -> None:

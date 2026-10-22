@@ -44,6 +44,42 @@ pytest -q
 
 ابزار: **pytest** + **httpx** / TestClient فست‌اپ‌آی.
 
+### دیتابیس تست جدا از دیتابیس کار روزمره
+
+`pytest` به **`gym_control_test`** وصل می‌شود — نه به `gym_control` داخل `.env`.  
+`conftest.py` قبل از import اپ، `DATABASE_URL` را به DB تست override می‌کند (یا از `TEST_DATABASE_URL` می‌خواند). روی DB روزمره wipe نمی‌زند.
+
+#### یک‌بار راه‌اندازی (ویندوز / PowerShell)
+
+اگر Postgres بالا است و رمز همان `.env` است، معمولاً خود pytest دیتابیس را می‌سازد. در غیر این صورت دستی:
+
+```powershell
+# گزینه ۱ — psql (مسیر bin را با نسخهٔ خودتان عوض کنید)
+$env:PGPASSWORD = "YOUR_POSTGRES_PASSWORD"
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE gym_control_test;"
+
+# گزینه ۲ — با SQLAlchemy URL تست (بعد از ساخت DB خالی)
+cd backend
+$env:DATABASE_URL = "postgresql+psycopg://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/gym_control_test"
+.\.venv\Scripts\python.exe -m alembic upgrade head
+```
+
+اختیاری در `backend/.env` (یا فقط در شل قبل از pytest):
+
+```text
+TEST_DATABASE_URL=postgresql+psycopg://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/gym_control_test
+```
+
+اگر `TEST_DATABASE_URL` به نام `gym_control` اشاره کند، pytest عمداً **قطع** می‌شود تا دادهٔ کار روزمره خراب نشود.
+
+### Seed در تست در برابر seed در توسعه
+
+| کجا | چه می‌کند |
+|------|-----------|
+| `python -m app.db.seed` (توسعه) | افزایشی؛ دادهٔ دستی را پاک نمی‌کند |
+| داخل pytest | روی DB تست، در صورت نیاز `wipe_and_seed()` برای state تمیز |
+| `python -m app.db.wipe_dev_data` | فقط wipe عمدی دامنه (با گارد prod) |
+
 ## فرانت‌اند (Ocean Dark MPA)
 
 ```powershell

@@ -9,7 +9,7 @@ from sqlalchemy import delete, select
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
 from app.db.bootstrap_manager import BootstrapError, bootstrap_manager, count_managers
-from app.db.seed import DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import AuditLog, Membership, MembershipPlan, StaffSession, User
 from app.models.enums import StaffRole
@@ -17,7 +17,7 @@ from app.models.enums import StaffRole
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)
@@ -41,7 +41,7 @@ def _login(client: TestClient, mobile: str = "09120000001") -> None:
 
 
 def test_bootstrap_manager_only_when_zero_managers() -> None:
-    seed()
+    wipe_and_seed()
     db = SessionLocal()
     try:
         assert count_managers(db) >= 1
@@ -86,11 +86,11 @@ def test_bootstrap_manager_only_when_zero_managers() -> None:
         db.rollback()
     finally:
         db.close()
-        seed()
+        wipe_and_seed()
 
 
 def test_manager_creates_receptionist_and_trainer(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     recv = client.post(
         "/api/v1/staff",
@@ -152,7 +152,7 @@ def test_manager_creates_receptionist_and_trainer(client: TestClient) -> None:
 
 
 def test_receptionist_creates_trainer_not_receptionist(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client, "09120000002")
     ok = client.post(
         "/api/v1/staff",
@@ -183,7 +183,7 @@ def test_receptionist_creates_trainer_not_receptionist(client: TestClient) -> No
 
 
 def test_trainer_forbidden_on_staff_and_plans(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client, "09120000003")
     assert client.get("/api/v1/staff").status_code == 403
     assert (
@@ -213,7 +213,7 @@ def test_trainer_forbidden_on_staff_and_plans(client: TestClient) -> None:
 
 
 def test_plan_crud_manager_and_receptionist_price_immutable(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     created = client.post(
         "/api/v1/membership-plans",
@@ -289,7 +289,7 @@ def test_plan_crud_manager_and_receptionist_price_immutable(client: TestClient) 
 
 
 def test_inactive_plan_hidden_from_default_list(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     created = client.post(
         "/api/v1/membership-plans",
@@ -321,7 +321,7 @@ def test_inactive_plan_hidden_from_default_list(client: TestClient) -> None:
 
 
 def test_deactivate_revokes_sessions(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     created = client.post(
         "/api/v1/staff",

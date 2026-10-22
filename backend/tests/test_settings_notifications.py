@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter, trial_lead_rate_limiter
-from app.db.seed import DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import AuditLog, StaffNotification
 from app.models.enums import StaffRole
@@ -16,7 +16,7 @@ from app.models.enums import StaffRole
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)

@@ -11,7 +11,7 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
-from app.db.seed import DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import Member
 from app.models.audit import AuditLog
@@ -20,9 +20,9 @@ from app.services.sms.base import SmsSendResult
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
     yield
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)

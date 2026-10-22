@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
-from app.db.seed import DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import Member
 from app.services.members import next_display_id
@@ -17,7 +17,7 @@ from app.services.members import next_display_id
 @pytest.fixture(scope="module", autouse=True)
 def _reseed_members_module() -> None:
     """Clean known seed state once for this module (archive/create mutate DB)."""
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)

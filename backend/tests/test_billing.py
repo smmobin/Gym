@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
-from app.db.seed import DEV_STAFF_PASSWORD, seed
+from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import AuditLog, Member, Membership, MembershipPlan, Payment
 from app.models.enums import MembershipStatus, PaymentStatus
@@ -19,7 +19,7 @@ from app.services.billing import renew_start_date
 
 @pytest.fixture(scope="module", autouse=True)
 def _reseed() -> None:
-    seed()
+    wipe_and_seed()
 
 
 @pytest.fixture(autouse=True)
@@ -127,7 +127,7 @@ def test_list_active_plans(client: TestClient) -> None:
 
 
 def test_renew_from_current_end_date(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     sara = _member("M-1002")
     db = SessionLocal()
@@ -183,7 +183,7 @@ def test_renew_rejects_negative_agreed(client: TestClient) -> None:
 
 
 def test_partial_payment_updates_debt(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     hosein = _member("M-1005")
     before = client.get(f"/api/v1/members/{hosein.id}/memberships")
@@ -216,7 +216,7 @@ def test_partial_payment_updates_debt(client: TestClient) -> None:
 
 
 def test_refund_keeps_amount_and_writes_audit(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     maryam = _member("M-1006")
     payments = client.get(f"/api/v1/members/{maryam.id}/payments").json()["items"]
@@ -249,7 +249,7 @@ def test_refund_keeps_amount_and_writes_audit(client: TestClient) -> None:
 
 
 def test_receipt_numbers_unique(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     elham = _member("M-1008")
     r1 = client.post(
@@ -268,7 +268,7 @@ def test_receipt_numbers_unique(client: TestClient) -> None:
 
 
 def test_online_method_without_gateway(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     elham = _member("M-1008")
     response = client.post(
@@ -286,7 +286,7 @@ def test_online_method_without_gateway(client: TestClient) -> None:
 
 
 def test_cancel_membership(client: TestClient) -> None:
-    seed()
+    wipe_and_seed()
     _login(client)
     reza = _member("M-1007")
     memberships = client.get(f"/api/v1/members/{reza.id}/memberships").json()["items"]
