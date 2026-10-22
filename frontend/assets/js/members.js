@@ -17,7 +17,7 @@ export function mountMembers(root, user) {
     <article class="panel">
       <header class="panel-head"><h2>اعضا</h2></header>
       <div class="form-grid">
-        <label class="full">جستجو<input type="search" data-q placeholder="نام یا موبایل — همزمان با تایپ" autocomplete="off" /></label>
+        <label class="full">جستجو<input type="search" data-q placeholder="نام یا موبایل" autocomplete="off" /></label>
       </div>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap" style="margin-top:1rem">
