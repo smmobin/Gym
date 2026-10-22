@@ -40,7 +40,7 @@ export function mountPlans(root, user) {
           <label>مدت (روز)<input type="number" name="duration_days" min="1" placeholder="اختیاری" /></label>
           <label>تعداد جلسه<input type="number" name="session_count" min="1" placeholder="اختیاری" /></label>
           <label>قیمت پایه (تومان)<input type="number" name="base_price_toman" min="0" value="0" required /></label>
-          <label class="full"><input type="checkbox" name="includes_locker" /> شامل کمد</label>
+          <label class="check"><input type="checkbox" name="includes_locker" /> شامل کمد</label>
           <p class="hint full">حداقل یکی از مدت یا تعداد جلسه باید پر شود. قیمت صفر = هدیه/آزاد.</p>
           <button class="btn" type="submit">ثبت طرح</button>
         </form>
@@ -54,7 +54,7 @@ export function mountPlans(root, user) {
           <label>مدت (روز)<input type="number" name="duration_days" min="1" /></label>
           <label>تعداد جلسه<input type="number" name="session_count" min="1" /></label>
           <label>قیمت پایه (تومان)<input type="number" name="base_price_toman" min="0" /></label>
-          <label class="full"><input type="checkbox" name="includes_locker" /> شامل کمد</label>
+          <label class="check"><input type="checkbox" name="includes_locker" /> شامل کمد</label>
           <div class="inline-actions full">
             <button class="btn" type="submit" data-save disabled>ذخیره</button>
             <button class="btn ghost" type="button" data-deactivate disabled>غیرفعال</button>

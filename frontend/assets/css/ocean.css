@@ -1733,6 +1733,30 @@ a.row-item:hover h3 {
   font-size: 0.84rem;
   margin-block: 0;
 }
+/* Checkbox/radio: row beside text — not stacked like text-field labels */
+.form-grid label:has(> input[type="checkbox"]),
+.form-grid label:has(> input[type="radio"]),
+.form-grid label.check {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  align-self: end;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: 100%;
+  min-height: 2.75rem;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.form-grid label:has(> input[type="checkbox"]) > input,
+.form-grid label:has(> input[type="radio"]) > input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
 .form-grid label.full,
 .form-grid .btn.wide,
 .form-grid button[type="submit"] {

@@ -179,5 +179,10 @@ describe('mountStaff / mountPlans', () => {
     expect(root.textContent).toContain('حذف = غیرفعال')
     expect(root.textContent).toContain('شامل کمد')
     expect(root.textContent).toContain('غیرفعال')
+    const lockerLabels = root.querySelectorAll('label.check input[name="includes_locker"]')
+    expect(lockerLabels.length).toBe(2)
+    lockerLabels.forEach((input) => {
+      expect(input.closest('label')?.classList.contains('full')).toBe(false)
+    })
   })
 })
