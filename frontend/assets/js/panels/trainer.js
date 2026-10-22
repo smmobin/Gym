@@ -1,4 +1,5 @@
 import { apiErrorMessage, apiGet } from '../api.js'
+import { createAutoRefresh } from '../auto-refresh.js'
 import { requireStaff } from '../auth-staff.js'
 import { mountAttendance } from '../attendance.js'
 import { createListPager } from '../pagination.js'
@@ -54,9 +55,7 @@ async function main() {
 function mountTrainees(root) {
   root.innerHTML = `
     <article class="panel">
-      <header class="panel-head"><h2>شاگردان من</h2>
-        <button type="button" class="btn ghost small" data-reload>بازخوانی</button>
-      </header>
+      <header class="panel-head"><h2>شاگردان من</h2></header>
       <div class="status-msg" data-status hidden></div>
       <div class="list" data-list></div>
       <div data-pager class="list-pager-host" hidden></div>
@@ -66,11 +65,15 @@ function mountTrainees(root) {
   const list = root.querySelector('[data-list]')
   const pager = createListPager(root.querySelector('[data-pager]'))
 
-  async function load() {
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
     try {
       const data = await apiGet('/api/v1/members')
       const items = data.items || data.members || []
-      pager.reset()
+      if (!silent) pager.reset()
       pager.paint(items, (rows) => {
         list.innerHTML = rows.length
           ? rows
@@ -85,14 +88,19 @@ function mountTrainees(root) {
               .join('')
           : '<p class="hint">شاگرد تخصیص‌یافته‌ای ندارید.</p>'
       })
+      setStatus(status, `${items.length.toLocaleString('fa-IR')} شاگرد`, 'ok')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'خطا در بارگذاری شاگردان'), 'error')
       list.innerHTML = ''
+      throw err
     }
   }
 
-  root.querySelector('[data-reload]')?.addEventListener('click', () => void load())
-  void load()
+  createAutoRefresh(root, load, {
+    intervalMs: 30_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
+  })
 }
 
 /** @param {string} id */

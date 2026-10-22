@@ -1,4 +1,5 @@
 import { ApiError, apiGet, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { ATTENDANCE_TYPE_LABEL, formatDateTime, formatToman } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch } from './members.js'
@@ -29,9 +30,7 @@ export function mountAttendance(root, user) {
         <div class="status-msg" data-status hidden></div>
       </article>
       <article class="panel">
-        <header class="panel-head"><h2>حضورهای امروز</h2>
-          <button type="button" class="btn ghost small" data-reload>بازخوانی</button>
-        </header>
+        <header class="panel-head"><h2>حضورهای امروز</h2></header>
         <div class="list" data-today></div>
       </article>
     </div>
@@ -60,7 +59,10 @@ export function mountAttendance(root, user) {
     },
   )
 
-  async function loadToday() {
+  /**
+   * @param {{ silent?: boolean }} [_ctx]
+   */
+  async function loadToday(_ctx = {}) {
     try {
       const data = await apiGet('/api/v1/attendances/today')
       const items = data.items || data.attendances || []
@@ -82,7 +84,7 @@ export function mountAttendance(root, user) {
           try {
             await apiPost(`/api/v1/attendances/${btn.getAttribute('data-out')}/check-out`)
             setStatus(status, 'خروج ثبت شد.', 'ok')
-            await loadToday()
+            await autoRefresh.refresh()
           } catch (err) {
             setStatus(status, err instanceof ApiError ? err.message : 'خروج ناموفق', 'error')
           }
@@ -90,8 +92,15 @@ export function mountAttendance(root, user) {
       })
     } catch (err) {
       todayEl.innerHTML = `<p class="hint">${err instanceof ApiError ? err.message : 'خطا'}</p>`
+      throw err
     }
   }
+
+  const autoRefresh = createAutoRefresh(root, loadToday, {
+    intervalMs: 20_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
+  })
 
   async function checkIn(confirmSecond) {
     if (!selected) {
@@ -114,7 +123,7 @@ export function mountAttendance(root, user) {
       if (data.debt_warning) msg += ` هشدار بدهی: ${formatToman(data.debt_toman)}`
       if (data.sessions_remaining != null) msg += ` · جلسه باقی‌مانده: ${data.sessions_remaining}`
       setStatus(status, msg, 'ok')
-      await loadToday()
+      await autoRefresh.refresh()
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && String(err.message).includes('ورود دوم')) {
         secondBtn.hidden = false
@@ -127,6 +136,4 @@ export function mountAttendance(root, user) {
 
   root.querySelector('[data-checkin]')?.addEventListener('click', () => void checkIn(false))
   secondBtn?.addEventListener('click', () => void checkIn(true))
-  root.querySelector('[data-reload]')?.addEventListener('click', () => void loadToday())
-  void loadToday()
 }

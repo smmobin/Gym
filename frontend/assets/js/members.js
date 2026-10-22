@@ -1,5 +1,7 @@
-import { ApiError, apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
+import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { MEMBER_STATUS } from './format.js'
+import { bindLiveSearch } from './live-search.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { createListPager } from './pagination.js'
 import { enhancePasswordFields } from './password-toggle.js'
@@ -15,11 +17,7 @@ export function mountMembers(root, user) {
     <article class="panel">
       <header class="panel-head"><h2>اعضا</h2></header>
       <div class="form-grid">
-        <label class="full">جستجو<input type="search" data-q placeholder="نام یا موبایل" /></label>
-      </div>
-      <div class="inline-actions">
-        <button type="button" class="btn" data-search>جستجو</button>
-        <button type="button" class="btn ghost" data-reload>بازخوانی</button>
+        <label class="full">جستجو<input type="search" data-q placeholder="نام یا موبایل — همزمان با تایپ" autocomplete="off" /></label>
       </div>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap" style="margin-top:1rem">
@@ -100,19 +98,30 @@ export function mountMembers(root, user) {
       })
     : null
 
-  async function load(q) {
-    setStatus(status, 'در حال بارگذاری…', 'loading')
+  function currentQ() {
+    const el = /** @type {HTMLInputElement | null} */ (root.querySelector('[data-q]'))
+    return el?.value?.trim() || ''
+  }
+
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'در حال بارگذاری…', 'loading')
     try {
       const params = new URLSearchParams()
-      if (q?.trim()) params.set('q', q.trim())
+      const q = currentQ()
+      if (q) params.set('q', q)
       const qs = params.toString()
       const data = await apiGet(qs ? `/api/v1/members?${qs}` : '/api/v1/members')
       items = data.items || []
-      pager.reset()
+      if (!silent) pager.reset()
       renderTable()
       setStatus(status, `${items.length.toLocaleString('fa-IR')} عضو`, 'ok')
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'بارگذاری ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
+      throw err
     }
   }
 
@@ -149,11 +158,19 @@ export function mountMembers(root, user) {
     if (locker) await locker.setMember(canWrite ? id : null)
   }
 
-  root.querySelector('[data-search]')?.addEventListener('click', () => {
-    const q = /** @type {HTMLInputElement} */ (root.querySelector('[data-q]')).value
-    void load(q)
+  const autoRefresh = createAutoRefresh(root, load, {
+    intervalMs: 30_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
   })
-  root.querySelector('[data-reload]')?.addEventListener('click', () => void load())
+
+  bindLiveSearch(
+    /** @type {HTMLInputElement | null} */ (root.querySelector('[data-q]')),
+    () => {
+      void autoRefresh.refresh()
+    },
+    { delayMs: 280 },
+  )
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -178,13 +195,14 @@ export function mountMembers(root, user) {
     } finally {
       form.dataset.busy = '0'
     }
-    if (createdOk) await load()
+    if (createdOk) await autoRefresh.refresh()
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     if (!selectedId || !lockHeldByMe) return
     const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
+    let savedOk = false
     try {
       await apiPatch(`/api/v1/members/${selectedId}`, {
         first_name: String(fd.get('first_name') || '').trim(),
@@ -193,10 +211,11 @@ export function mountMembers(root, user) {
         notes: String(fd.get('notes') || '').trim() || null,
       })
       setStatus(status, 'ذخیره شد.', 'ok')
-      await load()
+      savedOk = true
     } catch (err) {
       setStatus(status, lockErrorMessage(err, 'ذخیره ناموفق'), 'error')
     }
+    if (savedOk) await autoRefresh.refresh()
   })
 
   root.querySelector('[data-archive]')?.addEventListener('click', async () => {
@@ -207,10 +226,11 @@ export function mountMembers(root, user) {
       setStatus(status, 'آرشیو شد.', 'ok')
       selectedId = null
       if (locker) await locker.release()
-      await load()
     } catch (err) {
       setStatus(status, lockErrorMessage(err, 'آرشیو ناموفق'), 'error')
+      return
     }
+    await autoRefresh.refresh()
   })
 
   root.querySelector('[data-unlock]')?.addEventListener('click', async () => {
@@ -233,8 +253,7 @@ export function mountMembers(root, user) {
   })
 
   enhancePasswordFields(root)
-  void load()
-  return { reload: load }
+  return { reload: () => autoRefresh.refresh(), stop: () => autoRefresh.stop() }
 }
 
 /**

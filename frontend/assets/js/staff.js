@@ -1,4 +1,5 @@
 import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { ROLE_LABEL } from './format.js'
 import { createListPager } from './pagination.js'
 import { enhancePasswordFields } from './password-toggle.js'
@@ -23,9 +24,6 @@ export function mountStaff(root, user) {
     <article class="panel">
       <header class="panel-head"><h2>کارکنان</h2></header>
       <p class="hint">حذف = غیرفعال‌سازی (ردیف از دیتابیس پاک نمی‌شود). اگر موبایل کارمند با عضو یکی باشد، در ورود اولویت با کارکنان است.</p>
-      <div class="inline-actions">
-        <button type="button" class="btn ghost" data-reload>بازخوانی</button>
-      </div>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap" style="margin-top:1rem">
         <table class="responsive-table"><thead>
@@ -141,20 +139,29 @@ export function mountStaff(root, user) {
     if (hint) hint.textContent = `ویرایش: ${u.full_name}`
   }
 
-  async function load() {
-    setStatus(status, 'بارگذاری…', 'loading')
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'بارگذاری…', 'loading')
     try {
       const data = await apiGet('/api/v1/staff')
       items = data.items || []
-      pager.reset()
+      if (!silent) pager.reset()
       renderTable()
       setStatus(status, `${items.length.toLocaleString('fa-IR')} نفر`, 'ok')
     } catch (err) {
-      setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق'), 'error')
+      setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
+      throw err
     }
   }
 
-  root.querySelector('[data-reload]')?.addEventListener('click', () => void load())
+  const autoRefresh = createAutoRefresh(root, load, {
+    intervalMs: 30_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
+  })
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -193,7 +200,7 @@ export function mountStaff(root, user) {
       if (submitBtn) submitBtn.disabled = false
     }
     // Reload outside create catch so list-refresh errors are not shown as «ثبت ناموفق».
-    if (createdOk) await load()
+    if (createdOk) await autoRefresh.refresh()
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
@@ -222,7 +229,7 @@ export function mountStaff(root, user) {
       form.dataset.busy = '0'
     }
     if (savedOk) {
-      await load()
+      await autoRefresh.refresh()
       select(selectedId)
     }
   })
@@ -237,7 +244,7 @@ export function mountStaff(root, user) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
       return
     }
-    await load()
+    await autoRefresh.refresh()
     select(selectedId)
   })
 
@@ -250,12 +257,11 @@ export function mountStaff(root, user) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
       return
     }
-    await load()
+    await autoRefresh.refresh()
     select(selectedId)
   })
 
   enhancePasswordFields(root)
-  void load()
 }
 
 /** @param {string} s */

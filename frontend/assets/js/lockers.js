@@ -1,4 +1,5 @@
-import { ApiError, apiGet, apiPost } from './api.js'
+import { ApiError, apiErrorMessage, apiGet, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { bindMemberSearch } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -100,9 +101,7 @@ export function mountLockers(root, user) {
   }
   root.innerHTML = `
     <article class="panel">
-      <header class="panel-head"><h2>کمدها</h2>
-        <button type="button" class="btn ghost small" data-reload>بازخوانی</button>
-      </header>
+      <header class="panel-head"><h2>کمدها</h2></header>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap"><table class="responsive-table">
         <thead><tr><th>کد</th><th>وضعیت</th><th>عضو</th><th></th></tr></thead>
@@ -168,7 +167,7 @@ export function mountLockers(root, user) {
         try {
           await apiPost(`/api/v1/lockers/${b.getAttribute('data-rel')}/release`)
           setStatus(status, 'آزاد شد.', 'ok')
-          await load()
+          await autoRefresh.refresh()
         } catch (err) {
           setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
         }
@@ -220,16 +219,29 @@ export function mountLockers(root, user) {
     }
   }
 
-  async function load() {
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
     try {
       await loadLockersOnly()
       setStatus(status, `${lockers.length.toLocaleString('fa-IR')} کمد`, 'ok')
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
+      setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
+      throw err
     }
-    await loadPlansAndEligible()
-    if (member) renderEligibility()
+    if (!silent) {
+      await loadPlansAndEligible()
+      if (member) renderEligibility()
+    }
   }
+
+  const autoRefresh = createAutoRefresh(root, load, {
+    intervalMs: 30_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
+  })
 
   bindMemberSearch(
     /** @type {HTMLElement} */ (root.querySelector('[data-pick]')),
@@ -294,7 +306,7 @@ export function mountLockers(root, user) {
       const body = { member_id: member.id, membership_id: eligible[0].id }
       await apiPost(`/api/v1/lockers/${selected.id}/assign`, body)
       setStatus(status, 'واگذاری انجام شد.', 'ok')
-      await load()
+      await autoRefresh.refresh()
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'واگذاری ناموفق', 'error')
     }
@@ -337,16 +349,13 @@ export function mountLockers(root, user) {
           status,
           reloadErr instanceof ApiError
             ? `کمد ساخته شد (جدول به‌روز شد) ولی همگام‌سازی کامل ناموفق: ${reloadErr.message}`
-            : 'کمد ساخته شد؛ اگر ردیف را نمی‌بینید بازخوانی را بزنید.',
+            : 'کمد ساخته شد؛ جدول ممکن است لحظه‌ای تأخیر داشته باشد.',
           'error',
         )
       }
       void loadPlansAndEligible()
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ساخت ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'ساخت ناموفق'), 'error')
     }
   })
-
-  root.querySelector('[data-reload]')?.addEventListener('click', () => void load())
-  void load()
 }

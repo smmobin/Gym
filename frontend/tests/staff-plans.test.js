@@ -47,6 +47,8 @@ describe('mountStaff / mountPlans', () => {
     expect(roleSelect.innerHTML).toContain('receptionist')
     expect(roleSelect.innerHTML).toContain('trainer')
     expect(root.textContent).toContain('حذف = غیرفعال')
+    expect(root.querySelector('[data-reload]')).toBeNull()
+    expect(root.textContent).not.toContain('بازخوانی')
   })
 
   it('mountStaff create 201 shows success not ثبت ناموفق', async () => {

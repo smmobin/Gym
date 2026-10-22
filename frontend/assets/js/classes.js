@@ -1,4 +1,5 @@
-import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
+import { ApiError, apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { formatDateTimeShort } from './format.js'
 import { bindMemberSearch } from './members.js'
 import { createListPager } from './pagination.js'
@@ -9,9 +10,7 @@ export function mountClasses(root, user) {
   const canWrite = user.role === 'manager' || user.role === 'receptionist'
   root.innerHTML = `
     <article class="panel">
-      <header class="panel-head"><h2>کلاس‌های گروهی</h2>
-        <button type="button" class="btn ghost small" data-reload>بازخوانی</button>
-      </header>
+      <header class="panel-head"><h2>کلاس‌های گروهی</h2></header>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap"><table class="responsive-table">
         <thead><tr><th>عنوان</th><th>زمان</th><th>ظرفیت</th><th>جنسیت</th><th></th></tr></thead>
@@ -82,18 +81,29 @@ export function mountClasses(root, user) {
     )
   }
 
-  async function load() {
-    setStatus(status, 'بارگذاری…', 'loading')
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'بارگذاری…', 'loading')
     try {
       const data = await apiGet('/api/v1/group-classes')
       classes = data.items || []
-      pager.reset()
+      if (!silent) pager.reset()
       pager.paint(classes, paintClassRows)
       setStatus(status, `${classes.length.toLocaleString('fa-IR')} کلاس`, 'ok')
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
+      setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
+      throw err
     }
   }
+
+  const autoRefresh = createAutoRefresh(root, load, {
+    intervalMs: 30_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
+  })
 
   function fillEdit(id) {
     const c = classes.find((x) => x.id === id)
@@ -136,7 +146,7 @@ export function mountClasses(root, user) {
         btn.addEventListener('click', async () => {
           await apiPost(`/api/v1/group-classes/${id}/bookings/${btn.getAttribute('data-cancel')}/cancel`)
           setStatus(status, 'لغو شد.', 'ok')
-          await load()
+          await autoRefresh.refresh()
           await selectClass(id)
         }),
       )
@@ -149,7 +159,7 @@ export function mountClasses(root, user) {
           const body = membershipId ? { membership_id: membershipId } : {}
           await apiPost(path, body)
           setStatus(status, kind === 'no-show' ? 'غیبت ثبت شد.' : 'حضور ثبت شد.', 'ok')
-          await load()
+          await autoRefresh.refresh()
           await selectClass(id)
         } catch (err) {
           if (err instanceof ApiError && err.detail && err.detail.code === 'membership_required') {
@@ -188,7 +198,7 @@ export function mountClasses(root, user) {
       try {
         await apiPost(`/api/v1/group-classes/${selected.id}/bookings`, { member_id: pickMember.id })
         setStatus(status, 'رزرو ثبت شد.', 'ok')
-        await load()
+        await autoRefresh.refresh()
         await selectClass(selected.id)
       } catch (err) {
         setStatus(status, err instanceof ApiError ? err.message : 'رزرو ناموفق', 'error')
@@ -212,10 +222,10 @@ export function mountClasses(root, user) {
         if (data.trainer_schedule_conflict || data.warning) {
           setStatus(status, data.warning || 'هشدار تداخل زمان مربی — کلاس ذخیره شد.', 'ok')
         } else setStatus(status, 'کلاس ذخیره شد.', 'ok')
-        (e.target).reset()
-        await load()
+        /** @type {HTMLFormElement} */ (e.target).reset()
+        await autoRefresh.refresh()
       } catch (err) {
-        setStatus(status, err instanceof ApiError ? err.message : 'ذخیره ناموفق', 'error')
+        setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
       }
     })
     root.querySelector('[data-reset]')?.addEventListener('click', () => {
@@ -225,9 +235,6 @@ export function mountClasses(root, user) {
       if (id) id.value = ''
     })
   }
-
-  root.querySelector('[data-reload]')?.addEventListener('click', () => void load())
-  void load()
 }
 
 function toLocalInput(iso) {
