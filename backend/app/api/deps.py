@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -17,6 +16,8 @@ from app.models.enums import MemberStatus
 from app.models.member import Member
 from app.models.session import StaffSession
 from app.models.user import User
+from app.services.athlete_session import athlete_session_is_valid
+from app.services.auth_session import session_is_valid
 
 
 def get_current_user(
@@ -32,18 +33,16 @@ def get_current_user(
         )
 
     token_hash = hash_session_token(token)
-    now = datetime.now(tz=timezone.utc)
     stmt = (
         select(StaffSession)
         .where(
             StaffSession.token_hash == token_hash,
             StaffSession.revoked_at.is_(None),
-            StaffSession.expires_at > now,
         )
         .limit(1)
     )
     staff_session = db.scalar(stmt)
-    if staff_session is None:
+    if staff_session is None or not session_is_valid(staff_session, settings=settings):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="نشست معتبر نیست. دوباره وارد شوید.",
@@ -86,18 +85,18 @@ def get_current_athlete(
         )
 
     token_hash = hash_session_token(token)
-    now = datetime.now(tz=timezone.utc)
     stmt = (
         select(AthleteSession)
         .where(
             AthleteSession.token_hash == token_hash,
             AthleteSession.revoked_at.is_(None),
-            AthleteSession.expires_at > now,
         )
         .limit(1)
     )
     athlete_session = db.scalar(stmt)
-    if athlete_session is None:
+    if athlete_session is None or not athlete_session_is_valid(
+        athlete_session, settings=settings
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="نشست ورزشکار معتبر نیست. دوباره وارد شوید.",

@@ -40,6 +40,7 @@ from app.services import athlete_classes as athlete_class_svc
 from app.services.athlete_session import (
     create_athlete_session,
     revoke_athlete_session_by_token,
+    touch_athlete_session_by_token,
 )
 
 router = APIRouter(prefix="/athlete", tags=["athlete"])
@@ -56,7 +57,7 @@ def _set_athlete_cookie(response: Response, *, token: str, settings: Settings) -
         httponly=True,
         samesite="lax",
         secure=settings.cookie_secure,
-        max_age=settings.athlete_session_ttl_hours * 3600,
+        max_age=max(60, int(settings.athlete_session_idle_minutes) * 60),
         path="/",
     )
 
@@ -116,6 +117,24 @@ def athlete_logout(
         db.commit()
     _clear_athlete_cookie(response, settings=settings)
     return MessageResponse(detail="خروج انجام شد.")
+
+
+@router.post("/auth/touch", response_model=MessageResponse)
+def athlete_touch_session(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> MessageResponse:
+    token = request.cookies.get(settings.athlete_session_cookie_name)
+    if not token or not touch_athlete_session_by_token(db, token=token, settings=settings):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="نشست ورزشکار معتبر نیست. دوباره وارد شوید.",
+        )
+    db.commit()
+    _set_athlete_cookie(response, token=token, settings=settings)
+    return MessageResponse(detail="نشست تمدید شد.")
 
 
 @router.get("/auth/me", response_model=AthleteMeResponse)

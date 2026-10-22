@@ -143,6 +143,7 @@ cd backend
   1. اول جدول کارکنان (`users`) را چک می‌کند
   2. اگر نبود، جدول عضو (`members` با `password_hash`) را چک می‌کند
   3. پاسخ: `{ kind: "staff"|"athlete", role, user?, member? }` + کوکی مناسب (`gym_session` یا `gym_athlete_session`)
+  4. **Idle:** بعد از ۵ دقیقه بدون فعالیت کاربر، نشست منقضی می‌شود (`SESSION_IDLE_MINUTES`؛ تمدید با `POST /auth/touch` از UI). سقف مطلق از زمان ورود: `SESSION_TTL_HOURS` (پیش‌فرض ۱۲).
   4. اگر موبایل در **هر دو** جدول بود: **اولویت کارکنان** (رمز ورزشکار همان موبایل کار نمی‌کند)
 - Rate limit حفظ می‌شود (`login:{mobile}`)
 - مسیر قدیمی `POST /api/v1/athlete/auth/login` برای سازگاری API باقی است؛ UI عمومی فقط `/login/` است (`/athlete/login.html` ریدایرکت می‌کند)

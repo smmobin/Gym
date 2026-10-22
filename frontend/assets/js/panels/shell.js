@@ -1,5 +1,6 @@
 import { staffLogout, roleLabel } from '../auth-staff.js'
 import { mountNotificationBell } from '../notifications.js'
+import { startSessionActivityGuard } from '../session-activity.js'
 import { bindHashNav, bindSidebarClose, showApiDown } from '../ui.js'
 import { apiGet } from '../api.js'
 
@@ -34,6 +35,12 @@ export async function initStaffShell(opts) {
     } finally {
       location.href = '/login/'
     }
+  })
+
+  startSessionActivityGuard({
+    touchPath: '/api/v1/auth/touch',
+    logoutPath: '/api/v1/auth/logout',
+    idleMs: 5 * 60 * 1000,
   })
 
   // Hide manager-only nav for non-managers

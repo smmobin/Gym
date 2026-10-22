@@ -31,11 +31,15 @@ class Settings(BaseSettings):
     # future signing / ops checklist). Never commit the real value.
     secret_key: str = "CHANGE_ME"
 
-    # Auth / session (cookie name + TTL documented in getting-started)
+    # Auth / session (cookie name + idle TTL documented in getting-started)
     session_cookie_name: str = "gym_session"
+    # Idle timeout: logout after this many minutes without user activity (touch).
+    session_idle_minutes: int = 5
+    # Hard cap from login even if the user stays active.
     session_ttl_hours: int = 12
     # Athlete sessions are separate cookies + table (never share staff sessions)
     athlete_session_cookie_name: str = "gym_athlete_session"
+    athlete_session_idle_minutes: int = 5
     athlete_session_ttl_hours: int = 12
     login_rate_limit_max: int = 20
     login_rate_limit_window_seconds: int = 60

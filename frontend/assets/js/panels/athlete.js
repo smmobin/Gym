@@ -2,6 +2,7 @@ import { apiGet, apiPost, ApiError } from '../api.js'
 import { athleteLogout, requireAthlete } from '../auth-athlete.js'
 import { formatDateTime, formatDateTimeShort, formatToman } from '../format.js'
 import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-input.js'
+import { startSessionActivityGuard } from '../session-activity.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
 
 function payResultMessage() {
@@ -47,6 +48,12 @@ async function main() {
     } finally {
       location.href = '/login/'
     }
+  })
+
+  startSessionActivityGuard({
+    touchPath: '/api/v1/athlete/auth/touch',
+    logoutPath: '/api/v1/athlete/auth/logout',
+    idleMs: 5 * 60 * 1000,
   })
 
   const banner = document.querySelector('[data-api-banner]')

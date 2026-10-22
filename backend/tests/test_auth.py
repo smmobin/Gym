@@ -153,6 +153,55 @@ def test_logout_revokes_session(client: TestClient) -> None:
     assert client.get("/api/v1/auth/me").status_code == 401
 
 
+def test_touch_extends_idle_expiry(client: TestClient) -> None:
+    from datetime import datetime, timedelta, timezone
+
+    from app.models.session import StaffSession
+
+    assert _login(client).status_code == 200
+    db = SessionLocal()
+    try:
+        row = db.scalars(select(StaffSession).order_by(StaffSession.id.desc())).first()
+        assert row is not None
+        token_hash = row.token_hash
+        near = datetime.now(tz=timezone.utc) + timedelta(seconds=45)
+        row.expires_at = near
+        db.commit()
+    finally:
+        db.close()
+
+    touched = client.post("/api/v1/auth/touch")
+    assert touched.status_code == 200
+
+    db = SessionLocal()
+    try:
+        row = db.scalar(select(StaffSession).where(StaffSession.token_hash == token_hash))
+        assert row is not None
+        assert row.expires_at > near
+    finally:
+        db.close()
+    assert client.get("/api/v1/auth/me").status_code == 200
+
+
+def test_idle_expired_session_rejects_me_and_touch(client: TestClient) -> None:
+    from datetime import datetime, timedelta, timezone
+
+    from app.models.session import StaffSession
+
+    assert _login(client).status_code == 200
+    db = SessionLocal()
+    try:
+        row = db.scalars(select(StaffSession).order_by(StaffSession.id.desc())).first()
+        assert row is not None
+        row.expires_at = datetime.now(tz=timezone.utc) - timedelta(seconds=10)
+        db.commit()
+    finally:
+        db.close()
+
+    assert client.get("/api/v1/auth/me").status_code == 401
+    assert client.post("/api/v1/auth/touch").status_code == 401
+
+
 def test_manager_can_change_staff_password(client: TestClient) -> None:
     assert _login(client, mobile="09120000001").status_code == 200
     db = SessionLocal()

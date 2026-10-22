@@ -24,12 +24,16 @@ from app.schemas.auth import (
 )
 from app.services import athlete as athlete_svc
 from app.services.athlete_session import create_athlete_session
-from app.services.auth_session import create_session, revoke_session_by_token
+from app.services.auth_session import create_session, revoke_session_by_token, touch_session_by_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 MIN_PASSWORD_LEN = 8
 ATHLETE_ROLE = "athlete"
+
+
+def _cookie_max_age_seconds(settings: Settings) -> int:
+    return max(60, int(settings.session_idle_minutes) * 60)
 
 
 def _set_session_cookie(response: Response, *, token: str, settings: Settings) -> None:
@@ -39,7 +43,7 @@ def _set_session_cookie(response: Response, *, token: str, settings: Settings) -
         httponly=True,
         samesite="lax",
         secure=settings.cookie_secure,
-        max_age=settings.session_ttl_hours * 3600,
+        max_age=_cookie_max_age_seconds(settings),
         path="/",
     )
 
@@ -60,7 +64,7 @@ def _set_athlete_cookie(response: Response, *, token: str, settings: Settings) -
         httponly=True,
         samesite="lax",
         secure=settings.cookie_secure,
-        max_age=settings.athlete_session_ttl_hours * 3600,
+        max_age=max(60, int(settings.athlete_session_idle_minutes) * 60),
         path="/",
     )
 
@@ -158,6 +162,25 @@ def logout(
         db.commit()
     _clear_session_cookie(response, settings=settings)
     return MessageResponse(detail="خروج انجام شد.")
+
+
+@router.post("/touch", response_model=MessageResponse)
+def touch_session(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> MessageResponse:
+    """Extend idle session after real UI activity (not background polling alone)."""
+    token = request.cookies.get(settings.session_cookie_name)
+    if not token or not touch_session_by_token(db, token=token, settings=settings):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="نشست معتبر نیست. دوباره وارد شوید.",
+        )
+    db.commit()
+    _set_session_cookie(response, token=token, settings=settings)
+    return MessageResponse(detail="نشست تمدید شد.")
 
 
 @router.get("/me", response_model=MeResponse)
