@@ -1,4 +1,4 @@
-import { apiGet } from '../api.js'
+import { apiErrorMessage, apiGet } from '../api.js'
 import { requireStaff } from '../auth-staff.js'
 import { mountAttendance } from '../attendance.js'
 import { createListPager } from '../pagination.js'
@@ -86,7 +86,7 @@ function mountTrainees(root) {
           : '<p class="hint">شاگرد تخصیص‌یافته‌ای ندارید.</p>'
       })
     } catch (err) {
-      setStatus(status, err?.message || 'خطا در بارگذاری شاگردان', 'error')
+      setStatus(status, apiErrorMessage(err, 'خطا در بارگذاری شاگردان'), 'error')
       list.innerHTML = ''
     }
   }

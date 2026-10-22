@@ -1,4 +1,4 @@
-import { ApiError, apiGet, apiPost } from './api.js'
+import { apiErrorMessage, apiGet, apiPost } from './api.js'
 import { formatToman } from './format.js'
 import { enhanceMoneyInputs, moneyFromForm } from './money-input.js'
 import { setStatus } from './ui.js'
@@ -84,7 +84,7 @@ export function mountReports(root, user) {
         : '<p class="hint">هزینه‌ای در این بازه نیست.</p>'
       setStatus(status, profit.note || 'بازه اعمال شد.', 'ok')
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
+      setStatus(status, apiErrorMessage(err, 'خطا'), 'error')
     }
   }
 
@@ -96,7 +96,9 @@ export function mountReports(root, user) {
 
   root.querySelector('[data-expense]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
+    const form = /** @type {HTMLFormElement} */ (e.target)
+    const fd = new FormData(form)
+    let savedOk = false
     try {
       await apiPost('/api/v1/expenses', {
         category: String(fd.get('category')).trim(),
@@ -105,14 +107,17 @@ export function mountReports(root, user) {
         note: String(fd.get('note') || '').trim() || null,
       })
       setStatus(status, 'هزینه ثبت شد.', 'ok')
+      form.reset()
+      enhanceMoneyInputs(root)
+      savedOk = true
+    } catch (err) {
+      setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
+    }
+    if (savedOk) {
       const rangeForm = root.querySelector('[data-range]')
       const from = /** @type {HTMLInputElement} */ (rangeForm.querySelector('[name=from]')).value
       const to = /** @type {HTMLInputElement} */ (rangeForm.querySelector('[name=to]')).value
       await load(from, to)
-      /** @type {HTMLFormElement} */ (e.target).reset()
-      enhanceMoneyInputs(root)
-    } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ثبت ناموفق', 'error')
     }
   })
 

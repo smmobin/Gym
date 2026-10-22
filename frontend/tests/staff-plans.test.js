@@ -141,6 +141,71 @@ describe('mountStaff / mountPlans', () => {
     expect(roleSelect.innerHTML).not.toContain('receptionist')
   })
 
+  it('mountPlans create success is not overwritten by refresh TypeError', async () => {
+    const fetchMock = vi.fn(async (url, opts) => {
+      const method = (opts?.method || 'GET').toUpperCase()
+      if (method === 'POST' && String(url).includes('/membership-plans')) {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            plan: {
+              id: 9,
+              name: 'طرح تست',
+              duration_days: 30,
+              session_count: null,
+              base_price_toman: 1_500_000,
+              includes_locker: false,
+              is_active: true,
+            },
+          }),
+        }
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [
+            {
+              id: 9,
+              name: 'طرح تست',
+              duration_days: 30,
+              session_count: null,
+              base_price_toman: 1_500_000,
+              includes_locker: false,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        }),
+      }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountPlans(root, { role: 'manager' })
+    await vi.waitFor(() => expect(root.querySelector('[data-create]')).toBeTruthy())
+
+    const form = /** @type {HTMLFormElement} */ (root.querySelector('[data-create]'))
+    const name = form.querySelector('[name=name]')
+    const days = form.querySelector('[name=duration_days]')
+    const price = form.querySelector('[name=base_price_toman]')
+    if (name instanceof HTMLInputElement) name.value = 'طرح تست'
+    if (days instanceof HTMLInputElement) days.value = '30'
+    if (price instanceof HTMLInputElement) {
+      price.value = '1500000'
+      price.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    form.requestSubmit()
+
+    await vi.waitFor(() => {
+      const st = root.querySelector('[data-status]')
+      expect(st?.textContent).not.toMatch(/is not a function/i)
+      expect(st?.className).toMatch(/ok/)
+    })
+    expect(root.querySelector('[data-tbody]')?.textContent).toContain('طرح تست')
+  })
+
   it('mountPlans loads include_inactive without manual reload button', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

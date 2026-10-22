@@ -1,4 +1,4 @@
-import { ApiError, apiPost } from './api.js'
+import { apiErrorMessage, apiPost } from './api.js'
 import { formatToman, PAYMENT_METHOD_LABEL } from './format.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { setStatus } from './ui.js'
@@ -76,7 +76,7 @@ export function mountGuests(root, user) {
       payNow.checked = true
       method.disabled = false
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ثبت ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
     }
   })
 }

@@ -15,10 +15,18 @@ export class ApiError extends Error {
   }
 }
 
+/** @param {string} msg */
+function isTechnicalClientMessage(msg) {
+  return /is not a function|is not defined|Cannot read propert|Cannot set propert|null is not an object|undefined is not an object|Maximum call stack|Unexpected token|Failed to fetch|NetworkError|Load failed|network request failed/i.test(
+    msg,
+  )
+}
+
 /**
  * Reliable message for UI status lines.
  * Prefer this over `instanceof ApiError` alone — Vite can duplicate the module
  * and break instanceof across import graphs.
+ * Never surface raw TypeError/network engine text (e.g. `apiPost(...) is not a function`).
  * @param {unknown} err
  * @param {string} fallback
  */
@@ -28,7 +36,16 @@ export function apiErrorMessage(err, fallback) {
     const msg = /** @type {{ message?: string }} */ (err).message
     return msg || fallback
   }
-  if (err instanceof Error && err.message) return err.message
+  if (err instanceof Error && err.message) {
+    if (
+      err.name === 'TypeError' ||
+      err.name === 'ReferenceError' ||
+      isTechnicalClientMessage(err.message)
+    ) {
+      return fallback
+    }
+    return err.message
+  }
   return fallback
 }
 

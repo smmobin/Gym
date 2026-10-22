@@ -1,4 +1,4 @@
-import { ApiError, apiGet, apiPost } from './api.js'
+import { ApiError, apiErrorMessage, apiGet, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
 
 /** @param {unknown} detail */
@@ -26,9 +26,13 @@ export function lockErrorMessage(err, fallback) {
   if (err instanceof ApiError) {
     const fromDetail = formatMemberLockConflict(err.detail)
     if (fromDetail) return fromDetail
-    return err.message
+    return err.message || fallback
   }
-  return fallback
+  if (err && typeof err === 'object' && /** @type {{ name?: string }} */ (err).name === 'ApiError') {
+    const fromDetail = formatMemberLockConflict(/** @type {{ detail?: unknown }} */ (err).detail)
+    if (fromDetail) return fromDetail
+  }
+  return apiErrorMessage(err, fallback)
 }
 
 /**

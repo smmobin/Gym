@@ -184,31 +184,50 @@ export function mountPlans(root, user) {
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
+    const form = /** @type {HTMLFormElement} */ (e.target)
+    if (form.dataset.busy === '1') return
+    form.dataset.busy = '1'
+    const submitBtn = /** @type {HTMLButtonElement | null} */ (form.querySelector('[type="submit"]'))
+    if (submitBtn) submitBtn.disabled = true
+    const fd = new FormData(form)
     const body = { ...payloadFromForm(fd), is_active: true }
     if (body.duration_days == null && body.session_count == null) {
       setStatus(status, 'حداقل یکی از مدت یا تعداد جلسه را وارد کنید.', 'error')
+      form.dataset.busy = '0'
+      if (submitBtn) submitBtn.disabled = false
       return
     }
     setStatus(status, 'در حال ثبت…', 'loading')
+    let createdOk = false
     try {
-      await apiPost('/api/v1/membership-plans', body)
-      /** @type {HTMLFormElement} */ (e.target).reset()
-      const priceEl = /** @type {HTMLInputElement | null} */ (
-        /** @type {HTMLFormElement} */ (e.target).querySelector('[name=base_price_toman]')
-      )
+      const res = await apiPost('/api/v1/membership-plans', body)
+      form.reset()
+      const priceEl = /** @type {HTMLInputElement | null} */ (form.querySelector('[name=base_price_toman]'))
       if (priceEl) setMoneyInput(priceEl, 0)
+      if (res?.plan) {
+        items = [...items.filter((p) => p.id !== res.plan.id), res.plan]
+        pager.reset()
+        renderTable()
+      }
       setStatus(status, 'طرح ثبت شد.', 'ok')
-      await autoRefresh.refresh()
+      createdOk = true
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
+    } finally {
+      form.dataset.busy = '0'
+      if (submitBtn) submitBtn.disabled = false
     }
+    // Refresh outside create catch — list errors must not look like «ثبت ناموفق».
+    if (createdOk) await autoRefresh.refresh()
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     if (!selectedId) return
-    const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
+    const form = /** @type {HTMLFormElement} */ (e.target)
+    if (form.dataset.busy === '1') return
+    form.dataset.busy = '1'
+    const fd = new FormData(form)
     const body = payloadFromForm(fd)
     /** @type {Record<string, unknown>} */
     const patch = {
@@ -221,12 +240,23 @@ export function mountPlans(root, user) {
     else patch.clear_duration_days = true
     if (body.session_count != null) patch.session_count = body.session_count
     else patch.clear_session_count = true
+    let savedOk = false
     try {
-      await apiPatch(`/api/v1/membership-plans/${selectedId}`, patch)
+      const res = await apiPatch(`/api/v1/membership-plans/${selectedId}`, patch)
+      if (res?.plan) {
+        items = items.map((p) => (p.id === res.plan.id ? res.plan : p))
+        renderTable()
+      }
       setStatus(status, 'ذخیره شد.', 'ok')
-      await autoRefresh.refresh()
+      savedOk = true
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
+    } finally {
+      form.dataset.busy = '0'
+    }
+    if (savedOk) {
+      await autoRefresh.refresh()
+      select(selectedId)
     }
   })
 
@@ -235,23 +265,35 @@ export function mountPlans(root, user) {
     if (!confirm('این طرح غیرفعال شود؟ عضویت‌های فعال فعلی قطع نمی‌شوند؛ فقط از select تمدید حذف می‌شود.'))
       return
     try {
-      await apiPatch(`/api/v1/membership-plans/${selectedId}`, { is_active: false })
+      const res = await apiPatch(`/api/v1/membership-plans/${selectedId}`, { is_active: false })
+      if (res?.plan) {
+        items = items.map((p) => (p.id === res.plan.id ? res.plan : p))
+        renderTable()
+      }
       setStatus(status, 'غیرفعال شد.', 'ok')
-      await autoRefresh.refresh()
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
+      return
     }
+    await autoRefresh.refresh()
+    select(selectedId)
   })
 
   root.querySelector('[data-activate]')?.addEventListener('click', async () => {
     if (!selectedId) return
     try {
-      await apiPatch(`/api/v1/membership-plans/${selectedId}`, { is_active: true })
+      const res = await apiPatch(`/api/v1/membership-plans/${selectedId}`, { is_active: true })
+      if (res?.plan) {
+        items = items.map((p) => (p.id === res.plan.id ? res.plan : p))
+        renderTable()
+      }
       setStatus(status, 'فعال شد.', 'ok')
-      await autoRefresh.refresh()
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
+      return
     }
+    await autoRefresh.refresh()
+    select(selectedId)
   })
 }
 

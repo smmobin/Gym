@@ -16,6 +16,8 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
   /** @type {ReturnType<typeof setTimeout> | null} */
   let timer = null
   let inFlight = false
+  /** When a forced refresh arrives during an in-flight load, run again after. */
+  let pendingForce = false
   let consecutiveFailures = 0
   let everSucceeded = false
 
@@ -53,7 +55,11 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
    * @param {boolean} [force]
    */
   async function run(force = false) {
-    if (stopped || inFlight) return
+    if (stopped) return
+    if (inFlight) {
+      if (force) pendingForce = true
+      return
+    }
     if (!force && !shouldRun()) {
       schedule(intervalMs)
       return
@@ -71,6 +77,10 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
       schedule(retryDelay())
     } finally {
       inFlight = false
+      if (pendingForce && !stopped) {
+        pendingForce = false
+        void run(true)
+      }
     }
   }
 

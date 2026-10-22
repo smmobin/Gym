@@ -54,6 +54,14 @@ describe('api client', () => {
     expect(err.status).toBe(403)
   })
 
+  it('apiErrorMessage hides technical TypeError text from UI', () => {
+    expect(apiErrorMessage(new TypeError('apiPost(...) is not a function'), 'ثبت ناموفق')).toBe(
+      'ثبت ناموفق',
+    )
+    expect(apiErrorMessage(new TypeError('x is not a function'), 'خطا')).toBe('خطا')
+    expect(apiErrorMessage(new Error('Failed to fetch'), 'بارگذاری ناموفق')).toBe('بارگذاری ناموفق')
+  })
+
   it('apiErrorMessage keeps 409 staff duplicate detail for UI', async () => {
     vi.stubGlobal(
       'fetch',

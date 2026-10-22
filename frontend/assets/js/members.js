@@ -1,4 +1,4 @@
-import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
+import { ApiError, apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { MEMBER_STATUS } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { createListPager } from './pagination.js'
@@ -157,8 +157,12 @@ export function mountMembers(root, user) {
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
+    const form = /** @type {HTMLFormElement} */ (e.target)
+    if (form.dataset.busy === '1') return
+    form.dataset.busy = '1'
+    const fd = new FormData(form)
     setStatus(status, 'در حال ثبت…', 'loading')
+    let createdOk = false
     try {
       await apiPost('/api/v1/members', {
         first_name: String(fd.get('first_name') || '').trim(),
@@ -166,12 +170,15 @@ export function mountMembers(root, user) {
         mobile: String(fd.get('mobile') || '').trim(),
         notes: String(fd.get('notes') || '').trim() || null,
       })
-      /** @type {HTMLFormElement} */ (e.target).reset()
+      form.reset()
       setStatus(status, 'عضو ثبت شد.', 'ok')
-      await load()
+      createdOk = true
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ثبت ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
+    } finally {
+      form.dataset.busy = '0'
     }
+    if (createdOk) await load()
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
