@@ -1,4 +1,10 @@
 import { apiErrorMessage, apiGet, apiPost } from './api.js'
+import {
+  expenseCategoryLabel,
+  fillExpenseCategoryDatalist,
+  mergeExpenseCategories,
+  normalizeExpenseCategoryInput,
+} from './expense-categories.js'
 import { formatToman } from './format.js'
 import { enhanceMoneyInputs, moneyFromForm } from './money-input.js'
 import { setStatus } from './ui.js'
@@ -26,6 +32,7 @@ export function mountReports(root, user) {
     return
   }
   const range = monthRangeTehran()
+  const listId = 'expense-cat-list'
   root.innerHTML = `
     <article class="panel">
       <header class="panel-head"><h2>گزارش سود و هزینه</h2></header>
@@ -45,17 +52,48 @@ export function mountReports(root, user) {
       <article class="panel">
         <header class="panel-head"><h2>ثبت هزینه</h2></header>
         <form data-expense class="form-grid">
-          <label>دسته<input name="category" required placeholder="اجاره / حقوق / …" /></label>
+          <label>دسته
+            <input name="category" list="${listId}" required placeholder="انتخاب یا نوشتن دستهٔ جدید" autocomplete="off" maxlength="32" />
+            <datalist id="${listId}" data-cat-list></datalist>
+          </label>
           <label>مبلغ (تومان)<input data-money name="amount_toman" inputmode="numeric" required /></label>
           <label>تاریخ<input name="expense_date" type="date" value="${range.to}" required /></label>
           <label class="full">یادداشت<textarea name="note"></textarea></label>
           <button class="btn" type="submit">ثبت</button>
         </form>
+        <p class="hint">از لیست انتخاب کنید؛ اگر دستهٔ جدید بنویسید بعد از ثبت به لیست اضافه می‌شود.</p>
       </article>
     </div>
   `
   const status = root.querySelector('[data-status]')
+  const catList = /** @type {HTMLDataListElement | null} */ (root.querySelector('[data-cat-list]'))
+  /** @type {Array<{ value: string, label: string }>} */
+  let categories = mergeExpenseCategories()
+  fillExpenseCategoryDatalist(catList, categories)
   enhanceMoneyInputs(root)
+
+  async function refreshCategories() {
+    try {
+      const data = await apiGet('/api/v1/expenses/categories')
+      categories = mergeExpenseCategories(data.items || [])
+      fillExpenseCategoryDatalist(catList, categories)
+    } catch {
+      /* keep current list */
+    }
+  }
+
+  /**
+   * @param {string} rawCategory
+   */
+  function rememberCategory(rawCategory) {
+    const value = normalizeExpenseCategoryInput(rawCategory)
+    if (!value) return
+    categories = mergeExpenseCategories([
+      ...categories,
+      { value, label: expenseCategoryLabel(value) },
+    ])
+    fillExpenseCategoryDatalist(catList, categories)
+  }
 
   async function load(from, to) {
     setStatus(status, 'بارگذاری…', 'loading')
@@ -75,13 +113,13 @@ export function mountReports(root, user) {
         ? items
             .map(
               (r) => `<div class="row-item"><div>
-            <h3>${r.category}</h3>
+            <h3>${expenseCategoryLabel(r.category)}</h3>
             <p>${r.expense_date}${r.note ? ' · ' + r.note : ''}</p></div>
             <em>${formatToman(r.amount_toman)}</em></div>`,
             )
             .join('')
         : '<p class="hint">هزینه‌ای در این بازه نیست.</p>'
-      setStatus(status, '') // hide success banner; hint below summary is enough
+      setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'خطا'), 'error')
     }
@@ -97,14 +135,21 @@ export function mountReports(root, user) {
     e.preventDefault()
     const form = /** @type {HTMLFormElement} */ (e.target)
     const fd = new FormData(form)
+    const categoryRaw = String(fd.get('category') || '').trim()
+    const category = normalizeExpenseCategoryInput(categoryRaw)
+    if (!category) {
+      setStatus(status, 'دسته را انتخاب یا بنویسید.', 'error')
+      return
+    }
     let savedOk = false
     try {
       await apiPost('/api/v1/expenses', {
-        category: String(fd.get('category')).trim(),
+        category,
         amount_toman: moneyFromForm(fd, 'amount_toman'),
         expense_date: String(fd.get('expense_date')),
         note: String(fd.get('note') || '').trim() || null,
       })
+      rememberCategory(category)
       setStatus(status, 'هزینه ثبت شد.', 'ok')
       form.reset()
       enhanceMoneyInputs(root)
@@ -113,6 +158,7 @@ export function mountReports(root, user) {
       setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
     }
     if (savedOk) {
+      void refreshCategories()
       const rangeForm = root.querySelector('[data-range]')
       const from = /** @type {HTMLInputElement} */ (rangeForm.querySelector('[name=from]')).value
       const to = /** @type {HTMLInputElement} */ (rangeForm.querySelector('[name=to]')).value
@@ -120,5 +166,6 @@ export function mountReports(root, user) {
     }
   })
 
+  void refreshCategories()
   void load(range.from, range.to)
 }

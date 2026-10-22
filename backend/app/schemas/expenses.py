@@ -7,13 +7,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.models.enums import ExpenseCategory
-
-_CATEGORIES = {c.value for c in ExpenseCategory}
-
-
 class ExpenseCreate(BaseModel):
-    category: str
+    category: str = Field(..., min_length=1, max_length=32)
     amount_toman: int = Field(..., ge=0)
     expense_date: date
     note: Optional[str] = Field(default=None, max_length=2000)
@@ -21,11 +16,21 @@ class ExpenseCreate(BaseModel):
     @field_validator("category")
     @classmethod
     def category_ok(cls, value: str) -> str:
-        if value not in _CATEGORIES:
-            raise ValueError(
-                "دسته نامعتبر است. یکی از: rent, salary, purchase, utilities, other"
-            )
-        return value
+        cleaned = (value or "").strip()
+        if not cleaned:
+            raise ValueError("دسته الزامی است.")
+        if len(cleaned) > 32:
+            raise ValueError("دسته حداکثر ۳۲ کاراکتر باشد.")
+        return cleaned
+
+
+class ExpenseCategoryItem(BaseModel):
+    value: str
+    label: str
+
+
+class ExpenseCategoryListResponse(BaseModel):
+    items: list[ExpenseCategoryItem]
 
 
 class ExpenseOut(BaseModel):

@@ -1,15 +1,8 @@
 import { ApiError, apiGet } from './api.js'
+import { expenseCategoryLabel } from './expense-categories.js'
 import { formatToman } from './format.js'
 import { monthRangeTehran } from './reports.js'
 import { setStatus } from './ui.js'
-
-const EXPENSE_CATEGORY_FA = {
-  rent: 'اجاره',
-  salary: 'حقوق',
-  purchase: 'خرید',
-  utilities: 'قبوض',
-  other: 'سایر',
-}
 
 /**
  * @param {{ income_paid_toman: number, expenses_toman: number, profit_toman: number }} profit
@@ -36,7 +29,7 @@ export function buildRecentExpensesHtml(items, limit = 5) {
   }
   return rows
     .map((r) => {
-      const label = EXPENSE_CATEGORY_FA[r.category] || r.category
+      const label = expenseCategoryLabel(r.category)
       const note = r.note ? ` · ${r.note}` : ''
       return `<div class="row-item"><div>
         <h3>${label}</h3>

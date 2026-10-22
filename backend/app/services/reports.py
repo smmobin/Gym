@@ -20,6 +20,16 @@ from app.models.user import User
 
 TEHRAN = ZoneInfo("Asia/Tehran")
 _CATEGORIES = {c.value for c in ExpenseCategory}
+# Default UI labels (Persian) ↔ stored enum values
+CATEGORY_LABELS_FA: dict[str, str] = {
+    ExpenseCategory.RENT.value: "اجاره",
+    ExpenseCategory.SALARY.value: "حقوق",
+    ExpenseCategory.PURCHASE.value: "خرید",
+    ExpenseCategory.UTILITIES.value: "قبوض",
+    ExpenseCategory.OTHER.value: "سایر",
+}
+_FA_TO_VALUE = {label: value for value, label in CATEGORY_LABELS_FA.items()}
+_CATEGORY_MAX_LEN = 32
 
 
 class ReportError(Exception):
@@ -27,6 +37,51 @@ class ReportError(Exception):
         self.status_code = status_code
         self.detail = detail
         super().__init__(detail)
+
+
+def normalize_expense_category(raw: str) -> str:
+    """Map known Persian/English defaults to enum values; keep other text as custom."""
+    value = (raw or "").strip()
+    if not value:
+        raise ReportError(422, "دسته الزامی است.")
+    if len(value) > _CATEGORY_MAX_LEN:
+        raise ReportError(422, f"دسته حداکثر {_CATEGORY_MAX_LEN} کاراکتر باشد.")
+    if value in _CATEGORIES:
+        return value
+    if value in _FA_TO_VALUE:
+        return _FA_TO_VALUE[value]
+    return value
+
+
+def expense_category_label(value: str) -> str:
+    return CATEGORY_LABELS_FA.get(value, value)
+
+
+def list_expense_categories(db: Session, *, user: User) -> list[dict[str, str]]:
+    """Built-in defaults first, then distinct custom categories from expenses."""
+    ensure_manager(user)
+    defaults = [
+        {"value": value, "label": CATEGORY_LABELS_FA[value]}
+        for value in (
+            ExpenseCategory.RENT.value,
+            ExpenseCategory.SALARY.value,
+            ExpenseCategory.PURCHASE.value,
+            ExpenseCategory.UTILITIES.value,
+            ExpenseCategory.OTHER.value,
+        )
+    ]
+    seen = {d["value"] for d in defaults}
+    customs = db.scalars(
+        select(Expense.category)
+        .where(Expense.category.notin_(seen))
+        .distinct()
+        .order_by(Expense.category.asc())
+    ).all()
+    for cat in customs:
+        if cat and cat not in seen:
+            seen.add(cat)
+            defaults.append({"value": cat, "label": cat})
+    return defaults
 
 
 def today_tehran() -> date:
@@ -102,11 +157,7 @@ def create_expense(
     ensure_manager(user)
     if amount_toman < 0:
         raise ReportError(422, "مبلغ هزینه نمی‌تواند منفی باشد.")
-    if category not in _CATEGORIES:
-        raise ReportError(
-            422,
-            "دسته نامعتبر است. یکی از: rent, salary, purchase, utilities, other",
-        )
+    category = normalize_expense_category(category)
     row = Expense(
         category=category,
         amount_toman=amount_toman,

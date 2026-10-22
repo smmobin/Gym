@@ -12,6 +12,7 @@ from app.core.db import get_db
 from app.models.enums import StaffRole
 from app.models.user import User
 from app.schemas.expenses import (
+    ExpenseCategoryListResponse,
     ExpenseCreate,
     ExpenseListResponse,
     ExpenseOut,
@@ -26,6 +27,19 @@ _MANAGER = (StaffRole.MANAGER.value,)
 
 def _raise(err: reports_svc.ReportError) -> None:
     raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+
+
+@router.get("/expenses/categories", response_model=ExpenseCategoryListResponse)
+def list_expense_categories(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(*_MANAGER)),
+) -> ExpenseCategoryListResponse:
+    try:
+        items = reports_svc.list_expense_categories(db, user=user)
+    except reports_svc.ReportError as err:
+        _raise(err)
+        raise  # pragma: no cover
+    return ExpenseCategoryListResponse.model_validate({"items": items})
 
 
 @router.get("/expenses", response_model=ExpenseListResponse)

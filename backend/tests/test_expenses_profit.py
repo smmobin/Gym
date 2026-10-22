@@ -103,6 +103,40 @@ def test_manager_create_and_list(client: TestClient) -> None:
     assert data["expenses_toman"] >= 77_000
 
 
+def test_expense_categories_defaults_and_custom(client: TestClient) -> None:
+    _login(client)
+    cats = client.get("/api/v1/expenses/categories")
+    assert cats.status_code == 200
+    values = [i["value"] for i in cats.json()["items"]]
+    assert values[:5] == ["rent", "salary", "purchase", "utilities", "other"]
+
+    # Persian label for a default → stored as enum value
+    fa = client.post(
+        "/api/v1/expenses",
+        json={
+            "category": "اجاره",
+            "amount_toman": 1000,
+            "expense_date": str(today_tehran()),
+        },
+    )
+    assert fa.status_code == 201
+    assert fa.json()["category"] == "rent"
+
+    # Brand-new category is accepted and appears in the list
+    custom = client.post(
+        "/api/v1/expenses",
+        json={
+            "category": "تعمیرات",
+            "amount_toman": 2500,
+            "expense_date": str(today_tehran()),
+        },
+    )
+    assert custom.status_code == 201
+    assert custom.json()["category"] == "تعمیرات"
+    again = client.get("/api/v1/expenses/categories").json()["items"]
+    assert any(i["value"] == "تعمیرات" for i in again)
+
+
 def test_negative_amount_rejected(client: TestClient) -> None:
     _login(client)
     response = client.post(
