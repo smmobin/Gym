@@ -16,6 +16,23 @@ export class ApiError extends Error {
 }
 
 /**
+ * Reliable message for UI status lines.
+ * Prefer this over `instanceof ApiError` alone — Vite can duplicate the module
+ * and break instanceof across import graphs.
+ * @param {unknown} err
+ * @param {string} fallback
+ */
+export function apiErrorMessage(err, fallback) {
+  if (err instanceof ApiError) return err.message || fallback
+  if (err && typeof err === 'object' && /** @type {{ name?: string, message?: string }} */ (err).name === 'ApiError') {
+    const msg = /** @type {{ message?: string }} */ (err).message
+    return msg || fallback
+  }
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
+
+/**
  * @param {string} path
  * @param {{ method?: string, body?: unknown }} [options]
  */

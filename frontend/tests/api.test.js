@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, apiGet, apiPost } from '../assets/js/api.js'
+import { ApiError, apiErrorMessage, apiGet, apiPost } from '../assets/js/api.js'
 
 describe('api client', () => {
   afterEach(() => {
@@ -52,5 +52,29 @@ describe('api client', () => {
     const err = await apiGet('/api/v1/reports/profit').catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(403)
+  })
+
+  it('apiErrorMessage keeps 409 staff duplicate detail for UI', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({
+          detail: 'این شماره موبایل قبلاً برای کارکنان ثبت شده است.',
+        }),
+      }),
+    )
+    const err = await apiPost('/api/v1/staff', {}).catch((e) => e)
+    expect(apiErrorMessage(err, 'ثبت ناموفق')).toBe(
+      'این شماره موبایل قبلاً برای کارکنان ثبت شده است.',
+    )
+    // duck-typed ApiError (instanceof may fail across module copies)
+    expect(
+      apiErrorMessage(
+        { name: 'ApiError', message: 'این شماره موبایل قبلاً برای کارکنان ثبت شده است.' },
+        'ثبت ناموفق',
+      ),
+    ).toBe('این شماره موبایل قبلاً برای کارکنان ثبت شده است.')
   })
 })

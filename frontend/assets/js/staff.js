@@ -1,4 +1,4 @@
-import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
+import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { ROLE_LABEL } from './format.js'
 import { createListPager } from './pagination.js'
 import { enhancePasswordFields } from './password-toggle.js'
@@ -150,7 +150,7 @@ export function mountStaff(root, user) {
       renderTable()
       setStatus(status, `${items.length.toLocaleString('fa-IR')} نفر`, 'ok')
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'بارگذاری ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق'), 'error')
     }
   }
 
@@ -175,7 +175,7 @@ export function mountStaff(root, user) {
       setStatus(status, 'ثبت شد.', 'ok')
       await load()
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ثبت ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
     }
   })
 
@@ -197,7 +197,7 @@ export function mountStaff(root, user) {
       await load()
       select(selectedId)
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'ذخیره ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
     }
   })
 
@@ -210,7 +210,7 @@ export function mountStaff(root, user) {
       await load()
       select(selectedId)
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'عملیات ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
     }
   })
 
@@ -222,7 +222,7 @@ export function mountStaff(root, user) {
       await load()
       select(selectedId)
     } catch (err) {
-      setStatus(status, err instanceof ApiError ? err.message : 'عملیات ناموفق', 'error')
+      setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
     }
   })
 
