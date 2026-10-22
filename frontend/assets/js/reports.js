@@ -82,7 +82,7 @@ export function mountReports(root, user) {
             )
             .join('')
         : '<p class="hint">هزینه‌ای در این بازه نیست.</p>'
-      setStatus(status, profit.note || 'بازه اعمال شد.', 'ok')
+      setStatus(status, '') // hide success banner; hint below summary is enough
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'خطا'), 'error')
     }
