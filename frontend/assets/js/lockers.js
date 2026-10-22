@@ -74,25 +74,6 @@ export function lockersTableRowsHtml(lockers) {
     .join('')
 }
 
-/**
- * @param {Array<{ id: number, display_id?: string, first_name?: string, last_name?: string, plan_name?: string }>} items
- */
-export function eligibleMembersHintHtml(items) {
-  const list = items || []
-  if (!list.length) {
-    return '<p class="hint" data-eligible-list>الان هیچ عضوی با عضویت فعال شامل‌کمد نیست.</p>'
-  }
-  const lines = list
-    .slice(0, 12)
-    .map((m) => {
-      const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.display_id
-      const plan = m.plan_name ? ` · ${m.plan_name}` : ''
-      return `<li><strong>${name}</strong> (${m.display_id || m.id})${plan}</li>`
-    })
-    .join('')
-  return `<div data-eligible-list><p class="hint">اعضای واجد شرایط الان (عضویت فعال + شامل کمد):</p><ul>${lines}</ul></div>`
-}
-
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountLockers(root, user) {
   if (user.role !== 'manager' && user.role !== 'receptionist') {
@@ -117,7 +98,6 @@ export function mountLockers(root, user) {
       <header class="panel-head"><h2>واگذاری</h2></header>
       <p class="hint" data-sel-label>کمدی انتخاب نشده</p>
       <p class="hint" data-plans-hint></p>
-      <div data-eligible-wrap></div>
       <label>جستجوی عضو<input type="search" data-q /></label>
       <div class="member-pick" data-pick></div>
       <p class="hint" data-member-label>عضوی انتخاب نشده</p>
@@ -131,7 +111,6 @@ export function mountLockers(root, user) {
   const tbody = root.querySelector('[data-tbody]')
   const pager = createListPager(root.querySelector('[data-pager]'))
   const plansHint = root.querySelector('[data-plans-hint]')
-  const eligibleWrap = root.querySelector('[data-eligible-wrap]')
   const eligibilityEl = root.querySelector('[data-eligibility]')
   const memberLabel = root.querySelector('[data-member-label]')
   /** @type {any[]} */ let lockers = []
@@ -200,22 +179,13 @@ export function mountLockers(root, user) {
     return lockers
   }
 
-  async function loadPlansAndEligible() {
+  async function loadPlans() {
     try {
       const pData = await apiGet('/api/v1/membership-plans')
       plans = pData.items || []
       refreshPlansHint()
     } catch {
       refreshPlansHint()
-    }
-    if (eligibleWrap) {
-      try {
-        const elig = await apiGet('/api/v1/lockers/eligible-members')
-        eligibleWrap.innerHTML = eligibleMembersHintHtml(elig.items || [])
-      } catch {
-        eligibleWrap.innerHTML =
-          '<p class="hint">لیست واجدین بارگذاری نشد؛ با جستجو و برچسب عضویت‌ها هم می‌توانید ببینید.</p>'
-      }
     }
   }
 
@@ -232,7 +202,7 @@ export function mountLockers(root, user) {
       throw err
     }
     if (!silent) {
-      await loadPlansAndEligible()
+      await loadPlans()
       if (member) renderEligibility()
     }
   }
@@ -276,6 +246,7 @@ export function mountLockers(root, user) {
         setStatus(status, err instanceof ApiError ? err.message : 'بارگذاری عضویت ناموفق', 'error')
       }
     },
+    { showLockerEligibility: true },
   )
 
   root.querySelector('[data-assign]')?.addEventListener('click', async () => {
@@ -353,7 +324,7 @@ export function mountLockers(root, user) {
           'error',
         )
       }
-      void loadPlansAndEligible()
+      void loadPlans()
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'ساخت ناموفق'), 'error')
     }

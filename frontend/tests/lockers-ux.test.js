@@ -22,7 +22,6 @@ vi.mock('../assets/js/api.js', () => ({
 
 import { apiGet, apiPost } from '../assets/js/api.js'
 import {
-  eligibleMembersHintHtml,
   ineligibleLockerAssignMessage,
   lockerPlanNames,
   lockersTableRowsHtml,
@@ -63,15 +62,6 @@ describe('locker UX helpers (BUG-001)', () => {
     expect(html).toContain('بدون کمد')
     expect(html).toContain('سه‌ماهه + کمد')
   })
-
-  it('renders eligible members hint list', () => {
-    const html = eligibleMembersHintHtml([
-      { id: 2, display_id: 'M-1002', first_name: 'سارا', last_name: 'محمدی', plan_name: 'سه‌ماهه + کمد' },
-    ])
-    expect(html).toContain('سارا')
-    expect(html).toContain('M-1002')
-    expect(html).toContain('واجد شرایط')
-  })
 })
 
 describe('locker create → table refresh (BUG-003)', () => {
@@ -82,6 +72,24 @@ describe('locker create → table refresh (BUG-003)', () => {
 
   afterEach(() => {
     document.body.innerHTML = ''
+  })
+
+  it('does not render the old eligible-members hint block in the panel', async () => {
+    vi.mocked(apiGet).mockImplementation(async (path) => {
+      if (String(path).includes('membership-plans')) {
+        return { items: [{ id: 1, name: 'سه‌ماهه + کمد', includes_locker: true }], total: 1 }
+      }
+      if (String(path).includes('/lockers')) return { items: [], total: 0 }
+      return { items: [], total: 0 }
+    })
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountLockers(root, { role: 'manager' })
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-plans-hint]')?.textContent).toContain('شامل‌کمد')
+    })
+    expect(root.querySelector('[data-eligible-wrap]')).toBeNull()
+    expect(root.textContent || '').not.toContain('اعضای واجد شرایط')
   })
 
   it('shows new locker in tbody after create without full page reload', async () => {

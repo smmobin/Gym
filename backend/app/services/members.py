@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.models.enums import MemberStatus, MembershipStatus, StaffRole
 from app.models.member import Member
-from app.models.membership import Membership
+from app.models.membership import Membership, MembershipPlan
 from app.models.trainer import TrainerMemberAssignment
 from app.models.user import User
 from app.schemas.members import MemberOut
@@ -108,10 +108,36 @@ def members_with_active_membership(
     return set(rows)
 
 
+def members_with_locker_eligible_membership(
+    db: Session,
+    member_ids: Iterable[int],
+) -> set[int]:
+    """Member ids with an ACTIVE membership on an includes_locker plan (locker assign rule)."""
+    ids = {int(i) for i in member_ids}
+    if not ids:
+        return set()
+    rows = db.scalars(
+        select(Membership.member_id)
+        .join(MembershipPlan, Membership.plan_id == MembershipPlan.id)
+        .where(
+            Membership.member_id.in_(ids),
+            Membership.status == MembershipStatus.ACTIVE.value,
+            MembershipPlan.includes_locker.is_(True),
+        )
+        .distinct()
+    ).all()
+    return set(rows)
+
+
 def serialize_member(db: Session, member: Member, *, today: date | None = None) -> MemberOut:
     active = members_with_active_membership(db, [member.id], today=today)
+    locker_ok = members_with_locker_eligible_membership(db, [member.id])
     return MemberOut.model_validate(member).model_copy(
-        update={"role": "athlete", "has_active_membership": member.id in active}
+        update={
+            "role": "athlete",
+            "has_active_membership": member.id in active,
+            "can_receive_locker": member.id in locker_ok,
+        }
     )
 
 
@@ -123,9 +149,14 @@ def serialize_members(
 ) -> list[MemberOut]:
     rows = list(members)
     active = members_with_active_membership(db, [m.id for m in rows], today=today)
+    locker_ok = members_with_locker_eligible_membership(db, [m.id for m in rows])
     return [
         MemberOut.model_validate(m).model_copy(
-            update={"role": "athlete", "has_active_membership": m.id in active}
+            update={
+                "role": "athlete",
+                "has_active_membership": m.id in active,
+                "can_receive_locker": m.id in locker_ok,
+            }
         )
         for m in rows
     ]

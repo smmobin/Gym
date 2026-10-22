@@ -287,8 +287,9 @@ function ensureMemberSearchWrap(input, pickRoot) {
  * @param {HTMLElement} pickRoot
  * @param {HTMLInputElement} input
  * @param {(member: any) => void} onPick
+ * @param {{ showLockerEligibility?: boolean }} [opts]
  */
-export function bindMemberSearch(pickRoot, input, onPick) {
+export function bindMemberSearch(pickRoot, input, onPick, opts = {}) {
   if (!pickRoot || !input) return
   const wrap = ensureMemberSearchWrap(input, pickRoot)
   let timer
@@ -316,11 +317,16 @@ export function bindMemberSearch(pickRoot, input, onPick) {
     try {
       const data = await apiGet(`/api/v1/members?${params}`)
       const items = data.items || []
-      renderMemberPick(pickRoot, items, (id) => {
-        const m = items.find((x) => x.id === id)
-        if (m) onPick(m)
-        hide()
-      })
+      renderMemberPick(
+        pickRoot,
+        items,
+        (id) => {
+          const m = items.find((x) => x.id === id)
+          if (m) onPick(m)
+          hide()
+        },
+        opts,
+      )
     } catch {
       pickRoot.innerHTML = '<p class="hint member-pick-empty">جستجو ناموفق بود.</p>'
     }

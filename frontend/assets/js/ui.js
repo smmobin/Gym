@@ -89,8 +89,9 @@ export function memberPickLabel(m) {
  * @param {HTMLElement} root
  * @param {Array<any>} items
  * @param {(id: number) => void} onPick
+ * @param {{ showLockerEligibility?: boolean }} [opts]
  */
-export function renderMemberPick(root, items, onPick) {
+export function renderMemberPick(root, items, onPick, opts = {}) {
   root.innerHTML = ''
   root.classList.add('member-pick', 'is-overlay')
   if (!items.length) {
@@ -99,6 +100,7 @@ export function renderMemberPick(root, items, onPick) {
   }
   const list = document.createElement('div')
   list.className = 'member-pick-list'
+  const showLocker = !!opts.showLockerEligibility
   items.forEach((m) => {
     const btn = document.createElement('button')
     btn.type = 'button'
@@ -109,6 +111,12 @@ export function renderMemberPick(root, items, onPick) {
     const hasSub = !!m.has_active_membership
     const subClass = hasSub ? 'ok' : 'warn'
     const subText = hasSub ? 'اشتراک فعال' : 'بدون اشتراک فعال'
+    const canLocker = !!m.can_receive_locker
+    const lockerBadge = showLocker
+      ? `<span class="badge ${canLocker ? 'ok' : 'warn'}">${
+          canLocker ? 'می‌تواند کمد بگیرد' : 'نمی‌تواند کمد بگیرد'
+        }</span>`
+      : ''
     const meta = [m.display_id, m.mobile].filter(Boolean).join(' · ')
     btn.innerHTML = `
       <span class="member-pick-main">
@@ -118,6 +126,7 @@ export function renderMemberPick(root, items, onPick) {
       <span class="member-pick-meta">
         <span class="badge">${escapeHtml(roleText)}</span>
         <span class="badge ${subClass}">${subText}</span>
+        ${lockerBadge}
       </span>
     `
     btn.addEventListener('mousedown', (event) => {

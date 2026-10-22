@@ -71,6 +71,8 @@ class MemberOut(BaseModel):
     # Always athlete for members API; exposed so pickers can show role badges.
     role: Literal["athlete"] = "athlete"
     has_active_membership: bool = False
+    # Active membership on a plan with includes_locker (same rule as locker assign).
+    can_receive_locker: bool = False
 
     model_config = {"from_attributes": True}
 
