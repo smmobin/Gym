@@ -1,5 +1,6 @@
 import { ApiError, apiErrorMessage, apiGet, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { formatJalaliDate } from './format.js'
 import { bindMemberSearch } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -48,7 +49,7 @@ export function membershipEligibilityHtml(memberships, lockerPlanIds) {
         : '<span class="badge warn">بدون کمد</span>'
       return `<div class="row-item"><div>
         <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
-        <p>${m.status} · ${m.start_date || '—'} تا ${m.end_date || '—'}</p>
+        <p>${m.status} · ${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)}</p>
       </div>${badge}</div>`
     })
     .join('')

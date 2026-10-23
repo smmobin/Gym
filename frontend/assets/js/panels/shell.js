@@ -1,5 +1,6 @@
 import { staffLogout, roleLabel } from '../auth-staff.js'
 import { mountNotificationBell } from '../notifications.js'
+import { mountTodayDate } from '../format.js'
 import { startSessionActivityGuard } from '../session-activity.js'
 import { bindHashNav, bindSidebarClose, showApiDown } from '../ui.js'
 import { apiGet } from '../api.js'
@@ -25,6 +26,8 @@ export async function initStaffShell(opts) {
     const parts = opts.user.full_name.trim().split(/\s+/)
     avatar.textContent = (parts[0]?.[0] || '') + (parts[1]?.[0] || '')
   }
+
+  mountTodayDate()
 
   const bellRoot = document.querySelector('[data-bell-root]')
   if (bellRoot) mountNotificationBell((bellRoot))

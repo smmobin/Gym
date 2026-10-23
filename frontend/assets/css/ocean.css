@@ -1579,6 +1579,22 @@ label > .date-picker { width: 100%; }
 .topbar h1 { margin: 0; font-size: clamp(1.05rem, 2.5vw, 1.35rem); }
 .topbar p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.88rem; }
 .topbar-actions { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+.topbar-today {
+  display: inline-flex;
+  align-items: center;
+  max-width: min(18rem, 46vw);
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, var(--accent) 20%);
+  background: color-mix(in srgb, var(--panel-2) 88%, var(--accent-dim));
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .search { min-width: 0; flex: 1 1 160px; }
 .search input { max-width: 280px; }
 .icon-btn {

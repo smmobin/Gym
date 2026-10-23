@@ -1,5 +1,5 @@
 import { ApiError, apiGet, apiPost } from './api.js'
-import { formatToman, onlineMethodLabel, PAYMENT_METHOD_LABEL } from './format.js'
+import { formatJalaliDate, formatToman, onlineMethodLabel, PAYMENT_METHOD_LABEL } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch } from './members.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
@@ -135,8 +135,8 @@ export function mountBilling(root, user) {
               : ''
             return `<div class="row-item"><div>
           <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
-          <p>${m.start_date} تا ${m.end_date} · ${formatToman(m.agreed_amount_toman)} · ${m.status}
-          ${m.freeze_ends_at ? ` · توقف تا ${m.freeze_ends_at}` : ''}</p></div>
+          <p>${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)} · ${formatToman(m.agreed_amount_toman)} · ${m.status}
+          ${m.freeze_ends_at ? ` · توقف تا ${formatJalaliDate(m.freeze_ends_at)}` : ''}</p></div>
           <span class="badge">${m.status}</span>${lockerBadge}</div>`
           })
           .join('')
@@ -206,7 +206,7 @@ export function mountBilling(root, user) {
       })
       setStatus(
         status,
-        `تمدید از ${data.membership.start_date} تا ${data.membership.end_date}. بدهی: ${formatToman(data.debt_toman)}`,
+        `تمدید از ${formatJalaliDate(data.membership.start_date)} تا ${formatJalaliDate(data.membership.end_date)}. بدهی: ${formatToman(data.debt_toman)}`,
         'ok',
       )
       await loadMember(selected.id)

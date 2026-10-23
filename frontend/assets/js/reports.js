@@ -5,24 +5,21 @@ import {
   mountExpenseCategoryCombobox,
   normalizeExpenseCategoryInput,
 } from './expense-categories.js'
-import { formatToman } from './format.js'
+import {
+  formatJalaliDate,
+  formatToman,
+  jalaliMonthRangeLocal,
+  todayRangeLocal,
+} from './format.js'
 import { enhanceMoneyInputs, moneyFromForm } from './money-input.js'
 import { setStatus } from './ui.js'
 
-/** Calendar month range in local timezone (ISO YYYY-MM-DD). */
+/** @deprecated prefer todayRangeLocal / jalaliMonthRangeLocal from format.js */
 export function monthRangeTehran(now = new Date()) {
-  const y = now.getFullYear()
-  const m = now.getMonth()
-  const from = new Date(y, m, 1)
-  const to = new Date(y, m + 1, 0)
-  const iso = (d) => {
-    const yy = d.getFullYear()
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${yy}-${mm}-${dd}`
-  }
-  return { from: iso(from), to: iso(to) }
+  return jalaliMonthRangeLocal(now)
 }
+
+export { todayRangeLocal, jalaliMonthRangeLocal }
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountReports(root, user) {
@@ -31,7 +28,7 @@ export function mountReports(root, user) {
       '<p class="status-msg error">گزارش مالی فقط برای مدیر است. سرور هم ۴۰۳ می‌دهد.</p>'
     return
   }
-  const range = monthRangeTehran()
+  const range = todayRangeLocal()
   root.innerHTML = `
     <article class="panel">
       <header class="panel-head"><h2>گزارش سود و هزینه</h2></header>
@@ -42,6 +39,7 @@ export function mountReports(root, user) {
       </form>
       <div class="status-msg" data-status hidden></div>
       <div class="stats" data-summary style="margin-top:1rem"></div>
+      <p class="hint" style="margin-top:0.65rem">سود نمایشی = درآمد پرداخت‌شده (paid) منهای هزینه‌های همین بازه. بدهی اعضا جزو درآمد نیست.</p>
     </article>
     <div class="grid-2" style="margin-top:1rem">
       <article class="panel">
@@ -106,9 +104,9 @@ export function mountReports(root, user) {
         apiGet(`/api/v1/expenses?${params}`),
       ])
       root.querySelector('[data-summary]').innerHTML = `
-        <article class="stat accent"><span class="stat-label">درآمد (paid)</span><strong>${formatToman(profit.income_paid_toman)}</strong></article>
+        <article class="stat accent"><span class="stat-label">درآمد (paid)</span><strong>${formatToman(profit.income_paid_toman)}</strong><em>${formatJalaliDate(from)} تا ${formatJalaliDate(to)}</em></article>
         <article class="stat"><span class="stat-label">هزینه‌ها</span><strong>${formatToman(profit.expenses_toman)}</strong></article>
-        <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${formatToman(profit.profit_toman)}</strong></article>
+        <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${formatToman(profit.profit_toman)}</strong><em>درآمد − هزینه</em></article>
       `
       const items = expenses.items || []
       root.querySelector('[data-expenses]').innerHTML = items.length
@@ -116,7 +114,7 @@ export function mountReports(root, user) {
             .map(
               (r) => `<div class="row-item"><div>
             <h3>${expenseCategoryLabel(r.category)}</h3>
-            <p>${r.expense_date}${r.note ? ' · ' + r.note : ''}</p></div>
+            <p>${formatJalaliDate(r.expense_date)}${r.note ? ' · ' + r.note : ''}</p></div>
             <em>${formatToman(r.amount_toman)}</em></div>`,
             )
             .join('')

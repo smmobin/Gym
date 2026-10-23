@@ -4,12 +4,12 @@ import {
   buildDashboardStatsHtml,
   buildRecentExpensesHtml,
 } from '../assets/js/dashboard.js'
-import { monthRangeTehran } from '../assets/js/reports.js'
+import { jalaliMonthRangeLocal } from '../assets/js/format.js'
 
 describe('manager dashboard helpers', () => {
-  it('builds month range in local calendar dates (happy path)', () => {
-    const range = monthRangeTehran(new Date(2026, 9, 21))
-    expect(range).toEqual({ from: '2026-10-01', to: '2026-10-31' })
+  it('builds Jalali month range in Gregorian ISO for API (happy path)', () => {
+    const range = jalaliMonthRangeLocal(new Date(2026, 9, 23))
+    expect(range).toEqual({ from: '2026-10-23', to: '2026-11-21' })
   })
 
   it('renders finance summary stats with Persian amounts', () => {
@@ -29,12 +29,14 @@ describe('manager dashboard helpers', () => {
     expect(buildRecentExpensesHtml([])).toContain('هنوز هزینه‌ای ثبت نشده')
   })
 
-  it('maps expense categories to Persian labels', () => {
+  it('maps expense categories to Persian labels and Jalali dates', () => {
     const html = buildRecentExpensesHtml([
-      { category: 'rent', amount_toman: 5_000_000, expense_date: '2026-10-05', note: 'مهر' },
+      { category: 'rent', amount_toman: 5_000_000, expense_date: '2026-10-23', note: 'مهر' },
     ])
     expect(html).toContain('اجاره')
     expect(html).toContain('۵٬۰۰۰٬۰۰۰')
+    expect(html).toContain('۱ آبان ۱۴۰۵')
+    expect(html).not.toContain('2026-10-23')
     expect(html).toContain('مهر')
   })
 })

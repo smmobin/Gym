@@ -1,7 +1,6 @@
 import { ApiError, apiGet } from './api.js'
 import { expenseCategoryLabel } from './expense-categories.js'
-import { formatToman } from './format.js'
-import { monthRangeTehran } from './reports.js'
+import { formatJalaliDate, formatToman, jalaliMonthRangeLocal } from './format.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -33,7 +32,7 @@ export function buildRecentExpensesHtml(items, limit = 5) {
       const note = r.note ? ` · ${r.note}` : ''
       return `<div class="row-item"><div>
         <h3>${label}</h3>
-        <p>${r.expense_date}${note}</p></div>
+        <p>${formatJalaliDate(r.expense_date)}${note}</p></div>
         <em>${formatToman(r.amount_toman)}</em></div>`
     })
     .join('')
@@ -47,7 +46,7 @@ export function mountDashboard(root, user) {
     return
   }
 
-  const range = monthRangeTehran()
+  const range = jalaliMonthRangeLocal()
   root.innerHTML = `
     <div class="status-msg" data-status hidden></div>
     <div class="stats" data-stats></div>
@@ -65,7 +64,7 @@ export function mountDashboard(root, user) {
   const status = root.querySelector('[data-status]')
   const rangeLabel = root.querySelector('[data-range-label]')
   if (rangeLabel) {
-    rangeLabel.textContent = `بازه: ${range.from} تا ${range.to}`
+    rangeLabel.textContent = `بازه ماه شمسی: ${formatJalaliDate(range.from)} تا ${formatJalaliDate(range.to)}`
   }
 
   async function load() {

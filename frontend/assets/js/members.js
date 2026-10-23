@@ -1,6 +1,6 @@
 import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
-import { MEMBER_STATUS } from './format.js'
+import { formatDateTime, MEMBER_STATUS } from './format.js'
 import { bindLiveSearch } from './live-search.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { createListPager } from './pagination.js'
@@ -85,7 +85,7 @@ export function mountMembers(root, user) {
         if (info) {
           if (err) info.textContent = err
           else if (st?.locked && st.held_by_me)
-            info.textContent = `قفل نزد شما تا ${st.expires_at ? new Date(st.expires_at).toLocaleString('fa-IR') : '—'}`
+            info.textContent = `قفل نزد شما تا ${st.expires_at ? formatDateTime(st.expires_at) : '—'}`
           else if (st?.locked)
             info.textContent = `قفل نزد ${st.locked_by_name || 'دیگری'}`
           else info.textContent = selectedId ? 'بدون قفل فعال' : 'عضوی انتخاب نشده'

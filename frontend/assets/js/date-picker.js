@@ -473,13 +473,20 @@
       state.d = g[2];
       syncDisplay();
       renderGrid();
+      // Date-only: commit immediately so FormData / گزارش بازه the real value (not just the label).
+      if (!withTime) {
+        applyToInput();
+        close();
+      }
     }
 
     trigger.addEventListener("click", function (event) {
       event.preventDefault();
       event.stopPropagation();
-      if (root.classList.contains("is-open")) close();
-      else open();
+      if (root.classList.contains("is-open")) {
+        if (!withTime) applyToInput();
+        close();
+      } else open();
     });
 
     prevBtn.addEventListener("click", function (event) {
@@ -543,6 +550,10 @@
       state.viewJm = j[1];
       syncDisplay();
       renderGrid();
+      if (!withTime) {
+        applyToInput();
+        close();
+      }
     });
 
     okBtn.addEventListener("click", function (event) {
@@ -556,6 +567,9 @@
     cancelBtn.addEventListener("click", function (event) {
       event.preventDefault();
       event.stopPropagation();
+      pullFromInput();
+      syncDisplay();
+      renderGrid();
       close();
       trigger.focus();
     });
@@ -578,6 +592,13 @@
     document.addEventListener("click", function (event) {
       if (!root.classList.contains("is-open")) return;
       if (root.contains(event.target)) return;
+      // Keep trigger label and hidden input in sync (outside-click used to leave them mismatched).
+      if (!withTime) applyToInput();
+      else {
+        pullFromInput();
+        syncDisplay();
+        renderGrid();
+      }
       close();
     });
 

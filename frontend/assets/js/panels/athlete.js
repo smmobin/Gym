@@ -1,6 +1,12 @@
 import { apiGet, apiPost, ApiError } from '../api.js'
 import { athleteLogout, requireAthlete } from '../auth-athlete.js'
-import { formatDateTime, formatDateTimeShort, formatToman } from '../format.js'
+import {
+  formatDateTime,
+  formatDateTimeShort,
+  formatJalaliDate,
+  formatToman,
+  mountTodayDate,
+} from '../format.js'
 import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-input.js'
 import { startSessionActivityGuard } from '../session-activity.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
@@ -41,6 +47,7 @@ async function main() {
   if (greet) greet.textContent = `سلام ${member.first_name}، آماده یک تمرین خوب هستی؟`
   const avatar = document.querySelector('[data-avatar]')
   if (avatar) avatar.textContent = (member.first_name?.[0] || '') + (member.last_name?.[0] || '')
+  mountTodayDate()
 
   document.querySelector('[data-logout]')?.addEventListener('click', async () => {
     try {
@@ -103,7 +110,9 @@ async function main() {
     const memItems = memberships.items || []
     const active = memItems.find((m) => m.status === 'active') || memItems[0]
     document.querySelector('[data-stat-status]').textContent = active?.status || '—'
-    document.querySelector('[data-stat-end]').textContent = active?.end_date || '—'
+    document.querySelector('[data-stat-end]').textContent = active?.end_date
+      ? formatJalaliDate(active.end_date)
+      : '—'
     document.querySelector('[data-stat-debt]').textContent = debt
       ? formatToman(debt)
       : 'تسویه‌شده'
@@ -114,7 +123,7 @@ async function main() {
           .map(
             (m) => `<div class="row-item"><div>
           <h3>${m.plan_name || 'طرح ' + m.plan_id}</h3>
-          <p>${m.start_date} تا ${m.end_date} · ${formatToman(m.agreed_amount_toman)}</p></div>
+          <p>${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)} · ${formatToman(m.agreed_amount_toman)}</p></div>
           <span class="badge">${m.status}</span></div>`,
           )
           .join('')

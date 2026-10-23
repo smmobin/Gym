@@ -1,5 +1,5 @@
 import { apiErrorMessage, apiPost } from './api.js'
-import { formatToman, PAYMENT_METHOD_LABEL } from './format.js'
+import { formatJalaliDate, formatToman, PAYMENT_METHOD_LABEL } from './format.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { setStatus } from './ui.js'
 
@@ -63,7 +63,7 @@ export function mountGuests(root, user) {
           <p>عضو: ${data.member.display_id} — ${data.member.first_name} ${data.member.last_name}
           ${data.reused_existing_member ? ' (عضو موجود)' : ''}</p>
           <p>عضویت: ${data.membership.plan_name || data.membership.plan_id} · ${formatToman(data.membership.agreed_amount_toman)}
-          · ${data.membership.start_date}</p>
+          · ${formatJalaliDate(data.membership.start_date)}</p>
           ${
             data.payment
               ? `<p>رسید ${data.payment.receipt_number}: ${formatToman(data.payment.amount_toman)} · ${PAYMENT_METHOD_LABEL[data.payment.method] || data.payment.method}</p>`
