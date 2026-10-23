@@ -135,12 +135,15 @@
 .panel:has(.member-search.is-open),
 .panel:has(.member-pick.is-open),
 .panel:has(.custom-select.is-open),
+.panel:has(.custom-combobox.is-open),
 .panel:has(.time-picker.is-open),
 .panel:has(.date-picker.is-open) {
   overflow: visible;
 }
 .form-grid:has(.custom-select.is-open),
-label:has(.custom-select.is-open) {
+.form-grid:has(.custom-combobox.is-open),
+label:has(.custom-select.is-open),
+label:has(.custom-combobox.is-open) {
   position: relative;
   z-index: 20;
 }

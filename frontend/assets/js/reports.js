@@ -1,9 +1,8 @@
 import { apiErrorMessage, apiGet, apiPost } from './api.js'
 import {
-  EXPENSE_CATEGORY_CUSTOM,
   expenseCategoryLabel,
-  fillExpenseCategorySelect,
   mergeExpenseCategories,
+  mountExpenseCategoryCombobox,
   normalizeExpenseCategoryInput,
 } from './expense-categories.js'
 import { formatToman } from './format.js'
@@ -53,54 +52,33 @@ export function mountReports(root, user) {
         <header class="panel-head"><h2>ثبت هزینه</h2></header>
         <form data-expense class="form-grid">
           <label>دسته
-            <select name="category" data-expense-category required data-placeholder="انتخاب دسته…"></select>
-          </label>
-          <label data-custom-cat-wrap hidden>نام دستهٔ جدید
-            <input name="category_custom" maxlength="32" placeholder="مثلاً تعمیرات" autocomplete="off" />
+            <div data-expense-cat-host></div>
           </label>
           <label>مبلغ (تومان)<input data-money name="amount_toman" inputmode="numeric" required /></label>
           <label>تاریخ<input name="expense_date" type="date" value="${range.to}" required /></label>
           <label class="full">یادداشت<textarea name="note"></textarea></label>
           <button class="btn" type="submit">ثبت</button>
         </form>
-        <p class="hint">از منو انتخاب کنید؛ برای دستهٔ تازه گزینهٔ «دستهٔ جدید…» را بزنید تا بعد از ثبت به لیست اضافه شود.</p>
+        <p class="hint">از منو انتخاب کنید یا همان‌جا دستهٔ تازه بنویسید؛ بعد از ثبت به لیست اضافه می‌شود.</p>
       </article>
     </div>
   `
   const status = root.querySelector('[data-status]')
-  const catSelect = /** @type {HTMLSelectElement | null} */ (
-    root.querySelector('[data-expense-category]')
-  )
-  const customWrap = /** @type {HTMLElement | null} */ (root.querySelector('[data-custom-cat-wrap]'))
-  const customInput = /** @type {HTMLInputElement | null} */ (
-    root.querySelector('[name=category_custom]')
-  )
+  const catHost = /** @type {HTMLElement} */ (root.querySelector('[data-expense-cat-host]'))
   /** @type {Array<{ value: string, label: string }>} */
   let categories = mergeExpenseCategories()
-
-  function syncCustomCatVisibility() {
-    const isCustom = catSelect?.value === EXPENSE_CATEGORY_CUSTOM
-    if (customWrap) customWrap.hidden = !isCustom
-    if (customInput) {
-      customInput.required = !!isCustom
-      if (!isCustom) customInput.value = ''
-    }
-  }
-
-  function paintCategorySelect() {
-    fillExpenseCategorySelect(catSelect, categories)
-    syncCustomCatVisibility()
-  }
-
-  paintCategorySelect()
+  const categoryCombo = mountExpenseCategoryCombobox(catHost, {
+    name: 'category',
+    categories,
+    required: true,
+  })
   enhanceMoneyInputs(root)
-  catSelect?.addEventListener('change', syncCustomCatVisibility)
 
   async function refreshCategories() {
     try {
       const data = await apiGet('/api/v1/expenses/categories')
       categories = mergeExpenseCategories(data.items || [])
-      paintCategorySelect()
+      categoryCombo.setCategories(categories)
     } catch {
       /* keep current list */
     }
@@ -116,7 +94,7 @@ export function mountReports(root, user) {
       ...categories,
       { value, label: expenseCategoryLabel(value) },
     ])
-    paintCategorySelect()
+    categoryCombo.setCategories(categories)
   }
 
   async function load(from, to) {
@@ -159,20 +137,9 @@ export function mountReports(root, user) {
     e.preventDefault()
     const form = /** @type {HTMLFormElement} */ (e.target)
     const fd = new FormData(form)
-    const selected = String(fd.get('category') || '').trim()
-    const categoryRaw =
-      selected === EXPENSE_CATEGORY_CUSTOM
-        ? String(fd.get('category_custom') || '').trim()
-        : selected
-    const category = normalizeExpenseCategoryInput(categoryRaw)
+    const category = normalizeExpenseCategoryInput(String(fd.get('category') || ''))
     if (!category) {
-      setStatus(
-        status,
-        selected === EXPENSE_CATEGORY_CUSTOM
-          ? 'نام دستهٔ جدید را بنویسید.'
-          : 'دسته را از منو انتخاب کنید.',
-        'error',
-      )
+      setStatus(status, 'دسته را انتخاب یا بنویسید.', 'error')
       return
     }
     let savedOk = false
@@ -186,7 +153,7 @@ export function mountReports(root, user) {
       rememberCategory(category)
       setStatus(status, 'هزینه ثبت شد.', 'ok')
       form.reset()
-      paintCategorySelect()
+      categoryCombo.clear()
       enhanceMoneyInputs(root)
       savedOk = true
     } catch (err) {

@@ -813,6 +813,84 @@ label > .custom-select {
   font-size: inherit;
 }
 
+/* Combobox (type + pick) — same shell as custom-select */
+.custom-combobox-trigger {
+  cursor: text;
+  padding-inline-end: 0.65rem;
+}
+.custom-combobox-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  text-align: right;
+  outline: none !important;
+  min-height: 0 !important;
+}
+.custom-combobox-input::placeholder {
+  color: var(--muted);
+  font-weight: 500;
+}
+.custom-combobox-caret {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.35rem;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 8px;
+  color: inherit;
+}
+.custom-combobox-caret::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-inline-end: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  margin-top: -0.2rem;
+  opacity: 0.85;
+  transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+/* Hide the decorative span caret styles when button uses ::before */
+.custom-combobox .custom-select-caret.custom-combobox-caret {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 0;
+  transform: none;
+  margin-top: 0;
+  opacity: 1;
+}
+.custom-combobox.is-open .custom-combobox-caret::before {
+  transform: rotate(225deg);
+  margin-top: 0.12rem;
+  border-color: var(--accent);
+  opacity: 1;
+}
+.custom-combobox.is-open {
+  z-index: 30;
+}
+label:has(.custom-combobox.is-open),
+.form-grid:has(.custom-combobox.is-open),
+.panel:has(.custom-combobox.is-open) {
+  overflow: visible;
+}
+
 /* —— Custom time picker (replaces native clock popup) —— */
 .time-picker {
   position: relative;
