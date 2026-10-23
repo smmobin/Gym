@@ -1,4 +1,6 @@
 import { ApiError, apiGet } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
+import { LIVE } from './live-data.js'
 import { setStatus } from './ui.js'
 
 const TRIAL_STATUS_FA = {
@@ -90,8 +92,12 @@ export function mountDeskDashboard(root, user) {
   const statsEl = root.querySelector('[data-stats]')
   const actionsEl = root.querySelector('[data-actions]')
 
-  async function load() {
-    setStatus(status, 'بارگذاری داشبورد…', 'loading')
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'بارگذاری داشبورد…', 'loading')
     try {
       const data = await apiGet('/api/v1/desk/summary')
       if (statsEl) statsEl.innerHTML = buildDeskStatsHtml(data)
@@ -127,11 +133,15 @@ export function mountDeskDashboard(root, user) {
           ),
         ].join('')
       }
-      setStatus(status, 'خلاصهٔ امروز به‌روز شد.', 'ok')
+      if (!silent) setStatus(status, 'خلاصهٔ امروز به‌روز شد.', 'ok')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا در بارگذاری داشبورد', 'error')
+      throw err
     }
   }
 
-  void load()
+  createAutoRefresh(root, load, {
+    intervalMs: 15_000,
+    events: [LIVE.BILLING, LIVE.MEMBERS, LIVE.ATTENDANCE, LIVE.TRIAL],
+  })
 }

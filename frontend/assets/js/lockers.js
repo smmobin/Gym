@@ -1,5 +1,6 @@
 import { ApiError, apiErrorMessage, apiGet, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { LIVE } from './live-data.js'
 import { formatJalaliDate } from './format.js'
 import { bindMemberSearch } from './members.js'
 import { createListPager } from './pagination.js'
@@ -197,21 +198,22 @@ export function mountLockers(root, user) {
     const silent = !!ctx.silent
     try {
       await loadLockersOnly()
-      setStatus(status, `${lockers.length.toLocaleString('fa-IR')} کمد`, 'ok')
+      await loadPlans()
+      if (member) renderEligibility()
+      if (!silent) {
+        setStatus(status, `${lockers.length.toLocaleString('fa-IR')} کمد`, 'ok')
+      }
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
       throw err
     }
-    if (!silent) {
-      await loadPlans()
-      if (member) renderEligibility()
-    }
   }
 
   const autoRefresh = createAutoRefresh(root, load, {
-    intervalMs: 30_000,
+    intervalMs: 15_000,
     retryBaseMs: 2_500,
     retryMaxMs: 45_000,
+    events: [LIVE.PLANS, LIVE.LOCKERS, LIVE.MEMBERS],
   })
 
   bindMemberSearch(

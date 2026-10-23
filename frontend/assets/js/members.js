@@ -1,5 +1,6 @@
 import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { emitLive, LIVE } from './live-data.js'
 import { formatDateTime, MEMBER_STATUS } from './format.js'
 import { bindLiveSearch } from './live-search.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
@@ -159,9 +160,10 @@ export function mountMembers(root, user) {
   }
 
   const autoRefresh = createAutoRefresh(root, load, {
-    intervalMs: 30_000,
+    intervalMs: 15_000,
     retryBaseMs: 2_500,
     retryMaxMs: 45_000,
+    events: [LIVE.MEMBERS],
   })
 
   bindLiveSearch(
@@ -195,7 +197,10 @@ export function mountMembers(root, user) {
     } finally {
       form.dataset.busy = '0'
     }
-    if (createdOk) await autoRefresh.refresh()
+    if (createdOk) {
+      emitLive(LIVE.MEMBERS)
+      await autoRefresh.refresh()
+    }
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
@@ -215,7 +220,10 @@ export function mountMembers(root, user) {
     } catch (err) {
       setStatus(status, lockErrorMessage(err, 'ذخیره ناموفق'), 'error')
     }
-    if (savedOk) await autoRefresh.refresh()
+    if (savedOk) {
+      emitLive(LIVE.MEMBERS)
+      await autoRefresh.refresh()
+    }
   })
 
   root.querySelector('[data-archive]')?.addEventListener('click', async () => {
@@ -230,6 +238,7 @@ export function mountMembers(root, user) {
       setStatus(status, lockErrorMessage(err, 'آرشیو ناموفق'), 'error')
       return
     }
+    emitLive(LIVE.MEMBERS)
     await autoRefresh.refresh()
   })
 

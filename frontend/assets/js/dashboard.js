@@ -1,6 +1,8 @@
 import { ApiError, apiGet } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { expenseCategoryLabel } from './expense-categories.js'
 import { formatJalaliDate, formatToman, jalaliMonthRangeLocal } from './format.js'
+import { LIVE } from './live-data.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -67,8 +69,12 @@ export function mountDashboard(root, user) {
     rangeLabel.textContent = `بازه ماه شمسی: ${formatJalaliDate(range.from)} تا ${formatJalaliDate(range.to)}`
   }
 
-  async function load() {
-    setStatus(status, 'بارگذاری خلاصه…', 'loading')
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'بارگذاری خلاصه…', 'loading')
     const params = new URLSearchParams({ from: range.from, to: range.to })
     try {
       const [profit, expenses, today, members] = await Promise.all([
@@ -87,11 +93,15 @@ export function mountDashboard(root, user) {
       }
       const expEl = root.querySelector('[data-expenses]')
       if (expEl) expEl.innerHTML = buildRecentExpensesHtml(expenses.items || [])
-      setStatus(status, '') // hide success banner; hint under expenses panel is enough
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا در بارگذاری داشبورد', 'error')
+      throw err
     }
   }
 
-  void load()
+  createAutoRefresh(root, load, {
+    intervalMs: 15_000,
+    events: [LIVE.EXPENSES, LIVE.BILLING, LIVE.ATTENDANCE, LIVE.MEMBERS],
+  })
 }

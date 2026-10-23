@@ -67,4 +67,23 @@ describe('createAutoRefresh', () => {
 
     auto.stop()
   })
+
+  it('forces refresh when a subscribed live event fires', async () => {
+    vi.useFakeTimers()
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    const loadFn = vi.fn(async () => {})
+    const auto = createAutoRefresh(root, loadFn, {
+      intervalMs: 60_000,
+      events: ['gym:live:plans'],
+    })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(loadFn).toHaveBeenCalledTimes(1)
+
+    window.dispatchEvent(new Event('gym:live:plans'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(loadFn).toHaveBeenCalledTimes(2)
+
+    auto.stop()
+  })
 })

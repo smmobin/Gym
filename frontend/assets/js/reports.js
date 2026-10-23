@@ -1,4 +1,5 @@
 import { apiErrorMessage, apiGet, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import {
   expenseCategoryLabel,
   mergeExpenseCategories,
@@ -11,6 +12,7 @@ import {
   jalaliMonthRangeLocal,
   todayRangeLocal,
 } from './format.js'
+import { emitLive, LIVE } from './live-data.js'
 import { enhanceMoneyInputs, moneyFromForm } from './money-input.js'
 import { setStatus } from './ui.js'
 
@@ -95,8 +97,22 @@ export function mountReports(root, user) {
     categoryCombo.setCategories(categories)
   }
 
-  async function load(from, to) {
-    setStatus(status, 'بارگذاری…', 'loading')
+  function readRangeDates(form) {
+    if (typeof window !== 'undefined' && window.GymDatePicker?.flush) {
+      window.GymDatePicker.flush(form)
+    }
+    const fd = new FormData(form)
+    return { from: String(fd.get('from') || ''), to: String(fd.get('to') || '') }
+  }
+
+  /**
+   * @param {string} from
+   * @param {string} to
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(from, to, ctx = {}) {
+    const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'بارگذاری…', 'loading')
     const params = new URLSearchParams({ from, to })
     try {
       const [profit, expenses] = await Promise.all([
@@ -121,19 +137,27 @@ export function mountReports(root, user) {
             )
             .join('')
         : '<p class="hint">هزینه‌ای در این بازه نیست. تاریخ ثبت‌شدهٔ هزینه باید داخل همین بازه باشد.</p>'
-      setStatus(status, '')
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'خطا'), 'error')
+      throw err
     }
   }
 
-  function readRangeDates(form) {
-    if (typeof window !== 'undefined' && window.GymDatePicker?.flush) {
-      window.GymDatePicker.flush(form)
-    }
-    const fd = new FormData(form)
-    return { from: String(fd.get('from') || ''), to: String(fd.get('to') || '') }
-  }
+  const autoRefresh = createAutoRefresh(
+    root,
+    async (ctx) => {
+      const rangeForm = /** @type {HTMLFormElement | null} */ (root.querySelector('[data-range]'))
+      if (!rangeForm) return
+      const { from, to } = readRangeDates(rangeForm)
+      if (!from || !to) return
+      await load(from, to, ctx)
+    },
+    {
+      intervalMs: 15_000,
+      events: [LIVE.EXPENSES, LIVE.BILLING],
+    },
+  )
 
   root.querySelector('[data-range]')?.addEventListener('submit', (e) => {
     e.preventDefault()
@@ -176,13 +200,14 @@ export function mountReports(root, user) {
       setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')
     }
     if (savedOk) {
+      emitLive(LIVE.EXPENSES)
       void refreshCategories()
       const rangeForm = /** @type {HTMLFormElement} */ (root.querySelector('[data-range]'))
       const { from, to } = readRangeDates(rangeForm)
       await load(from, to)
+      void autoRefresh.refresh()
     }
   })
 
   void refreshCategories()
-  void load(range.from, range.to)
 }

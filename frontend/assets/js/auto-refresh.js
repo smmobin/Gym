@@ -2,15 +2,22 @@
  * Periodic list refresh with exponential backoff on failure.
  * Pauses while the tab or host `[data-section]` is hidden; retries on
  * `online` / becoming visible again.
+ * Optional `events` (e.g. LIVE.PLANS) force an immediate refresh in this tab.
  *
  * @param {HTMLElement} root
  * @param {(ctx: { silent: boolean }) => Promise<void>} loadFn reject/throw → retry
- * @param {{ intervalMs?: number, retryBaseMs?: number, retryMaxMs?: number }} [opts]
+ * @param {{
+ *   intervalMs?: number,
+ *   retryBaseMs?: number,
+ *   retryMaxMs?: number,
+ *   events?: string[],
+ * }} [opts]
  */
 export function createAutoRefresh(root, loadFn, opts = {}) {
-  const intervalMs = opts.intervalMs ?? 30_000
+  const intervalMs = opts.intervalMs ?? 15_000
   const retryBaseMs = opts.retryBaseMs ?? 2_500
   const retryMaxMs = opts.retryMaxMs ?? 45_000
+  const events = Array.isArray(opts.events) ? opts.events.filter(Boolean) : []
 
   let stopped = false
   /** @type {ReturnType<typeof setTimeout> | null} */
@@ -20,6 +27,8 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
   let pendingForce = false
   let consecutiveFailures = 0
   let everSucceeded = false
+  /** @type {Array<() => void>} */
+  const unsubs = []
 
   function clearTimer() {
     if (timer != null) {
@@ -92,9 +101,17 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
     void run(true)
   }
 
+  function onLiveEvent() {
+    void run(true)
+  }
+
   document.addEventListener('visibilitychange', onResume)
   window.addEventListener('online', onOnline)
   window.addEventListener('hashchange', onResume)
+  for (const name of events) {
+    window.addEventListener(name, onLiveEvent)
+    unsubs.push(() => window.removeEventListener(name, onLiveEvent))
+  }
 
   void run(true)
 
@@ -107,6 +124,10 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
       document.removeEventListener('visibilitychange', onResume)
       window.removeEventListener('online', onOnline)
       window.removeEventListener('hashchange', onResume)
+      while (unsubs.length) {
+        const off = unsubs.pop()
+        if (off) off()
+      }
     },
   }
 }

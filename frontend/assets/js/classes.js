@@ -100,9 +100,10 @@ export function mountClasses(root, user) {
   }
 
   const autoRefresh = createAutoRefresh(root, load, {
-    intervalMs: 30_000,
+    intervalMs: 15_000,
     retryBaseMs: 2_500,
     retryMaxMs: 45_000,
+    events: [LIVE.CLASSES],
   })
 
   function fillEdit(id) {

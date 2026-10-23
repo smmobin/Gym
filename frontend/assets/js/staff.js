@@ -1,5 +1,6 @@
 import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { emitLive, LIVE } from './live-data.js'
 import { ROLE_LABEL } from './format.js'
 import { createListPager } from './pagination.js'
 import { enhancePasswordFields } from './password-toggle.js'
@@ -158,9 +159,10 @@ export function mountStaff(root, user) {
   }
 
   const autoRefresh = createAutoRefresh(root, load, {
-    intervalMs: 30_000,
+    intervalMs: 15_000,
     retryBaseMs: 2_500,
     retryMaxMs: 45_000,
+    events: [LIVE.STAFF],
   })
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
@@ -200,7 +202,10 @@ export function mountStaff(root, user) {
       if (submitBtn) submitBtn.disabled = false
     }
     // Reload outside create catch so list-refresh errors are not shown as «ثبت ناموفق».
-    if (createdOk) await autoRefresh.refresh()
+    if (createdOk) {
+      emitLive(LIVE.STAFF)
+      await autoRefresh.refresh()
+    }
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
@@ -229,6 +234,7 @@ export function mountStaff(root, user) {
       form.dataset.busy = '0'
     }
     if (savedOk) {
+      emitLive(LIVE.STAFF)
       await autoRefresh.refresh()
       select(selectedId)
     }
@@ -244,6 +250,7 @@ export function mountStaff(root, user) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
       return
     }
+    emitLive(LIVE.STAFF)
     await autoRefresh.refresh()
     select(selectedId)
   })
@@ -257,6 +264,7 @@ export function mountStaff(root, user) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
       return
     }
+    emitLive(LIVE.STAFF)
     await autoRefresh.refresh()
     select(selectedId)
   })

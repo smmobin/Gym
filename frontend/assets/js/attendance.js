@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { emitLive, LIVE } from './live-data.js'
 import { ATTENDANCE_TYPE_LABEL, formatDateTime, formatToman } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch } from './members.js'
@@ -97,9 +98,10 @@ export function mountAttendance(root, user) {
   }
 
   const autoRefresh = createAutoRefresh(root, loadToday, {
-    intervalMs: 20_000,
+    intervalMs: 15_000,
     retryBaseMs: 2_500,
     retryMaxMs: 45_000,
+    events: [LIVE.ATTENDANCE],
   })
 
   async function checkIn(confirmSecond) {
@@ -123,6 +125,7 @@ export function mountAttendance(root, user) {
       if (data.debt_warning) msg += ` هشدار بدهی: ${formatToman(data.debt_toman)}`
       if (data.sessions_remaining != null) msg += ` · جلسه باقی‌مانده: ${data.sessions_remaining}`
       setStatus(status, msg, 'ok')
+      emitLive(LIVE.ATTENDANCE)
       await autoRefresh.refresh()
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && String(err.message).includes('ورود دوم')) {

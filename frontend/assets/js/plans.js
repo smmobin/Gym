@@ -1,5 +1,6 @@
 import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { emitLive, LIVE } from './live-data.js'
 import { formatToman } from './format.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { createListPager } from './pagination.js'
@@ -177,9 +178,10 @@ export function mountPlans(root, user) {
   enhanceMoneyInputs(root)
 
   const autoRefresh = createAutoRefresh(root, load, {
-    intervalMs: 30_000,
+    intervalMs: 15_000,
     retryBaseMs: 2_500,
     retryMaxMs: 45_000,
+    events: [LIVE.PLANS],
   })
 
   root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
@@ -218,7 +220,10 @@ export function mountPlans(root, user) {
       if (submitBtn) submitBtn.disabled = false
     }
     // Refresh outside create catch — list errors must not look like «ثبت ناموفق».
-    if (createdOk) await autoRefresh.refresh()
+    if (createdOk) {
+      emitLive(LIVE.PLANS)
+      await autoRefresh.refresh()
+    }
   })
 
   root.querySelector('[data-edit]')?.addEventListener('submit', async (e) => {
@@ -255,6 +260,7 @@ export function mountPlans(root, user) {
       form.dataset.busy = '0'
     }
     if (savedOk) {
+      emitLive(LIVE.PLANS)
       await autoRefresh.refresh()
       select(selectedId)
     }
@@ -275,6 +281,7 @@ export function mountPlans(root, user) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
       return
     }
+    emitLive(LIVE.PLANS)
     await autoRefresh.refresh()
     select(selectedId)
   })
@@ -292,6 +299,7 @@ export function mountPlans(root, user) {
       setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
       return
     }
+    emitLive(LIVE.PLANS)
     await autoRefresh.refresh()
     select(selectedId)
   })

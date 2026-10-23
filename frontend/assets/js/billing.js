@@ -1,5 +1,7 @@
-import { ApiError, apiGet, apiPost } from './api.js'
+import { apiErrorMessage, apiGet, apiPost } from './api.js'
+import { createAutoRefresh } from './auto-refresh.js'
 import { formatJalaliDate, formatToman, onlineMethodLabel, PAYMENT_METHOD_LABEL } from './format.js'
+import { LIVE } from './live-data.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch } from './members.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
@@ -68,6 +70,7 @@ export function mountBilling(root, user) {
   /** @type {any[]} */ let plans = []
   /** @type {any[]} */ let memberships = []
   let lockHeld = false
+  let planChangeBound = false
   const locker = createMemberLock((st, err) => {
     lockHeld = !!(st && st.held_by_me)
     const el = root.querySelector('[data-lock]')
@@ -89,31 +92,43 @@ export function mountBilling(root, user) {
           : 'روش آنلاین فقط ثبت می‌شود؛ درگاه واقعی وصل نیست.'
       }
       PAYMENT_METHOD_LABEL.online = onlineMethodLabel(!!gw.enabled)
+      const methodSel = root.querySelector('[data-pay] select[name=method]')
+      if (methodSel) globalThis.GymCustomSelect?.sync?.(methodSel)
     } catch {
       /* keep placeholder labels */
     }
   }
 
+  function planOptionLabel(p) {
+    const lockerTag = p.includes_locker ? ' · شامل کمد' : ''
+    return `${p.name}${lockerTag} (${formatToman(p.base_price_toman)})`
+  }
+
   async function loadPlans() {
     const data = await apiGet('/api/v1/membership-plans')
     plans = data.items || []
-    const sel = root.querySelector('[data-plans]')
-    if (sel) {
-      sel.innerHTML = plans
-        .map((p) => {
-          const lockerTag = p.includes_locker ? ' · شامل کمد' : ''
-          return `<option value="${p.id}">${p.name}${lockerTag} (${formatToman(p.base_price_toman)})</option>`
-        })
-        .join('')
-      globalThis.GymCustomSelect?.sync?.(sel)
-      const amount = /** @type {HTMLInputElement | null} */ (
-        root.querySelector('[data-renew] [name=amount]')
-      )
-      if (amount && plans[0]) setMoneyInput(amount, plans[0].base_price_toman)
+    const sel = /** @type {HTMLSelectElement | null} */ (root.querySelector('[data-plans]'))
+    if (!sel) return
+    const prev = sel.value
+    sel.innerHTML = plans.map((p) => `<option value="${p.id}">${planOptionLabel(p)}</option>`).join('')
+    if (prev && [...sel.options].some((o) => o.value === prev)) {
+      sel.value = prev
+    }
+    globalThis.GymCustomSelect?.sync?.(sel)
+    const amount = /** @type {HTMLInputElement | null} */ (
+      root.querySelector('[data-renew] [name=amount]')
+    )
+    if (!planChangeBound) {
+      planChangeBound = true
       sel.addEventListener('change', () => {
         const p = plans.find((x) => String(x.id) === sel.value)
         if (p && amount) setMoneyInput(amount, p.base_price_toman)
       })
+    }
+    // Only seed amount when empty / first paint — don't clobber in-progress typing on refresh.
+    if (amount && plans.length && !String(amount.value || '').replace(/\D/g, '')) {
+      const current = plans.find((x) => String(x.id) === sel.value) || plans[0]
+      if (current) setMoneyInput(amount, current.base_price_toman)
     }
   }
 
@@ -182,6 +197,30 @@ export function mountBilling(root, user) {
     })
   }
 
+  /**
+   * @param {{ silent?: boolean }} [ctx]
+   */
+  async function load(ctx = {}) {
+    const silent = !!ctx.silent
+    try {
+      await loadPlans()
+      if (selected?.id) await loadMember(selected.id)
+      if (!silent) await loadGatewayLabel()
+    } catch (err) {
+      if (!silent) {
+        setStatus(status, apiErrorMessage(err, 'بارگذاری مالی ناموفق — تلاش مجدد خودکار…'), 'error')
+      }
+      throw err
+    }
+  }
+
+  const autoRefresh = createAutoRefresh(root, load, {
+    intervalMs: 15_000,
+    retryBaseMs: 2_500,
+    retryMaxMs: 45_000,
+    events: [LIVE.PLANS, LIVE.BILLING, LIVE.MEMBERS],
+  })
+
   bindMemberSearch(
     (root.querySelector('[data-pick]')),
     (root.querySelector('[data-q]')),
@@ -210,6 +249,7 @@ export function mountBilling(root, user) {
         'ok',
       )
       await loadMember(selected.id)
+      void autoRefresh.refresh()
     } catch (err) {
       setStatus(status, lockErrorMessage(err, 'تمدید ناموفق'), 'error')
     }
@@ -274,13 +314,9 @@ export function mountBilling(root, user) {
           <button type="button" class="btn small" onclick="window.print()">چاپ</button>`
       }
       await loadMember(selected.id)
+      void autoRefresh.refresh()
     } catch (err) {
       setStatus(status, lockErrorMessage(err, 'پرداخت ناموفق'), 'error')
     }
   })
-
-  void loadPlans().catch((err) =>
-    setStatus(status, err instanceof ApiError ? err.message : 'بارگذاری طرح‌ها ناموفق', 'error'),
-  )
-  void loadGatewayLabel()
 }
