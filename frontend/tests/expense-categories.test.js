@@ -75,6 +75,9 @@ describe('expense categories', () => {
     options[0].dispatchEvent(new MouseEvent('click', { bubbles: true }))
     expect(input.value).toBe('اجاره')
     expect(normalizeExpenseCategoryInput(api.getRawValue())).toBe('rent')
+    expect(host.querySelector('[data-expense-combobox]')?.classList.contains('is-open')).toBe(false)
+    input.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(host.querySelector('[data-expense-combobox]')?.classList.contains('is-open')).toBe(true)
 
     input.value = 'نوسازی'
     input.dispatchEvent(new Event('input', { bubbles: true }))

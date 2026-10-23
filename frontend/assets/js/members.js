@@ -345,7 +345,11 @@ export function bindMemberSearch(pickRoot, input, onPick, opts = {}) {
     clearTimeout(timer)
     timer = setTimeout(() => void run(), 300)
   })
+  // focus opens on first entry; click re-opens when input stayed focused after a pick.
   input.addEventListener('focus', () => void run())
+  input.addEventListener('click', () => {
+    if (!open) void run()
+  })
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') hide()
   })

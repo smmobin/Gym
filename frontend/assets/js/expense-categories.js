@@ -220,6 +220,10 @@ export function mountExpenseCategoryCombobox(host, opts = {}) {
   input.addEventListener('focus', () => {
     open()
   })
+  // After pick we keep focus; click must re-open without requiring an outside blur first.
+  input.addEventListener('click', () => {
+    if (!root.classList.contains('is-open')) open()
+  })
 
   input.addEventListener('input', () => {
     activeValue = ''
