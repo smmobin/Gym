@@ -103,8 +103,10 @@ export function mountReports(root, user) {
         apiGet(`/api/v1/reports/profit?${params}`),
         apiGet(`/api/v1/expenses?${params}`),
       ])
+      const fromShown = profit.from || profit.from_date || from
+      const toShown = profit.to || profit.to_date || to
       root.querySelector('[data-summary]').innerHTML = `
-        <article class="stat accent"><span class="stat-label">درآمد (paid)</span><strong>${formatToman(profit.income_paid_toman)}</strong><em>${formatJalaliDate(from)} تا ${formatJalaliDate(to)}</em></article>
+        <article class="stat accent"><span class="stat-label">درآمد (paid)</span><strong>${formatToman(profit.income_paid_toman)}</strong><em>${formatJalaliDate(fromShown)} تا ${formatJalaliDate(toShown)}</em></article>
         <article class="stat"><span class="stat-label">هزینه‌ها</span><strong>${formatToman(profit.expenses_toman)}</strong></article>
         <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${formatToman(profit.profit_toman)}</strong><em>درآمد − هزینه</em></article>
       `
@@ -118,26 +120,42 @@ export function mountReports(root, user) {
             <em>${formatToman(r.amount_toman)}</em></div>`,
             )
             .join('')
-        : '<p class="hint">هزینه‌ای در این بازه نیست.</p>'
+        : '<p class="hint">هزینه‌ای در این بازه نیست. تاریخ ثبت‌شدهٔ هزینه باید داخل همین بازه باشد.</p>'
       setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'خطا'), 'error')
     }
   }
 
+  function readRangeDates(form) {
+    if (typeof window !== 'undefined' && window.GymDatePicker?.flush) {
+      window.GymDatePicker.flush(form)
+    }
+    const fd = new FormData(form)
+    return { from: String(fd.get('from') || ''), to: String(fd.get('to') || '') }
+  }
+
   root.querySelector('[data-range]')?.addEventListener('submit', (e) => {
     e.preventDefault()
-    const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
-    void load(String(fd.get('from')), String(fd.get('to')))
+    const { from, to } = readRangeDates(/** @type {HTMLFormElement} */ (e.target))
+    void load(from, to)
   })
 
   root.querySelector('[data-expense]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
     const form = /** @type {HTMLFormElement} */ (e.target)
+    if (typeof window !== 'undefined' && window.GymDatePicker?.flush) {
+      window.GymDatePicker.flush(form)
+    }
     const fd = new FormData(form)
     const category = normalizeExpenseCategoryInput(String(fd.get('category') || ''))
     if (!category) {
       setStatus(status, 'دسته را انتخاب یا بنویسید.', 'error')
+      return
+    }
+    const expenseDate = String(fd.get('expense_date') || '').trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) {
+      setStatus(status, 'تاریخ هزینه را از تقویم انتخاب کنید.', 'error')
       return
     }
     let savedOk = false
@@ -145,7 +163,7 @@ export function mountReports(root, user) {
       await apiPost('/api/v1/expenses', {
         category,
         amount_toman: moneyFromForm(fd, 'amount_toman'),
-        expense_date: String(fd.get('expense_date')),
+        expense_date: expenseDate,
         note: String(fd.get('note') || '').trim() || null,
       })
       rememberCategory(category)
@@ -159,9 +177,8 @@ export function mountReports(root, user) {
     }
     if (savedOk) {
       void refreshCategories()
-      const rangeForm = root.querySelector('[data-range]')
-      const from = /** @type {HTMLInputElement} */ (rangeForm.querySelector('[name=from]')).value
-      const to = /** @type {HTMLInputElement} */ (rangeForm.querySelector('[name=to]')).value
+      const rangeForm = /** @type {HTMLFormElement} */ (root.querySelector('[data-range]'))
+      const { from, to } = readRangeDates(rangeForm)
       await load(from, to)
     }
   })

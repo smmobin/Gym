@@ -33,4 +33,13 @@ describe('jalali utils', () => {
     expect(saturdayIndex(2024, 3, 20)).toBeGreaterThanOrEqual(0)
     expect(saturdayIndex(2024, 3, 20)).toBeLessThanOrEqual(6)
   })
+
+  it('maps Aban 1405 days used in finance reports', () => {
+    // 1 / 19 / 20 / 21 آبان ۱۴۰۵
+    expect(jalaliToGregorian(1405, 8, 1)).toEqual([2026, 10, 23])
+    expect(jalaliToGregorian(1405, 8, 19)).toEqual([2026, 11, 10])
+    expect(jalaliToGregorian(1405, 8, 20)).toEqual([2026, 11, 11])
+    expect(jalaliToGregorian(1405, 8, 21)).toEqual([2026, 11, 12])
+    expect(gregorianToJalali(2026, 11, 11)).toEqual([1405, 8, 20])
+  })
 })

@@ -377,6 +377,19 @@
     input.setAttribute("aria-hidden", "true");
     input.dataset.dateEnhanced = "1";
 
+    // Keep a stable ISO/text value for FormData. Native type=date is unreliable
+    // with custom UI (label focus, empty serialization, browser calendar).
+    var initialValue = input.value;
+    try {
+      input.type = "hidden";
+    } catch (err) {
+      /* some browsers block type changes; keep original */
+    }
+    if (initialValue) {
+      input.value = initialValue;
+      input.setAttribute("value", initialValue);
+    }
+
     input.parentNode.insertBefore(root, input);
     root.appendChild(input);
     root.appendChild(trigger);
@@ -430,13 +443,19 @@
       var next = withTime
         ? formatDateTimeLocal(state.y, state.m, state.d, state.hour, state.minute)
         : formatIsoDate(state.y, state.m, state.d);
-      if (input.value !== next) {
-        input.value = next;
+      var changed = input.value !== next;
+      input.value = next;
+      // Keep default value in sync so form.reset() restores the last committed date.
+      input.setAttribute("value", next);
+      input.dataset.isoValue = next;
+      if (changed) {
         input.dispatchEvent(new Event("input", { bubbles: true }));
         input.dispatchEvent(new Event("change", { bubbles: true }));
       }
       syncDisplay();
     }
+
+    root._gymCommitDate = applyToInput;
 
     function pullFromInput() {
       var p = parseDateTimeLocal(input.value) || todayParts();
@@ -631,8 +650,25 @@
     root.querySelectorAll('input[type="date"], input[type="datetime-local"]').forEach(enhanceDateInput);
   }
 
+  /** Commit every enhanced date picker inside a form (or document) before FormData/read. */
+  function flush(scope) {
+    var root = scope && scope.querySelectorAll ? scope : document;
+    root.querySelectorAll("[data-date-picker]").forEach(function (el) {
+      if (typeof el._gymCommitDate === "function") el._gymCommitDate();
+    });
+  }
+
   function init() {
     refresh(document);
+    document.addEventListener(
+      "submit",
+      function (event) {
+        var form = event.target;
+        if (!form || !form.querySelectorAll) return;
+        flush(form);
+      },
+      true,
+    );
     if (typeof MutationObserver === "undefined") return;
     var mo = new MutationObserver(function (mutations) {
       mutations.forEach(function (m) {
@@ -652,6 +688,7 @@
 
   window.GymDatePicker = {
     refresh: refresh,
+    flush: flush,
     enhance: enhanceDateInput,
     gregorianToJalali: gregorianToJalali,
     jalaliToGregorian: jalaliToGregorian,
