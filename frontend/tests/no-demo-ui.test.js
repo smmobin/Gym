@@ -22,6 +22,7 @@ describe('public UI has no demo seed accounts', () => {
     expect(html).not.toContain('09121111001')
     expect(html).toContain('data-login-wizard')
     expect(html).toContain('data-mobile-form')
+    expect(html).toContain('login-card-head')
     // Step 1 is mobile-only (password lives in a later hidden auth step).
     expect(html).toMatch(/data-step="mobile"[\s\S]*?data-mobile-form[\s\S]*?<\/form>/)
     const mobileForm = html.match(
@@ -30,6 +31,7 @@ describe('public UI has no demo seed accounts', () => {
     expect(mobileForm).toBeTruthy()
     expect(mobileForm).not.toContain('password')
     expect(mobileForm).toContain('name="mobile"')
+    expect(mobileForm).toContain('login-field-label')
 
   })
 

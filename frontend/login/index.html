@@ -15,16 +15,18 @@
   <div class="login-shell">
     <div class="login-theme-bar" data-theme-mount></div>
     <div class="login-card">
-      <p class="eyebrow en">GYM CONTROL</p>
-      <h1>ورود به سامانه</h1>
-      <p class="lead" data-login-lead>شماره موبایل خود را وارد کنید.</p>
+      <header class="login-card-head">
+        <p class="eyebrow en">GYM CONTROL</p>
+        <h1 id="login-heading">ورود به سامانه</h1>
+        <p class="lead" data-login-lead>شماره موبایل خود را وارد کنید.</p>
+      </header>
 
-      <div class="login-wizard" data-login-wizard>
+      <div class="login-wizard" data-login-wizard aria-labelledby="login-heading">
         <!-- Step 1: mobile only -->
-        <section class="login-step is-active" data-step="mobile" aria-labelledby="login-mobile-title">
-          <h2 id="login-mobile-title" class="visually-hidden">موبایل</h2>
-          <form class="form-grid" data-mobile-form>
-            <label class="login-mobile-field">موبایل
+        <section class="login-step is-active" data-step="mobile">
+          <form class="form-grid login-form" data-mobile-form>
+            <label class="login-mobile-field">
+              <span class="login-field-label">موبایل</span>
               <input
                 name="mobile"
                 type="tel"
@@ -35,10 +37,11 @@
                 minlength="11"
                 pattern="09[0-9]{9}"
                 title="موبایل ۱۱ رقمی با ۰۹"
+                dir="ltr"
                 required
               />
             </label>
-            <button class="btn wide" type="submit">ادامه</button>
+            <button class="btn wide login-primary-btn" type="submit">ادامه</button>
           </form>
         </section>
 
@@ -73,7 +76,7 @@
                 />
               </label>
               <div class="inline-actions login-otp-actions">
-                <button class="btn wide" type="submit">تأیید و ورود</button>
+                <button class="btn wide login-primary-btn" type="submit">تأیید و ورود</button>
                 <button type="button" class="btn ghost" data-resend-otp>ارسال مجدد کد</button>
               </div>
               <p class="hint login-dev-hint" data-otp-dev-hint hidden>
@@ -91,7 +94,7 @@
                   required
                 />
               </label>
-              <button class="btn wide" type="submit">ورود</button>
+              <button class="btn wide login-primary-btn" type="submit">ورود</button>
             </form>
           </div>
 
@@ -116,7 +119,7 @@
 
       <div class="status-msg" data-status hidden></div>
 
-      <p class="hint" style="margin-top:1rem">
+      <p class="login-footer-link">
         <a href="/">صفحه اصلی</a>
       </p>
     </div>
