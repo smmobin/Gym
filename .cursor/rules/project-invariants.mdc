@@ -16,3 +16,5 @@ Discover docs and structure yourself — do not require the user to paste paths 
 - **Money:** changing plan price must not rewrite past payments/memberships; income ≠ debt.
 - **Delivery:** vertical slices; API under `/api/v1`; audit log for financial/membership/role changes; Postgres backups before real member data.
 - **Fake/seed data:** every meaningful data feature must ship with realistic fake seed data so the owner can see the system working; never put real member PII in seed or git.
+- **Site images/logo:** if the landing/brand needs an image the agent can generate, create and wire it without asking the owner first (see `docs/guides/project-rules.md` §۱۱). Never invent real member photos.
+- **PWA:** deferred until the operational web product is done (ADR 0004); do not open a PWA coding slice unless the owner explicitly asks.
