@@ -63,7 +63,7 @@
 .login-card .eyebrow {
   margin: 0 0 0.55rem;
   color: var(--accent);
-  font-size: 0.78rem;
+  font-size: 0.8425rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -85,6 +85,8 @@
   width: 100%;
   min-width: 0;
   gap: 0.95rem;
+  /* Login is a single full-width column (global .form-grid is 2-col). */
+  grid-template-columns: minmax(0, 1fr);
 }
 .visually-hidden {
   position: absolute;
@@ -117,6 +119,9 @@
   margin: 0 !important;
   color: var(--muted);
   font-size: 0.88rem;
+  width: 100%;
+  max-width: 100%;
+  grid-column: 1 / -1;
 }
 .login-field-label {
   display: block;
@@ -128,6 +133,9 @@
 .login-card input[name="mobile"],
 .login-card input[name="otp"],
 .login-card input[name="password"] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   font-size: 1.12rem;
   letter-spacing: 0.05em;
   padding: 0.95rem 1rem;
@@ -143,7 +151,7 @@
 .login-card .btn.wide {
   min-height: 3rem;
   border-radius: 12px;
-  font-size: 1.02rem;
+  font-size: 16.5px;
   font-weight: 700;
   padding: 0.8rem 1rem;
   margin-top: 0.15rem;
