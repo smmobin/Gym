@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>(function(){try{var t=localStorage.getItem('gym-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark';}})();</script>
   <title>باشگاه آذر · GYM CONTROL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,8 +33,10 @@
       <a href="#facility">فضا</a>
       <a class="btn ghost nav-cta-mobile" href="/login/" aria-label="ورود به سامانه">ورود به سامانه</a>
       <a class="btn nav-cta-mobile" href="#trial" aria-label="رزرو جلسه آزمایشی">جلسه آزمایشی</a>
+      <div data-theme-mount class="theme-mount-mobile"></div>
     </nav>
     <div class="nav-cta-desktop nav-cta-pair" role="group" aria-label="اقدامات سریع">
+      <div data-theme-mount></div>
       <a class="btn ghost" href="/login/" aria-label="ورود به سامانه">ورود به سامانه</a>
       <a class="btn" href="#trial" aria-label="رزرو جلسه آزمایشی">جلسه آزمایشی</a>
     </div>
@@ -42,7 +45,7 @@
 
   <main id="top">
     <section class="hero-bleed">
-      <img class="hero-media" src="/images/hero-gym.jpg" alt="سالن وزنه باشگاه آذر" />
+      <img class="hero-media" src="/images/hero-gym.jpg" alt="سالن وزنه باشگاه آذر" data-src-dark="/images/hero-gym.jpg" data-src-light="/images/hero-gym-light.jpg" />
       <div class="hero-veil"></div>
       <div class="hero-copy">
         <p class="brand-lockup en">GYM CONTROL</p>
@@ -70,21 +73,21 @@
       </div>
       <div class="program-grid reveal">
         <article class="program">
-          <img src="/images/facility-floor.jpg" alt="سالن قدرتی" />
+          <img src="/images/facility-floor.jpg" alt="سالن قدرتی" data-src-dark="/images/facility-floor.jpg" data-src-light="/images/facility-floor-light.jpg" />
           <div>
             <h3>بدنسازی و قدرت</h3>
             <p>سالن وزنه آزاد، رک و کابل با برنامه مربی.</p>
           </div>
         </article>
         <article class="program">
-          <img src="/images/class-studio.jpg" alt="کلاس گروهی" />
+          <img src="/images/class-studio.jpg" alt="کلاس گروهی" data-src-dark="/images/class-studio.jpg" data-src-light="/images/class-studio-light.jpg" />
           <div>
             <h3>کلاس‌های گروهی</h3>
             <p>یوگا، فانکشنال، TRX و هوازی با ظرفیت محدود.</p>
           </div>
         </article>
         <article class="program">
-          <img src="/images/amenities.jpg" alt="فضای ریکاوری" />
+          <img src="/images/amenities.jpg" alt="فضای ریکاوری" data-src-dark="/images/amenities.jpg" data-src-light="/images/amenities-light.jpg" />
           <div>
             <h3>ریکاوری و آمادگی</h3>
             <p>کشش، ریکاوری و مشاوره تغذیه نمایشی.</p>
@@ -195,7 +198,7 @@
           </div>
         </article>
         <article class="coach">
-          <img src="/images/class-studio.jpg" alt="مربی نگار احمدی" />
+          <img src="/images/class-studio.jpg" alt="مربی نگار احمدی" data-src-dark="/images/class-studio.jpg" data-src-light="/images/class-studio-light.jpg" />
           <div>
             <h3>نگار احمدی</h3>
             <p class="role">مربی یوگا و انعطاف</p>
@@ -214,19 +217,19 @@
       </div>
       <div class="gallery reveal">
         <figure class="wide">
-          <img src="/images/hero-gym.jpg" alt="سالن وزنه" />
+          <img src="/images/hero-gym.jpg" alt="سالن وزنه" data-src-dark="/images/hero-gym.jpg" data-src-light="/images/hero-gym-light.jpg" />
           <figcaption>سالن وزنه آزاد</figcaption>
         </figure>
         <figure>
-          <img src="/images/facility-floor.jpg" alt="ناحیه هوازی" />
+          <img src="/images/facility-floor.jpg" alt="ناحیه هوازی" data-src-dark="/images/facility-floor.jpg" data-src-light="/images/facility-floor-light.jpg" />
           <figcaption>ناحیه هوازی و فانکشنال</figcaption>
         </figure>
         <figure>
-          <img src="/images/class-studio.jpg" alt="استودیو کلاس" />
+          <img src="/images/class-studio.jpg" alt="استودیو کلاس" data-src-dark="/images/class-studio.jpg" data-src-light="/images/class-studio-light.jpg" />
           <figcaption>استودیوی کلاس گروهی</figcaption>
         </figure>
         <figure>
-          <img src="/images/amenities.jpg" alt="امکانات رفاهی" />
+          <img src="/images/amenities.jpg" alt="امکانات رفاهی" data-src-dark="/images/amenities.jpg" data-src-light="/images/amenities-light.jpg" />
           <figcaption>امکانات رفاهی و ریکاوری</figcaption>
         </figure>
       </div>

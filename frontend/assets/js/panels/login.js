@@ -9,9 +9,11 @@ import {
 } from '../auth-staff.js'
 import { mountNotificationBell } from '../notifications.js'
 import { enhancePasswordFields } from '../password-toggle.js'
+import { initThemeToggle } from '../theme.js'
 import { setStatus } from '../ui.js'
 
 async function main() {
+  initThemeToggle(document)
   enhancePasswordFields(document)
   const form = document.querySelector('[data-login-form]')
   const logged = document.querySelector('[data-logged]')

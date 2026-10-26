@@ -9,6 +9,7 @@ import {
 } from '../format.js'
 import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-input.js'
 import { startSessionActivityGuard } from '../session-activity.js'
+import { initThemeToggle } from '../theme.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
 
 function payResultMessage() {
@@ -38,6 +39,7 @@ async function main() {
   const member = await requireAthlete()
   if (!member) return
 
+  initThemeToggle(document)
   bindSidebarClose()
   bindHashNav('dash')
 

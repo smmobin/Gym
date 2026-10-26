@@ -16,7 +16,7 @@ ADR 0001 فرانت عملیاتی را React + TypeScript + Vite انتخاب �
 | لایه | انتخاب |
 |------|--------|
 | UI | **Multi-page HTML + CSS + JS وانیلا** داخل `frontend/` |
-| تم | Ocean Dark / Vazirmatn / RTL (همان پروتوتایپ) |
+| تم | Ocean Dark پیش‌فرض + تم روشن اختیاری کاربر (`data-theme` / `localStorage`)؛ Vazirmatn / RTL |
 | ابزار بیلد | **Vite** بدون پلاگین React — خروجی استاتیک |
 | ارتباط با API | `fetch` با `credentials: 'include'`؛ پروکسی `/api` → بک‌اند |
 | React | **حذف از محصول** |

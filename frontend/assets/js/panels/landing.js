@@ -1,5 +1,6 @@
 import { apiGet } from '../api.js'
 import { mountPublicPlans } from '../public-plans.js'
+import { initThemeToggle } from '../theme.js'
 import { mountTrialPublicForm } from '../trial.js'
 import { showApiDown } from '../ui.js'
 
@@ -29,6 +30,7 @@ function bindNav() {
 }
 
 async function main() {
+  initThemeToggle(document)
   bindNav()
   const banner = document.querySelector('[data-api-banner]')
   try {
