@@ -85,13 +85,15 @@ def test_wrong_password_401(client: TestClient) -> None:
     assert response.status_code == 401
 
 
-def test_member_without_password_401(client: TestClient) -> None:
-    # Sara has no password_hash in seed
+def test_member_without_password_clear_error(client: TestClient) -> None:
+    # Sara has no password_hash in seed — password path asks to use OTP / desk
     response = client.post(
         "/api/v1/athlete/auth/login",
         json={"mobile": "09121111002", "password": DEV_ATHLETE_PASSWORD},
     )
-    assert response.status_code == 401
+    assert response.status_code == 400
+    assert "رمز" in response.json()["detail"]
+
 
 
 def test_staff_cookie_not_enough_for_athlete(client: TestClient) -> None:

@@ -27,8 +27,16 @@ class AthleteError(Exception):
         super().__init__(detail)
 
 
-def member_may_login(member: Member) -> bool:
+def member_eligible_for_login(member: Member) -> bool:
+    """Non-archived members may use athlete auth (OTP primary; password optional)."""
     if member.status == MemberStatus.ARCHIVED.value or member.archived_at is not None:
+        return False
+    return True
+
+
+def member_may_login(member: Member) -> bool:
+    """Password path: eligible + password set (legacy athlete login)."""
+    if not member_eligible_for_login(member):
         return False
     if not member.password_hash:
         return False
@@ -39,9 +47,13 @@ def authenticate_athlete(db: Session, *, mobile: str, password: str) -> Member:
     if len(password) < MIN_PASSWORD_LEN:
         raise AthleteError(400, "رمز باید حداقل ۸ کاراکتر باشد.")
     member = db.scalar(select(Member).where(Member.mobile == mobile.strip()))
-    if member is None or not member_may_login(member):
+    if member is None or not member_eligible_for_login(member):
         raise AthleteError(401, "موبایل یا رمز نادرست است.")
-    assert member.password_hash is not None
+    if not member.password_hash:
+        raise AthleteError(
+            400,
+            "رمز عبور برای این حساب ست نشده است. به میز پذیرش مراجعه کنید یا با کد پیامک وارد شوید.",
+        )
     if not verify_password(password, member.password_hash):
         raise AthleteError(401, "موبایل یا رمز نادرست است.")
     return member

@@ -48,6 +48,111 @@
   width: 100%;
   min-width: 0;
 }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.login-wizard { position: relative; }
+.login-step {
+  display: grid;
+  gap: 0.85rem;
+}
+.login-step[hidden] { display: none !important; }
+.login-step.is-active {
+  animation: login-step-in 0.32s ease both;
+}
+.login-step-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.login-mobile-field input {
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 0.95rem;
+  min-height: 3rem;
+}
+.login-role-list {
+  display: grid;
+  gap: 0.65rem;
+}
+.login-role-btn {
+  appearance: none;
+  width: 100%;
+  text-align: right;
+  font: inherit;
+  cursor: pointer;
+  color: var(--text);
+  background: var(--bg-elevated, var(--panel));
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.9rem 1rem;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.login-role-btn:hover,
+.login-role-btn:focus-visible {
+  border-color: var(--accent, #3aa7c9);
+  outline: none;
+  transform: translateY(-1px);
+}
+.login-auth-panels {
+  position: relative;
+}
+.login-auth-panel.is-active {
+  animation: login-step-in 0.28s ease both;
+}
+.login-auth-panel[hidden] {
+  display: none !important;
+}
+.login-method-switch {
+  margin-top: 0.35rem;
+  text-align: center;
+}
+.login-method-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: var(--accent, #3aa7c9);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0.35rem;
+}
+.login-method-link:hover,
+.login-method-link:focus-visible {
+  opacity: 0.9;
+  outline: none;
+}
+.login-otp-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+.login-dev-hint {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+@keyframes login-step-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-step.is-active,
+  .login-auth-panel,
+  .login-role-btn {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
 .section-panel[hidden], .view[hidden] { display: none !important; }
 .busy-overlay { opacity: 0.65; pointer-events: none; }
 .print-receipt {

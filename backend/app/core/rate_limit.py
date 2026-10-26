@@ -37,6 +37,13 @@ class SlidingWindowRateLimiter:
 # Shared limiter for login endpoints (tests may call reset).
 login_rate_limiter = SlidingWindowRateLimiter(max_attempts=20, window_seconds=60)
 
+# Mobile identity lookup before auth steps.
+lookup_rate_limiter = SlidingWindowRateLimiter(max_attempts=30, window_seconds=60)
+
+# OTP send / verify (stricter than password login).
+otp_send_rate_limiter = SlidingWindowRateLimiter(max_attempts=5, window_seconds=60)
+otp_verify_rate_limiter = SlidingWindowRateLimiter(max_attempts=20, window_seconds=60)
+
 # Public trial form (by client IP); tests may call reset.
 trial_lead_rate_limiter = SlidingWindowRateLimiter(max_attempts=15, window_seconds=60)
 

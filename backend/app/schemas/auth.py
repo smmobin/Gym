@@ -10,10 +10,92 @@ from app.schemas.athlete import AthleteOut
 class LoginRequest(BaseModel):
     mobile: str = Field(min_length=10, max_length=20)
     password: str = Field(min_length=1, max_length=72)
+    kind: Optional[Literal["staff", "athlete"]] = None
+    role: Optional[str] = Field(default=None, max_length=32)
 
     @field_validator("mobile")
     @classmethod
     def normalize_mobile(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("role")
+    @classmethod
+    def normalize_role(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class LookupRequest(BaseModel):
+    mobile: str = Field(min_length=10, max_length=20)
+
+    @field_validator("mobile")
+    @classmethod
+    def normalize_mobile(cls, value: str) -> str:
+        return value.strip()
+
+
+class IdentityOut(BaseModel):
+    kind: Literal["staff", "athlete"]
+    role: str
+    label: str
+    auth_methods: list[str]
+    has_password: bool
+
+
+class LookupResponse(BaseModel):
+    identities: list[IdentityOut]
+    otp_dev_hint: bool = False
+
+
+class OtpSendRequest(BaseModel):
+    mobile: str = Field(min_length=10, max_length=20)
+    kind: Literal["staff", "athlete"]
+    role: Optional[str] = Field(default=None, max_length=32)
+
+    @field_validator("mobile")
+    @classmethod
+    def normalize_mobile(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("role")
+    @classmethod
+    def normalize_role(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class OtpSendResponse(BaseModel):
+    detail: str
+    expires_in_seconds: int
+    mode: Literal["live", "dev_fixed", "unavailable"]
+
+
+class OtpVerifyRequest(BaseModel):
+    mobile: str = Field(min_length=10, max_length=20)
+    kind: Literal["staff", "athlete"]
+    role: Optional[str] = Field(default=None, max_length=32)
+    code: str = Field(min_length=4, max_length=12)
+
+    @field_validator("mobile")
+    @classmethod
+    def normalize_mobile(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("role")
+    @classmethod
+    def normalize_role(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+    @field_validator("code")
+    @classmethod
+    def normalize_code(cls, value: str) -> str:
         return value.strip()
 
 
@@ -28,7 +110,7 @@ class UserOut(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    """Unified login: staff first, then athlete. Cookie matches kind."""
+    """Unified login response. Cookie matches kind (staff vs athlete)."""
 
     kind: Literal["staff", "athlete"]
     role: str

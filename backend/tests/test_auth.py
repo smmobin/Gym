@@ -78,8 +78,8 @@ def test_unified_login_athlete(client: TestClient) -> None:
     assert client.get("/api/v1/auth/me").status_code == 401
 
 
-def test_unified_login_staff_priority_over_member_same_mobile(client: TestClient) -> None:
-    """If mobile exists in users, staff wins — athlete password must not succeed."""
+def test_unified_login_conflict_requires_kind(client: TestClient) -> None:
+    """Same mobile in staff + member → no automatic staff priority; kind required."""
     wipe_and_seed()
     login_rate_limiter.reset()
     db = SessionLocal()
@@ -97,14 +97,32 @@ def test_unified_login_staff_priority_over_member_same_mobile(client: TestClient
     finally:
         db.close()
 
-    as_staff = _login(client, mobile="09120000002", password=DEV_STAFF_PASSWORD)
+    bare = _login(client, mobile="09120000002", password=DEV_STAFF_PASSWORD)
+    assert bare.status_code == 409
+
+    as_staff = client.post(
+        "/api/v1/auth/login",
+        json={
+            "mobile": "09120000002",
+            "password": DEV_STAFF_PASSWORD,
+            "kind": "staff",
+            "role": "receptionist",
+        },
+    )
     assert as_staff.status_code == 200
     assert as_staff.json()["kind"] == "staff"
-    assert as_staff.json()["role"] == "receptionist"
 
     client.post("/api/v1/auth/logout")
-    as_athlete_pw = _login(client, mobile="09120000002", password="AthleteOnly99")
-    assert as_athlete_pw.status_code == 401
+    as_athlete_pw = client.post(
+        "/api/v1/auth/login",
+        json={
+            "mobile": "09120000002",
+            "password": "AthleteOnly99",
+            "kind": "athlete",
+        },
+    )
+    assert as_athlete_pw.status_code == 200
+    assert as_athlete_pw.json()["kind"] == "athlete"
 
     wipe_and_seed()  # restore clean seed for other tests
     login_rate_limiter.reset()

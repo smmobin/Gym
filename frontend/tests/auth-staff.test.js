@@ -12,30 +12,37 @@ describe('unified login helpers', () => {
     vi.unstubAllGlobals()
   })
 
-  it('unifiedLogin returns kind+role without client role pick', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          kind: 'staff',
+  it('unifiedLogin returns kind+role and can send identity', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        kind: 'staff',
+        role: 'receptionist',
+        user: {
+          id: 2,
+          mobile: '09120000002',
+          full_name: 'منشی نمونه',
           role: 'receptionist',
-          user: {
-            id: 2,
-            mobile: '09120000002',
-            full_name: 'منشی نمونه',
-            role: 'receptionist',
-            is_active: true,
-          },
-          member: null,
-        }),
+          is_active: true,
+        },
+        member: null,
       }),
-    )
+    })
+    vi.stubGlobal('fetch', fetchMock)
 
-    const result = await unifiedLogin('09120000002', 'ChangeMe123')
+    const result = await unifiedLogin('09120000002', 'ChangeMe123', {
+      kind: 'staff',
+      role: 'receptionist',
+    })
     expect(result.kind).toBe('staff')
     expect(result.role).toBe('receptionist')
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(init.body)).toMatchObject({
+      mobile: '09120000002',
+      kind: 'staff',
+      role: 'receptionist',
+    })
   })
 
   it('staffLogin happy path returns user', async () => {

@@ -14,16 +14,60 @@ export async function fetchStaffMe() {
 }
 
 /**
- * Unified login (staff first, then athlete). Server sets the right cookie.
+ * Resolve identities for a mobile (server-side; client must not invent roles).
+ * @param {string} mobile
+ * @returns {Promise<{ identities: Array<object>, otp_dev_hint: boolean }>}
+ */
+export async function lookupMobile(mobile) {
+  return apiPost('/api/v1/auth/lookup', { mobile: mobile.trim() })
+}
+
+/**
+ * Password login for a known identity.
  * @param {string} mobile
  * @param {string} password
+ * @param {{ kind?: 'staff'|'athlete', role?: string }} [identity]
  * @returns {Promise<{ kind: 'staff' | 'athlete', role: string, user?: object, member?: object }>}
  */
-export async function unifiedLogin(mobile, password) {
-  return apiPost('/api/v1/auth/login', {
+export async function unifiedLogin(mobile, password, identity = {}) {
+  /** @type {Record<string, string>} */
+  const body = {
     mobile: mobile.trim(),
     password,
-  })
+  }
+  if (identity.kind) body.kind = identity.kind
+  if (identity.role) body.role = identity.role
+  return apiPost('/api/v1/auth/login', body)
+}
+
+/**
+ * @param {string} mobile
+ * @param {{ kind: 'staff'|'athlete', role?: string }} identity
+ */
+export async function sendLoginOtp(mobile, identity) {
+  /** @type {Record<string, string>} */
+  const body = {
+    mobile: mobile.trim(),
+    kind: identity.kind,
+  }
+  if (identity.role) body.role = identity.role
+  return apiPost('/api/v1/auth/otp/send', body)
+}
+
+/**
+ * @param {string} mobile
+ * @param {string} code
+ * @param {{ kind: 'staff'|'athlete', role?: string }} identity
+ */
+export async function verifyLoginOtp(mobile, code, identity) {
+  /** @type {Record<string, string>} */
+  const body = {
+    mobile: mobile.trim(),
+    code: code.trim(),
+    kind: identity.kind,
+  }
+  if (identity.role) body.role = identity.role
+  return apiPost('/api/v1/auth/otp/verify', body)
 }
 
 /**

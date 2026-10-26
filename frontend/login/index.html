@@ -17,13 +17,91 @@
     <div class="login-card">
       <p class="eyebrow en">GYM CONTROL</p>
       <h1>ورود به سامانه</h1>
-      <p class="lead">فقط موبایل و رمز را وارد کنید. نقش (مدیر، منشی، مربی یا ورزشکار) را سرور تشخیص می‌دهد.</p>
+      <p class="lead" data-login-lead>شماره موبایل خود را وارد کنید.</p>
 
-      <form class="form-grid" data-login-form>
-        <label>موبایل<input name="mobile" type="tel" inputmode="numeric" autocomplete="username" placeholder="09xxxxxxxxx" maxlength="11" minlength="11" pattern="09[0-9]{9}" title="موبایل ۱۱ رقمی با ۰۹" required /></label>
-        <label>رمز عبور<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label>
-        <button class="btn wide" type="submit">ورود</button>
-      </form>
+      <div class="login-wizard" data-login-wizard>
+        <!-- Step 1: mobile only -->
+        <section class="login-step is-active" data-step="mobile" aria-labelledby="login-mobile-title">
+          <h2 id="login-mobile-title" class="visually-hidden">موبایل</h2>
+          <form class="form-grid" data-mobile-form>
+            <label class="login-mobile-field">موبایل
+              <input
+                name="mobile"
+                type="tel"
+                inputmode="numeric"
+                autocomplete="username"
+                placeholder="09xxxxxxxxx"
+                maxlength="11"
+                minlength="11"
+                pattern="09[0-9]{9}"
+                title="موبایل ۱۱ رقمی با ۰۹"
+                required
+              />
+            </label>
+            <button class="btn wide" type="submit">ادامه</button>
+          </form>
+        </section>
+
+        <!-- Step 2: role chooser (only when multiple identities) -->
+        <section class="login-step" data-step="chooser" hidden aria-labelledby="login-chooser-title">
+          <h2 id="login-chooser-title" class="login-step-title">با کدام نقش وارد می‌شوید؟</h2>
+          <p class="hint" data-chooser-mobile></p>
+          <div class="login-role-list" data-role-list role="list"></div>
+          <button type="button" class="btn ghost wide" data-back-mobile>بازگشت</button>
+        </section>
+
+        <!-- Step 3: password and/or OTP -->
+        <section class="login-step" data-step="auth" hidden aria-labelledby="login-auth-title">
+          <div class="login-auth-head">
+            <h2 id="login-auth-title" class="login-step-title" data-auth-role-label>ورود</h2>
+            <p class="hint" data-auth-mobile></p>
+          </div>
+
+          <div class="login-auth-panels" data-auth-panels>
+            <form class="form-grid login-auth-panel is-active" data-otp-form hidden>
+              <label>کد پیامک
+                <input
+                  name="otp"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="6"
+                  minlength="4"
+                  pattern="[0-9]{4,6}"
+                  placeholder="------"
+                  required
+                />
+              </label>
+              <div class="inline-actions login-otp-actions">
+                <button class="btn wide" type="submit">تأیید و ورود</button>
+                <button type="button" class="btn ghost" data-resend-otp>ارسال مجدد کد</button>
+              </div>
+              <p class="hint login-dev-hint" data-otp-dev-hint hidden>
+                حالت توسعه: بدون پیامک واقعی، کد <strong dir="ltr">123456</strong> را وارد کنید.
+              </p>
+            </form>
+
+            <form class="form-grid login-auth-panel" data-password-form hidden>
+              <label>رمز عبور
+                <input
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  minlength="8"
+                  required
+                />
+              </label>
+              <button class="btn wide" type="submit">ورود</button>
+            </form>
+          </div>
+
+          <div class="login-method-switch" data-method-switch hidden>
+            <button type="button" class="login-method-link" data-switch-method></button>
+          </div>
+
+          <button type="button" class="btn ghost wide" data-back-from-auth>بازگشت</button>
+        </section>
+      </div>
 
       <section data-logged hidden>
         <p>شما وارد شده‌اید: <strong data-name></strong></p>

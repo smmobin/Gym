@@ -59,6 +59,7 @@ def test_expected_tables_exist_after_migration() -> None:
         "staff_notification_reads",
         "athlete_sessions",
         "athlete_notifications",
+        "login_otps",
         "alembic_version",
     }
     missing = expected - tables
@@ -76,6 +77,7 @@ def test_alembic_current_revision() -> None:
         "b2c3d4e5f6a7",
         "c3d4e5f6a7b8",
         "e5f6a7b8c9d0",
+        "f6a7b8c9d0e1",
     }
 
 

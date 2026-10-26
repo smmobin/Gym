@@ -20,6 +20,7 @@ from app.models.expense import Expense
 from app.models.group_class import ClassBooking, GroupClass
 from app.models.gym_settings import GymSettings
 from app.models.locker import Locker, LockerAssignment
+from app.models.login_otp import LoginOtp
 from app.models.member import Member
 from app.models.member_file_lock import MemberFileLock
 from app.models.membership import Membership, MembershipPlan
@@ -46,6 +47,7 @@ __all__ = [
     "GymSettings",
     "Locker",
     "LockerAssignment",
+    "LoginOtp",
     "Member",
     "MemberFileLock",
     "MemberStatus",
