@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_roles
 from app.core.db import get_db
+from app.core.rate_limit import public_plans_rate_limiter
 from app.models.enums import StaffRole
 from app.models.membership import Membership
 from app.models.payment import Payment
@@ -26,6 +27,8 @@ from app.schemas.billing import (
     PaymentListResponse,
     PaymentMutationResponse,
     PaymentOut,
+    PublicMembershipPlanListResponse,
+    PublicMembershipPlanOut,
     RenewMembershipRequest,
     RenewMembershipResponse,
 )
@@ -81,6 +84,28 @@ def _membership_out(
 
 def _raise_freeze(err: freeze_svc.FreezeError) -> None:
     raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+
+
+@router.get(
+    "/public/membership-plans",
+    response_model=PublicMembershipPlanListResponse,
+)
+def list_public_membership_plans(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> PublicMembershipPlanListResponse:
+    """No auth. Active plans only — for landing pricing cards."""
+    client = request.client.host if request.client else "unknown"
+    if not public_plans_rate_limiter.is_allowed(client):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="تعداد درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید.",
+        )
+    items = billing_svc.list_active_plans(db)
+    return PublicMembershipPlanListResponse(
+        items=[PublicMembershipPlanOut.model_validate(p) for p in items],
+        total=len(items),
+    )
 
 
 @router.get("/membership-plans", response_model=MembershipPlanListResponse)

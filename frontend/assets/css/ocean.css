@@ -281,9 +281,20 @@ a { color: inherit; }
 
 .plan-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
   align-items: stretch;
+}
+.plans-status {
+  margin: 0 0 1rem;
+  text-align: center;
+}
+.plans-loading,
+.plans-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  text-align: center;
+  padding: 1.5rem 0.5rem;
 }
 .plan {
   border: 1px solid var(--line);

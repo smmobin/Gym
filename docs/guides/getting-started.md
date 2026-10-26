@@ -47,7 +47,7 @@ npm run dev
 
 | آدرس | کار |
 |------|-----|
-| http://127.0.0.1:5173/ | لندینگ + فرم جلسه آزمایشی واقعی |
+| http://127.0.0.1:5173/ | لندینگ + طرح‌های فعال از API + فرم جلسه آزمایشی واقعی |
 | http://127.0.0.1:5173/login/ | ورود یکپارچه (موبایل+رمز؛ بدون انتخاب نقش) |
 | http://127.0.0.1:5173/receptionist/ | پنل منشی (فقط نقش منشی) — داشبورد: حاضر امروز / بدون خروج / صف آزمایشی / مهمان + لیست اقدام |
 | http://127.0.0.1:5173/manager/ | پنل مدیر |
@@ -162,7 +162,8 @@ cd backend
 - مدیر می‌تواند رمز کارکنان را عوض کند: `POST /api/v1/auth/users/{id}/password` یا از `/manager/#staff` (رمز اختیاری هنگام ویرایش)
 - منشی فقط مربی‌هایی که می‌سازد/مدیریت می‌کند را از `/receptionist/#staff` ویرایش/رمز می‌کند
 - کارکنان: `GET/POST /api/v1/staff` ، `PATCH /api/v1/staff/{id}` ، `POST …/deactivate|activate` — مدیر: منشی+مربی؛ منشی: فقط مربی؛ مربی → ۴۰۳
-- طرح‌ها: `GET /api/v1/membership-plans` (فعال؛ `?include_inactive=1` برای مدیریت) ، `POST/PATCH /api/v1/membership-plans` — منشی و مدیر؛ مربی → ۴۰۳
+- طرح‌ها (عمومی لندینگ): `GET /api/v1/public/membership-plans` — بدون لاگین؛ فقط فعال
+- طرح‌ها (میز): `GET /api/v1/membership-plans` (فعال؛ `?include_inactive=1` برای مدیریت) ، `POST/PATCH /api/v1/membership-plans` — منشی و مدیر؛ مربی → ۴۰۳
 - UI: `/manager/#staff` ، `/manager/#plans` ، `/receptionist/#staff` ، `/receptionist/#plans`
 - ست رمز ورزشکار از منشی: `/receptionist/#members` (یا مدیر از `/manager/#members`) یا `POST /api/v1/members/{id}/athlete-password`
 
@@ -349,6 +350,14 @@ API: `GET/POST /api/v1/expenses?from=&to=` ، `GET /api/v1/reports/profit?from=&
 ## جلسه آزمایشی و مهمان روزانه
 
 **توجه:** محصول واقعی UI = `frontend/` (Ocean Dark) + `backend/`. **GitHub Pages (HTML ریشه) ماکت بدون API است.**
+
+### قیمت‌های لندینگ (`#plans`)
+
+کارت‌های عضویت روی صفحهٔ اول از طرح‌های **فعال** دیتابیس می‌آیند (نه قیمت ثابت HTML).  
+مدیریت نام/قیمت/فعال‌بودن: پنل منشی یا مدیر → `#plans`. عوض کردن قیمت طرح، سوابق عضویت/پرداخت گذشته را عوض نمی‌کند.
+
+API: `GET /api/v1/public/membership-plans` — بدون لاگین؛ فقط `is_active=true`؛ rate-limit سبک روی IP.  
+endpoint میز (`GET /api/v1/membership-plans`) همچنان فقط desk است و `include_inactive` را به اینترنت باز نمی‌کند.
 
 ### فرم عمومی (بدون لاگین)
 

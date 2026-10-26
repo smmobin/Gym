@@ -26,6 +26,25 @@ class MembershipPlanListResponse(BaseModel):
     total: int
 
 
+class PublicMembershipPlanOut(BaseModel):
+    """Minimal plan fields for the public landing (active plans only)."""
+
+    id: int
+    name: str
+    description: Optional[str] = None
+    duration_days: Optional[int] = None
+    session_count: Optional[int] = None
+    base_price_toman: int
+    includes_locker: bool
+
+    model_config = {"from_attributes": True}
+
+
+class PublicMembershipPlanListResponse(BaseModel):
+    items: list[PublicMembershipPlanOut]
+    total: int
+
+
 class MembershipPlanCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     description: Optional[str] = Field(default=None, max_length=5000)

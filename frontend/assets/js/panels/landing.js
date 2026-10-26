@@ -1,4 +1,5 @@
 import { apiGet } from '../api.js'
+import { mountPublicPlans } from '../public-plans.js'
 import { mountTrialPublicForm } from '../trial.js'
 import { showApiDown } from '../ui.js'
 
@@ -35,6 +36,15 @@ async function main() {
     showApiDown(/** @type {HTMLElement} */ (banner), false)
   } catch {
     showApiDown(/** @type {HTMLElement} */ (banner), true)
+  }
+
+  const plansGrid = document.querySelector('[data-plans-grid]')
+  const plansStatus = document.querySelector('[data-plans-status]')
+  if (plansGrid) {
+    await mountPublicPlans(
+      /** @type {HTMLElement} */ (plansGrid),
+      /** @type {HTMLElement | null} */ (plansStatus),
+    )
   }
 
   const form = document.querySelector('.trial-form')
