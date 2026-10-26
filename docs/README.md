@@ -15,6 +15,7 @@
 | [guides/qa.md](guides/qa.md) | چطور چت کنترل کیفیت (QA) را راه بیندازی |
 | [qa/bug-log.md](qa/bug-log.md) | دفتر باگ زندهٔ QA |
 | [guides/principled-project-playbook.md](guides/principled-project-playbook.md) | الگوی کامل قابل‌تکرار: پروتوتایپ، docs، مشخصات، ساختار، تست، برش‌ها، دیپلوی |
+| [guides/owner-request-log.md](guides/owner-request-log.md) | دفتر درخواست‌های صاحب به زبان خودش (برای پروژهٔ بعد؛ نه پرامپت سازنده) |
 | [adr/README.md](adr/README.md) | ADR چیست + فهرست تصمیم‌های معماری |
 | [adr/0001-frontend-stack.md](adr/0001-frontend-stack.md) | فرانت React (Superseded) |
 | [adr/0005-frontend-ocean-dark-mpa.md](adr/0005-frontend-ocean-dark-mpa.md) | فرانت Ocean Dark MPA (فعلی) |
