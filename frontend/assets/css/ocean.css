@@ -397,6 +397,19 @@ html[data-theme="light"] .landing-page .program img {
   gap: 0.7rem;
   margin-top: 1.5rem;
 }
+/* Hero sits on dark photo+veil — keep ghost CTA white in both themes */
+.hero-cta .btn.ghost {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.hero-cta .btn.ghost:hover {
+  color: #ffffff;
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.hero-copy h1 {
+  color: #ffffff;
+}
 
 .trust-strip {
   display: grid;
