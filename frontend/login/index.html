@@ -20,7 +20,7 @@
       <p class="lead">فقط موبایل و رمز را وارد کنید. نقش (مدیر، منشی، مربی یا ورزشکار) را سرور تشخیص می‌دهد.</p>
 
       <form class="form-grid" data-login-form>
-        <label>موبایل<input name="mobile" inputmode="tel" autocomplete="username" placeholder="09xxxxxxxxx" required /></label>
+        <label>موبایل<input name="mobile" type="tel" inputmode="numeric" autocomplete="username" placeholder="09xxxxxxxxx" maxlength="11" minlength="11" pattern="09[0-9]{9}" title="موبایل ۱۱ رقمی با ۰۹" required /></label>
         <label>رمز عبور<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label>
         <button class="btn wide" type="submit">ورود</button>
       </form>

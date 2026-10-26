@@ -1,4 +1,5 @@
 import { apiGet } from '../api.js'
+import { enhanceMobileInputs } from '../mobile-input.js'
 import { mountPublicPlans } from '../public-plans.js'
 import { initThemeToggle } from '../theme.js'
 import { mountTrialPublicForm } from '../trial.js'
@@ -31,6 +32,7 @@ function bindNav() {
 
 async function main() {
   initThemeToggle(document)
+  enhanceMobileInputs(document)
   bindNav()
   const banner = document.querySelector('[data-api-banner]')
   try {

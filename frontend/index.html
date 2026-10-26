@@ -264,7 +264,7 @@
         <p>فرم به API واقعی وصل است؛ عضو خودکار ساخته نمی‌شود.</p>
         <form class="trial-form" method="post">
           <label>نام و نام خانوادگی<input type="text" name="full_name" placeholder="مثلاً علی رضایی" required /></label>
-          <label>موبایل<input type="tel" name="mobile" placeholder="۰۹۱۲..." required /></label>
+          <label>موبایل<input type="tel" name="mobile" inputmode="numeric" placeholder="۰۹۱۲۳۴۵۶۷۸۹" maxlength="11" minlength="11" pattern="09[0-9]{9}" title="موبایل ۱۱ رقمی با ۰۹" required /></label>
           <label>زمان مناسب
             <select id="trial-time" name="preferred_time_note">
               <option value="morning">صبح (۰۶:۳۰–۱۲:۰۰)</option>
