@@ -197,14 +197,29 @@ html[dir="ltr"] .theme-switch[aria-checked="true"] .theme-switch-thumb,
 .theme-switch.is-light .theme-switch-label {
   color: var(--text);
 }
-.sidebar-foot .theme-switch {
-  width: 100%;
-  justify-content: space-between;
-  padding: 0.45rem 0.65rem;
-}
+.topbar-actions .theme-switch,
 .nav-cta-desktop .theme-switch,
 .site-nav .theme-switch {
   flex-shrink: 0;
+}
+.topbar-actions .theme-switch {
+  padding: 0.32rem 0.5rem 0.32rem 0.45rem;
+}
+@media (max-width: 900px) {
+  .topbar-actions .theme-switch-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .topbar-actions .theme-switch {
+    padding: 0.32rem;
+  }
 }
 .site-links .theme-switch {
   width: 100%;

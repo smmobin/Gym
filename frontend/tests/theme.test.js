@@ -86,5 +86,9 @@ describe('theme preference', () => {
       expect(text).toContain('data-theme-mount')
       expect(text).toContain('gym-theme')
     }
+    expect(manager).toMatch(/topbar-actions[\s\S]*?data-theme-mount/)
+    const footStart = manager.indexOf('sidebar-foot')
+    const asideEnd = manager.indexOf('</aside>', footStart)
+    expect(manager.slice(footStart, asideEnd)).not.toContain('data-theme-mount')
   })
 })
