@@ -1,14 +1,48 @@
 import logging
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger("gym.startup")
+
+# repo_root/frontend/dist (backend/app/main.py → parents[2] = repo root)
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+
+def _frontend_dist_ready() -> bool:
+    return FRONTEND_DIST.is_dir() and (FRONTEND_DIST / "index.html").is_file()
+
+
+def _should_serve_frontend() -> bool:
+    """Serve built MPA from FastAPI for single-host preview/tunnel.
+
+    - Never during pytest (keeps GET / JSON health tests stable).
+    - SERVE_FRONTEND=false → never.
+    - SERVE_FRONTEND=true → require dist (warn if missing).
+    - default auto → only if dist is present.
+    """
+    if "pytest" in sys.modules:
+        return False
+    mode = (settings.serve_frontend or "auto").strip().lower()
+    if mode in {"0", "false", "no", "off"}:
+        return False
+    ready = _frontend_dist_ready()
+    if mode in {"1", "true", "yes", "on"}:
+        if not ready:
+            logger.warning(
+                "SERVE_FRONTEND=true but %s is missing — run: cd frontend && npm run build",
+                FRONTEND_DIST,
+            )
+        return ready
+    return ready
 
 
 def _warn_insecure_production() -> None:
@@ -30,6 +64,8 @@ def _warn_insecure_production() -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     _warn_insecure_production()
+    if _should_serve_frontend():
+        logger.info("Serving frontend from %s", FRONTEND_DIST)
     yield
 
 
@@ -51,21 +87,25 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.api_prefix)
 
+_SERVE_FRONTEND = _should_serve_frontend()
 
-@app.get("/")
-def root() -> dict[str, str]:
-    payload: dict[str, str] = {
-        "name": settings.app_name,
-        "health": f"{settings.api_prefix}/health",
-        "env": settings.app_env,
-    }
-    if not settings.is_production_like:
-        payload["docs"] = "/docs"
-    return payload
+if not _SERVE_FRONTEND:
 
-from fastapi.staticfiles import StaticFiles
-from pathlib import Path
+    @app.get("/")
+    def root() -> dict[str, str]:
+        payload: dict[str, str] = {
+            "name": settings.app_name,
+            "health": f"{settings.api_prefix}/health",
+            "env": settings.app_env,
+        }
+        if not settings.is_production_like:
+            payload["docs"] = "/docs"
+        return payload
 
-# قرار دادن این کد در انتهای فایل main.py بعد از تمام routerها
-frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
+else:
+    # After API routes so /api/v1/* stays on the router; MPA HTML/assets on /.
+    app.mount(
+        "/",
+        StaticFiles(directory=str(FRONTEND_DIST), html=True),
+        name="frontend",
+    )

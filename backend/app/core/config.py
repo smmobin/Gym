@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     # Destructive seed must never run on real member data without explicit override
     allow_destructive_seed: bool = False
 
+    # Serve frontend/dist from this API process (single-host preview / tunnel).
+    # auto (default) = only if dist exists; true = require build; false = API JSON / only.
+    # Pytest never mounts the SPA (see app.main).
+    serve_frontend: str = "auto"
+
     # Online payment gateway (secrets only via env — never commit real merchant ids)
     # provider: none | zarinpal (extensible via adapter factory)
     payment_gateway_provider: str = "none"

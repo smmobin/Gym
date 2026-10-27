@@ -35,6 +35,20 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 چک: http://127.0.0.1:8000/api/v1/health و `/api/v1/health/db`
 
+### پری‌ویو تک‌هاست (API + فرانت روی :8000)
+
+برای تونل Cloudflare روی بک‌اند، اول فرانت را بیلد کن؛ اگر `frontend/dist` باشد، FastAPI خودش UI را از `/` سرو می‌کند (`SERVE_FRONTEND=auto`):
+
+```powershell
+cd frontend
+npm run build
+cd ..\backend
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+بعد تونل را به `http://localhost:8000` بزن (نه 5173/5174). در `.env` دامنهٔ `*.trycloudflare.com` را به `CORS_ORIGINS` اضافه کن اگر هنوز از Vite جدا صدا می‌زنی. با `SERVE_FRONTEND=false` فقط JSON روی `/` می‌ماند.
+
 ## ۲) فرانت‌اند (Ocean Dark — محصول واقعی UI)
 
 در ترمینال جدا:
