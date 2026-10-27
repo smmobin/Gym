@@ -160,7 +160,7 @@ cd backend
 - `POST /api/v1/auth/login` با `{ "mobile", "password", "kind"?, "role"? }` — وقتی چند هویت است `kind` اجباری است (بدون آن ۴۰۹)
 - `POST /api/v1/auth/otp/send` و `…/otp/verify` برای مربی/ورزشکار (مدیر/منشی → ۴۰۰)
 - پاسخ موفق ورود: `{ kind: "staff"|"athlete", role, user?, member? }` + کوکی مناسب (`gym_session` یا `gym_athlete_session`)
-- **Idle:** بعد از ۵ دقیقه بدون فعالیت، نشست منقضی می‌شود (`SESSION_IDLE_MINUTES`؛ تمدید با `POST /auth/touch`). سقف مطلق: `SESSION_TTL_HOURS` (پیش‌فرض ۱۲)
+- **Idle:** بعد از ۲۵ دقیقه بدون فعالیت، نشست منقضی می‌شود (`SESSION_IDLE_MINUTES` / `ATHLETE_SESSION_IDLE_MINUTES`؛ تمدید با `POST /auth/touch`). سقف مطلق: `SESSION_TTL_HOURS` (پیش‌فرض ۱۲). قفل پروندهٔ عضو جداست و همچنان حدود ۵ دقیقه است.
 - Rate limit روی lookup / login / otp send / otp verify
 - مسیر قدیمی `POST /api/v1/athlete/auth/login` برای سازگاری API باقی است؛ UI عمومی فقط `/login/` است
 - خروج کارکنان: `POST /api/v1/auth/logout`؛ ورزشکار: `POST /api/v1/athlete/auth/logout`

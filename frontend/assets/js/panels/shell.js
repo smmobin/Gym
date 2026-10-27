@@ -45,7 +45,6 @@ export async function initStaffShell(opts) {
   startSessionActivityGuard({
     touchPath: '/api/v1/auth/touch',
     logoutPath: '/api/v1/auth/logout',
-    idleMs: 5 * 60 * 1000,
   })
 
   // Hide manager-only nav for non-managers

@@ -63,7 +63,6 @@ async function main() {
   startSessionActivityGuard({
     touchPath: '/api/v1/athlete/auth/touch',
     logoutPath: '/api/v1/athlete/auth/logout',
-    idleMs: 5 * 60 * 1000,
   })
 
   const banner = document.querySelector('[data-api-banner]')

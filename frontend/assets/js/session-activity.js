@@ -1,6 +1,7 @@
 import { apiPost } from './api.js'
 
-const DEFAULT_IDLE_MS = 5 * 60 * 1000
+/** Product default: match backend SESSION_IDLE_MINUTES / ATHLETE_SESSION_IDLE_MINUTES (25). */
+export const SESSION_IDLE_MS = 25 * 60 * 1000
 const DEFAULT_TOUCH_MIN_MS = 30_000
 
 /**
@@ -22,7 +23,7 @@ export function startSessionActivityGuard(opts = {}) {
   const touchPath = opts.touchPath || '/api/v1/auth/touch'
   const logoutPath = opts.logoutPath || '/api/v1/auth/logout'
   const loginPath = opts.loginPath || '/login/'
-  const idleMs = opts.idleMs ?? DEFAULT_IDLE_MS
+  const idleMs = opts.idleMs ?? SESSION_IDLE_MS
   const touchMinIntervalMs = opts.touchMinIntervalMs ?? DEFAULT_TOUCH_MIN_MS
 
   let lastTouchAt = 0
