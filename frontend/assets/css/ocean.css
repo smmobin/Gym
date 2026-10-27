@@ -1426,8 +1426,9 @@ input.date-picker-native[type="datetime-local"] {
   inset-inline-start: 0;
   top: calc(100% + 0.45rem);
   z-index: 55;
-  width: min(100%, 20.5rem);
-  padding: 0.85rem;
+  width: 282.44px;
+  max-width: calc(100vw - 2rem);
+  padding: 0.4375rem;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
   background:
