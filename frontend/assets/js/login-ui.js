@@ -1,6 +1,22 @@
 import { roleLabel } from './auth-staff.js'
 
 /**
+ * Show one wizard step; hide the rest. Must assign `.hidden` on a real HTMLElement
+ * variable — never on a parenthesized JSDoc cast (that is invalid JS / PARSE_ERROR).
+ * @param {HTMLElement | null} root
+ * @param {'mobile'|'chooser'|'auth'} step
+ */
+export function showStep(root, step) {
+  if (!root) return
+  root.querySelectorAll('[data-step]').forEach((node) => {
+    if (!(node instanceof HTMLElement)) return
+    const match = node.getAttribute('data-step') === step
+    node.hidden = !match
+    node.classList.toggle('is-active', match)
+  })
+}
+
+/**
  * @param {Document | Element} root
  * @param {'otp'|'password'} mode
  * @param {boolean} reduceMotion

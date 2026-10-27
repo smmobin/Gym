@@ -17,25 +17,12 @@ import {
   reduceLoginStep,
   toggleAuthMode,
 } from '../login-flow.js'
-import { applyAuthMode, renderRoleChooser } from '../login-ui.js'
+import { applyAuthMode, renderRoleChooser, showStep } from '../login-ui.js'
 import { mountNotificationBell } from '../notifications.js'
 import { enhanceMobileInputs } from '../mobile-input.js'
 import { enhancePasswordFields } from '../password-toggle.js'
 import { initThemeToggle } from '../theme.js'
 import { setStatus } from '../ui.js'
-
-/**
- * @param {HTMLElement | null} root
- * @param {'mobile'|'chooser'|'auth'} step
- */
-function showStep(root, step) {
-  if (!root) return
-  root.querySelectorAll('[data-step]').forEach((el) => {
-    const match = el.getAttribute('data-step') === step
-    /** @type {HTMLElement} */ (el).hidden = !match
-    el.classList.toggle('is-active', match)
-  })
-}
 
 async function main() {
   initThemeToggle(document)

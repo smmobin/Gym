@@ -9,7 +9,10 @@ import {
   singleIdentity,
   toggleAuthMode,
 } from '../assets/js/login-flow.js'
-import { applyAuthMode, renderRoleChooser } from '../assets/js/login-ui.js'
+import { applyAuthMode, renderRoleChooser, showStep } from '../assets/js/login-ui.js'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const manager = {
   kind: 'staff',
@@ -72,6 +75,28 @@ describe('login-flow helpers', () => {
 })
 
 describe('login UI helpers', () => {
+  it('login panel does not assign through JSDoc cast (BUG-005)', () => {
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+    const src = readFileSync(join(root, 'assets/js/panels/login.js'), 'utf8')
+    expect(src).not.toMatch(/\/\*\*[^*]*@type\s*\{HTMLElement\}[^*]*\*\/\s*\([^)]+\)\.hidden\s*=/)
+  })
+
+  it('showStep toggles hidden without throwing', () => {
+    document.body.innerHTML = `
+      <div data-login-wizard>
+        <section data-step="mobile" class="login-step is-active"></section>
+        <section data-step="auth" class="login-step" hidden></section>
+      </div>
+    `
+    const root = document.querySelector('[data-login-wizard]')
+    expect(() => showStep(/** @type {HTMLElement} */ (root), 'auth')).not.toThrow()
+    expect(document.querySelector('[data-step="mobile"]')?.hidden).toBe(true)
+    expect(document.querySelector('[data-step="auth"]')?.hidden).toBe(false)
+    expect(document.querySelector('[data-step="auth"]')?.classList.contains('is-active')).toBe(
+      true,
+    )
+  })
+
   it('renders mobile-only field markup expectations', () => {
     document.body.innerHTML = `
       <section data-step="mobile" class="login-step is-active">

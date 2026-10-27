@@ -1,13 +1,13 @@
 # دفتر باگ — GYM CONTROL
 
 **نقش:** سند زندهٔ چت QA. بعد از هر دور شکار باگ به‌روز شود.  
-**آخرین به‌روزرسانی:** ۱۴۰۴-۰۸-۰۵ (2026-10-27) — تست دستی ویزارد ورود؛ BUG-005 Critical
+**آخرین به‌روزرسانی:** ۱۴۰۴-۰۸-۰۵ (2026-10-27) — فیکس BUG-005 (showStep / cast assignment)
 
 ## خلاصهٔ باز
 
 | شناسه | شدت | عنوان | وضعیت |
 |-------|------|--------|--------|
-| BUG-005 | Critical | ویزارد ورود لود نمی‌شود؛ بعد از موبایل همان صفحه برمی‌گردد | باز |
+| BUG-005 | Critical | ویزارد ورود لود نمی‌شود؛ بعد از موبایل همان صفحه برمی‌گردد | بسته‌شده |
 | BUG-004 | Suggestion | وقتی چند عضویت شامل‌کمد فعال است، UI بدون انتخاب صریح اولی را می‌فرستد | باز |
 | BUG-001 | Major | مسیر واگذاری کمد برای عضو بدون طرح شامل‌کمد گیج‌کننده است | بسته‌شده |
 | BUG-003 | Minor | بعد از «ساخت کمد» لیست تا refresh کامل به‌روز نمی‌شود | بسته‌شده |
@@ -75,4 +75,5 @@
 - **واقعیت:** ماژول `frontend/assets/js/panels/login.js` با خطای `Invalid left-hand side in assignment` لود نمی‌شود (انتساب روی cast جی‌اس‌داک: `/** @type {HTMLElement} */ (el).hidden = …`). بدون JS، `preventDefault` نیست → رفرش همان صفحه. API `POST /auth/lookup` سالم است و هویت‌ها درست برمی‌گردند
 - **شواهد:** Console: `reimport_fail: Invalid left-hand side in assignment`؛ lookup مدیر → `auth_methods: ["password"]`؛ مربی/ورزشکار → `["otp","password"]`؛ Vite scan روی همان خط PARSE_ERROR
 - **احتمال دامنه:** frontend (یک خط در `showStep`)
-- **وضعیت:** باز
+- **فیکس:** `showStep` به `login-ui.js` منتقل شد؛ انتساب `hidden` روی متغیر `HTMLElement` واقعی (بدون cast به‌عنوان LHS). vitest: `showStep` + گارد منبع برای الگوی cast.
+- **وضعیت:** بسته‌شده
