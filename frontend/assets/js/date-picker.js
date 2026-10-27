@@ -536,6 +536,9 @@
       var dayBtn = event.target.closest(".date-picker-day:not(.is-blank)");
       if (!dayBtn || !grid.contains(dayBtn)) return;
       event.preventDefault();
+      // Stop before pickDay/renderGrid — otherwise the day button is detached and
+      // document click treats it as outside (BUG-006 datetime-local).
+      event.stopPropagation();
       pickDay(Number(dayBtn.dataset.day));
     });
 
@@ -610,7 +613,12 @@
 
     document.addEventListener("click", function (event) {
       if (!root.classList.contains("is-open")) return;
-      if (root.contains(event.target)) return;
+      var target = event.target;
+      if (target instanceof Node) {
+        if (root.contains(target)) return;
+        // Nodes detached mid-handler (e.g. day re-render) are not real outside clicks.
+        if (!document.documentElement.contains(target)) return;
+      }
       // Keep trigger label and hidden input in sync (outside-click used to leave them mismatched).
       if (!withTime) applyToInput();
       else {
