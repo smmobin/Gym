@@ -76,7 +76,12 @@ export function mountClasses(root, user) {
           <td data-label="ظرفیت">${(c.booked_count ?? 0).toLocaleString('fa-IR')} / ${(c.capacity ?? 0).toLocaleString('fa-IR')} (باقی ${c.remaining})</td>
           <td data-label="جنسیت">${genderLabelFa(c.gender_label)}</td>
           <td><button type="button" class="btn small" data-id="${c.id}">انتخاب</button>
-          ${canWrite ? `<button type="button" class="btn small ghost" data-edit="${c.id}">ویرایش</button>` : ''}</td>
+          ${canWrite ? `<button type="button" class="btn small ghost" data-edit="${c.id}">ویرایش</button>` : ''}
+          ${
+            canWrite && c.is_active !== false && !(c.booked_count > 0)
+              ? `<button type="button" class="btn small ghost" data-deactivate="${c.id}">غیرفعال‌سازی</button>`
+              : ''
+          }</td>
         </tr>`,
       )
       .join('')
@@ -86,6 +91,39 @@ export function mountClasses(root, user) {
     tbody.querySelectorAll('[data-edit]').forEach((b) =>
       b.addEventListener('click', () => fillEdit(Number(b.getAttribute('data-edit')))),
     )
+    tbody.querySelectorAll('[data-deactivate]').forEach((b) =>
+      b.addEventListener('click', () => void deactivateClass(Number(b.getAttribute('data-deactivate')))),
+    )
+  }
+
+  /** @param {number} id */
+  async function deactivateClass(id) {
+    const c = classes.find((x) => x.id === id)
+    if (!c) return
+    if ((c.booked_count ?? 0) > 0) {
+      setStatus(status, 'کلاس دارای رزرو فعال را نمی‌توان غیرفعال کرد.', 'error')
+      return
+    }
+    if (!confirm(`کلاس «${c.title}» غیرفعال شود؟`)) return
+    try {
+      await apiPatch(`/api/v1/group-classes/${id}`, { is_active: false })
+      setStatus(status, 'کلاس غیرفعال شد.', 'ok')
+      if (selected?.id === id) {
+        selected = null
+        root.querySelector('[data-sel]').textContent = 'کلاسی انتخاب نشده'
+        root.querySelector('[data-bookings]').innerHTML = ''
+      }
+      const form = root.querySelector('[data-class-form]')
+      const idInput = form?.querySelector('[name=id]')
+      if (idInput instanceof HTMLInputElement && idInput.value === String(id)) {
+        form?.reset()
+        if (idInput) idInput.value = ''
+        if (form) syncGenderSelect(form)
+      }
+      await autoRefresh.refresh()
+    } catch (err) {
+      setStatus(status, apiErrorMessage(err, 'غیرفعال‌سازی ناموفق'), 'error')
+    }
   }
 
   /**
@@ -218,7 +256,13 @@ export function mountClasses(root, user) {
     })
     root.querySelector('[data-class-form]')?.addEventListener('submit', async (e) => {
       e.preventDefault()
-      const fd = new FormData((e.target))
+      const form = /** @type {HTMLFormElement} */ (e.target)
+      // BUG-007: prevent double-create from rapid/repeated Save before id is set.
+      if (form.dataset.busy === '1') return
+      form.dataset.busy = '1'
+      const submitBtn = /** @type {HTMLButtonElement | null} */ (form.querySelector('[type="submit"]'))
+      if (submitBtn) submitBtn.disabled = true
+      const fd = new FormData(form)
       const id = String(fd.get('id') || '')
       const body = {
         title: String(fd.get('title')).trim(),
@@ -227,19 +271,28 @@ export function mountClasses(root, user) {
         starts_at: new Date(String(fd.get('starts_at'))).toISOString(),
         ends_at: new Date(String(fd.get('ends_at'))).toISOString(),
       }
+      let savedOk = false
       try {
         const data = id
           ? await apiPatch(`/api/v1/group-classes/${id}`, body)
           : await apiPost('/api/v1/group-classes', body)
+        const saved = data?.group_class
+        // Keep form filled and set id so the next Save is PATCH, not another POST.
+        if (saved?.id != null) {
+          const idInput = form.querySelector('[name=id]')
+          if (idInput instanceof HTMLInputElement) idInput.value = String(saved.id)
+        }
         if (data.trainer_schedule_conflict || data.warning) {
           setStatus(status, data.warning || 'هشدار تداخل زمان مربی — کلاس ذخیره شد.', 'ok')
         } else setStatus(status, 'کلاس ذخیره شد.', 'ok')
-        /** @type {HTMLFormElement} */ (e.target).reset()
-        syncGenderSelect(e.target)
-        await autoRefresh.refresh()
+        savedOk = true
       } catch (err) {
         setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
+      } finally {
+        form.dataset.busy = '0'
+        if (submitBtn) submitBtn.disabled = false
       }
+      if (savedOk) await autoRefresh.refresh()
     })
     root.querySelector('[data-reset]')?.addEventListener('click', () => {
       const form = root.querySelector('[data-class-form]')

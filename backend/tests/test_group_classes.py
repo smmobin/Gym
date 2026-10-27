@@ -112,6 +112,37 @@ def test_receptionist_can_create(client: TestClient) -> None:
     assert response.status_code == 201
 
 
+def test_duplicate_active_class_409(client: TestClient) -> None:
+    """BUG-007: same title+starts_at+gender_label while active → 409 Persian."""
+    _login(client)
+    starts, ends = _future_range(112)
+    payload = {
+        "title": "کلاس تکراری تست",
+        "capacity": 4,
+        "gender_label": "men",
+        "starts_at": starts,
+        "ends_at": ends,
+    }
+    first = client.post("/api/v1/group-classes", json=payload)
+    assert first.status_code == 201
+    class_id = first.json()["group_class"]["id"]
+
+    second = client.post("/api/v1/group-classes", json=payload)
+    assert second.status_code == 409
+    detail = second.json()["detail"]
+    assert "فعال" in detail
+    assert "عنوان" in detail
+
+    # Deactivate then recreate is allowed.
+    assert (
+        client.patch(f"/api/v1/group-classes/{class_id}", json={"is_active": False}).status_code
+        == 200
+    )
+    third = client.post("/api/v1/group-classes", json=payload)
+    assert third.status_code == 201
+    assert third.json()["group_class"]["id"] != class_id
+
+
 def test_invalid_time_range_422(client: TestClient) -> None:
     _login(client)
     starts, ends = _future_range(120)

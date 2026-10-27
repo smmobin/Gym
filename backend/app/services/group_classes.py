@@ -178,6 +178,30 @@ def list_group_classes(
     return [snapshot(db, row) for row in rows]
 
 
+def _ensure_no_active_duplicate(
+    db: Session,
+    *,
+    title: str,
+    starts_at: datetime,
+    gender_label: str,
+    exclude_id: Optional[int] = None,
+) -> None:
+    """Reject a second active class with the same title + start + gender (BUG-007)."""
+    stmt = select(GroupClass.id).where(
+        GroupClass.is_active.is_(True),
+        GroupClass.title == title,
+        GroupClass.starts_at == starts_at,
+        GroupClass.gender_label == gender_label,
+    )
+    if exclude_id is not None:
+        stmt = stmt.where(GroupClass.id != exclude_id)
+    if db.scalar(stmt) is not None:
+        raise GroupClassError(
+            409,
+            "کلاس فعالی با همین عنوان، زمان شروع و برچسب جنسیت از قبل وجود دارد.",
+        )
+
+
 def create_group_class(
     db: Session,
     *,
@@ -198,6 +222,13 @@ def create_group_class(
         trainer = db.get(User, trainer_user_id)
         if trainer is None or trainer.role != StaffRole.TRAINER.value or not trainer.is_active:
             raise GroupClassError(400, "مربی معتبر نیست.")
+
+    _ensure_no_active_duplicate(
+        db,
+        title=title,
+        starts_at=starts_at,
+        gender_label=gender_label,
+    )
 
     conflict = has_trainer_schedule_conflict(
         db,
@@ -260,6 +291,16 @@ def update_group_class(
         row.ends_at = ends_at
     if is_active is not None:
         row.is_active = is_active
+
+    # When reactivating or retargeting identity fields, block colliding active rows.
+    if row.is_active:
+        _ensure_no_active_duplicate(
+            db,
+            title=row.title,
+            starts_at=row.starts_at,
+            gender_label=row.gender_label,
+            exclude_id=row.id,
+        )
 
     new_trainer_id = row.trainer_user_id
     if clear_trainer:
