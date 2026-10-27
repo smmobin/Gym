@@ -84,7 +84,7 @@ export function mountDeskDashboard(root, user) {
   root.innerHTML = `
     <div class="status-msg" data-status hidden></div>
     <div class="stats" data-stats></div>
-    <div class="grid-2" data-actions style="margin-top:0.25rem"></div>
+    <div class="grid-2" data-actions style="margin-top:11px"></div>
     <p class="hint">این صفحه وضعیت امروز میز است؛ جزئیات هر مورد را از منوی کناری باز کنید. بدهی ≠ درآمد.</p>
   `
 
