@@ -62,3 +62,10 @@ def root() -> dict[str, str]:
     if not settings.is_production_like:
         payload["docs"] = "/docs"
     return payload
+
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+
+# قرار دادن این کد در انتهای فایل main.py بعد از تمام routerها
+frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
