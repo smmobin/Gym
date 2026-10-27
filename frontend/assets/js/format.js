@@ -178,6 +178,19 @@ export const PAYMENT_METHOD_LABEL = {
   online: 'آنلاین',
 }
 
+/** Display-only class gender tag (API: men | women | mixed). */
+export const GENDER_LABEL = {
+  mixed: 'مختلط',
+  women: 'بانوان',
+  men: 'آقایان',
+}
+
+/** @param {string | null | undefined} value */
+export function genderLabelFa(value) {
+  if (!value) return '—'
+  return GENDER_LABEL[value] ?? value
+}
+
 /** @param {boolean} [gatewayEnabled] */
 export function onlineMethodLabel(gatewayEnabled) {
   return gatewayEnabled ? 'آنلاین (درگاه)' : 'آنلاین (بدون درگاه)'

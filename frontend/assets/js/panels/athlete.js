@@ -5,6 +5,7 @@ import {
   formatDateTimeShort,
   formatJalaliDate,
   formatToman,
+  genderLabelFa,
   mountTodayDate,
 } from '../format.js'
 import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-input.js'
@@ -187,7 +188,7 @@ async function main() {
             <h3>${c.title}</h3>
             <p>${formatDateTimeShort(c.starts_at)} · ${c.trainer_full_name || '—'}
             · باقی ${(c.remaining ?? 0).toLocaleString('fa-IR')} از ${(c.capacity ?? 0).toLocaleString('fa-IR')}
-            ${c.gender_label ? ' · ' + c.gender_label : ''}</p></div>
+            ${c.gender_label ? ' · ' + genderLabelFa(c.gender_label) : ''}</p></div>
             ${
               c.booked_by_me && c.my_booking_id
                 ? `<button type="button" class="btn small ghost" data-cancel="${c.my_booking_id}">لغو رزرو</button>`

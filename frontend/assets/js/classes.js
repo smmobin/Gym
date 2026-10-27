@@ -1,6 +1,7 @@
 import { ApiError, apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
-import { formatDateTimeShort } from './format.js'
+import { formatDateTimeShort, genderLabelFa } from './format.js'
+import { LIVE } from './live-data.js'
 import { bindMemberSearch } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -39,7 +40,13 @@ export function mountClasses(root, user) {
           <input type="hidden" name="id" />
           <label class="full">عنوان<input name="title" required /></label>
           <label>ظرفیت<input name="capacity" type="number" min="1" value="12" required /></label>
-          <label>برچسب جنسیت<input name="gender_label" placeholder="مختلط / بانوان / آقایان" /></label>
+          <label>برچسب جنسیت
+            <select name="gender_label" required>
+              <option value="mixed">مختلط</option>
+              <option value="women">بانوان</option>
+              <option value="men">آقایان</option>
+            </select>
+          </label>
           <label>شروع<input name="starts_at" type="datetime-local" required /></label>
           <label>پایان<input name="ends_at" type="datetime-local" required /></label>
           <div class="inline-actions">
@@ -67,7 +74,7 @@ export function mountClasses(root, user) {
           <td data-label="عنوان">${c.title}${c.trainer_schedule_conflict ? ' ⚠' : ''}</td>
           <td data-label="زمان">${formatDateTimeShort(c.starts_at)}</td>
           <td data-label="ظرفیت">${(c.booked_count ?? 0).toLocaleString('fa-IR')} / ${(c.capacity ?? 0).toLocaleString('fa-IR')} (باقی ${c.remaining})</td>
-          <td data-label="جنسیت">${c.gender_label || '—'}</td>
+          <td data-label="جنسیت">${genderLabelFa(c.gender_label)}</td>
           <td><button type="button" class="btn small" data-id="${c.id}">انتخاب</button>
           ${canWrite ? `<button type="button" class="btn small ghost" data-edit="${c.id}">ویرایش</button>` : ''}</td>
         </tr>`,
@@ -114,7 +121,11 @@ export function mountClasses(root, user) {
     form.querySelector('[name=id]').value = String(c.id)
     form.querySelector('[name=title]').value = c.title
     form.querySelector('[name=capacity]').value = String(c.capacity)
-    form.querySelector('[name=gender_label]').value = c.gender_label || ''
+    const genderSel = form.querySelector('[name=gender_label]')
+    if (genderSel instanceof HTMLSelectElement) {
+      genderSel.value = c.gender_label || 'mixed'
+      globalThis.GymCustomSelect?.sync?.(genderSel)
+    }
     form.querySelector('[name=starts_at]').value = toLocalInput(c.starts_at)
     form.querySelector('[name=ends_at]').value = toLocalInput(c.ends_at)
   }
@@ -212,7 +223,7 @@ export function mountClasses(root, user) {
       const body = {
         title: String(fd.get('title')).trim(),
         capacity: Number(fd.get('capacity')),
-        gender_label: String(fd.get('gender_label') || '').trim() || null,
+        gender_label: String(fd.get('gender_label') || 'mixed').trim() || 'mixed',
         starts_at: new Date(String(fd.get('starts_at'))).toISOString(),
         ends_at: new Date(String(fd.get('ends_at'))).toISOString(),
       }
@@ -224,6 +235,7 @@ export function mountClasses(root, user) {
           setStatus(status, data.warning || 'هشدار تداخل زمان مربی — کلاس ذخیره شد.', 'ok')
         } else setStatus(status, 'کلاس ذخیره شد.', 'ok')
         /** @type {HTMLFormElement} */ (e.target).reset()
+        syncGenderSelect(e.target)
         await autoRefresh.refresh()
       } catch (err) {
         setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
@@ -234,7 +246,18 @@ export function mountClasses(root, user) {
       form?.reset()
       const id = form?.querySelector('[name=id]')
       if (id) id.value = ''
+      if (form) syncGenderSelect(form)
     })
+    globalThis.GymCustomSelect?.refresh?.(root)
+  }
+}
+
+/** @param {ParentNode} scope */
+function syncGenderSelect(scope) {
+  const genderSel = scope.querySelector('[name=gender_label]')
+  if (genderSel instanceof HTMLSelectElement) {
+    if (!genderSel.value) genderSel.value = 'mixed'
+    globalThis.GymCustomSelect?.sync?.(genderSel)
   }
 }
 
