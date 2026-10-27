@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { createListPager, LIST_PAGE_SIZE, slicePage } from '../assets/js/pagination.js'
+import {
+  createListPager,
+  findItemPage,
+  LIST_PAGE_SIZE,
+  pageForIndex,
+  slicePage,
+} from '../assets/js/pagination.js'
 
 describe('list pagination', () => {
   it('uses page size 5', () => {
@@ -23,6 +29,16 @@ describe('list pagination', () => {
     expect(slicePage(items, 0).page).toBe(1)
   })
 
+  it('pageForIndex / findItemPage locate the page of a row (BUG-008)', () => {
+    expect(pageForIndex(0)).toBe(1)
+    expect(pageForIndex(4)).toBe(1)
+    expect(pageForIndex(5)).toBe(2)
+    expect(pageForIndex(11)).toBe(3)
+    const items = Array.from({ length: 12 }, (_, i) => ({ id: i + 1 }))
+    expect(findItemPage(items, (x) => x.id === 12)).toBe(3)
+    expect(findItemPage(items, (x) => x.id === 99)).toBeNull()
+  })
+
   it('createListPager paints and navigates', () => {
     document.body.innerHTML = `<div data-pager></div><ul data-out></ul>`
     const pagerEl = document.querySelector('[data-pager]')
@@ -39,5 +55,32 @@ describe('list pagination', () => {
 
     pagerEl.querySelector('[data-pager="next"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     expect(out.textContent).toBe('6')
+  })
+
+  it('goToMatching jumps to the page that contains the item', () => {
+    document.body.innerHTML = `<div data-pager></div><ul data-out></ul>`
+    const pagerEl = document.querySelector('[data-pager]')
+    const out = document.querySelector('[data-out]')
+    const pager = createListPager(pagerEl)
+    const all = [
+      { id: 1, title: 'a' },
+      { id: 2, title: 'b' },
+      { id: 3, title: 'c' },
+      { id: 4, title: 'd' },
+      { id: 5, title: 'e' },
+      { id: 6, title: 'جدید' },
+    ]
+
+    pager.paint(all, (rows) => {
+      out.textContent = rows.map((r) => r.title).join(',')
+    })
+    expect(out.textContent).toBe('a,b,c,d,e')
+
+    const page = pager.goToMatching(all, (rows) => {
+      out.textContent = rows.map((r) => r.title).join(',')
+    }, (row) => row.id === 6)
+    expect(page).toBe(2)
+    expect(pager.page).toBe(2)
+    expect(out.textContent).toBe('جدید')
   })
 })

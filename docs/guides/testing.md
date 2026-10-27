@@ -101,6 +101,17 @@ npm run build
 - `money-input.test.js` — جداکنندهٔ هزارگان فیلدهای تومان (`data-money`) + پارس رقم فارسی/لاتین
 - `live-search.test.js` / `members-live-search.test.js` — جستجوی زنده (debounce) بدون دکمهٔ جستجو/بازخوانی
 - `trainers-roster.test.js` — با انتخاب مربی، لیست شاگردان همان مربی (`GET /trainers/{id}/members`)
+- `classes-save.test.js` / `pagination.test.js` — بعد از mutation کلاس: `emitLive` + `focusId` تا pager روی صفحهٔ همان ردیف بماند (BUG-007/008)
+
+### قرارداد live بعد از mutation (لیست‌های صفحه‌بندی‌شده)
+
+برای هر پنل با `createListPager` + `createAutoRefresh`:
+
+1. بعد از create/update موفق: `emitLive(LIVE.…, { focusId })` و در صورت نیاز `autoRefresh.refresh({ focusId })`.
+2. در `load`: اگر `ctx.focusId` بود → `pager.goToMatching(items, paint, …)`؛ وگرنه فقط برای بارگذاری غیرسایلنت `pager.reset()`.
+3. همیشه آرایهٔ تازه را از API بگیر و بعد `paint` کن تا DOM با دادهٔ جدید یکی باشد.
+
+جزئیات در کامنت `frontend/assets/js/pagination.js` و `auto-refresh.js`. بازنویسی همهٔ پنل‌ها اجباری نیست؛ کلاس‌ها مرجع پیاده‌سازی‌اند.
 
 بک‌اند (نمونهٔ مرتبط با ورود یکپارچه): `test_auth.py` — staff هر نقش، athlete، رمز غلط، اولویت staff اگر موبایل در هر دو جدول.
 

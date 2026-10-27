@@ -207,3 +207,66 @@ describe('class save anti-duplicate (BUG-007)', () => {
     expect(root.querySelector('[data-deactivate="10"]')).toBeNull()
   })
 })
+
+describe('class list focus after save (BUG-008)', () => {
+  beforeEach(() => {
+    vi.mocked(apiGet).mockReset()
+    vi.mocked(apiPost).mockReset()
+    vi.mocked(apiPatch).mockReset()
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('after create, paints the page that contains the new class (not stuck on page 1)', async () => {
+    const seed = Array.from({ length: 5 }, (_, i) => ({
+      id: i + 1,
+      title: `قدیمی ${i + 1}`,
+      capacity: 10,
+      booked_count: 0,
+      remaining: 10,
+      gender_label: 'mixed',
+      starts_at: `2020-01-0${i + 1}T08:00:00.000Z`,
+      ends_at: `2020-01-0${i + 1}T09:00:00.000Z`,
+      is_active: true,
+    }))
+    const created = {
+      id: 99,
+      title: 'کلاس آینده دیده شو',
+      capacity: 8,
+      booked_count: 0,
+      remaining: 8,
+      gender_label: 'men',
+      starts_at: '2030-06-01T06:30:00.000Z',
+      ends_at: '2030-06-01T07:30:00.000Z',
+      is_active: true,
+    }
+    let listPayload = { items: seed, total: seed.length }
+    vi.mocked(apiGet).mockImplementation(async () => listPayload)
+    vi.mocked(apiPost).mockImplementation(async () => {
+      listPayload = { items: [...seed, created], total: seed.length + 1 }
+      return { group_class: created, trainer_schedule_conflict: false }
+    })
+
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountClasses(root, { role: 'receptionist' })
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-tbody]')?.textContent).toContain('قدیمی 1')
+    })
+    expect(root.querySelector('[data-tbody]')?.textContent || '').not.toContain('کلاس آینده دیده شو')
+
+    const form = /** @type {HTMLFormElement} */ (root.querySelector('[data-class-form]'))
+    fillClassForm(form, { title: 'کلاس آینده دیده شو' })
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+
+    await vi.waitFor(() => {
+      const text = root.querySelector('[data-tbody]')?.textContent || ''
+      expect(text).toContain('کلاس آینده دیده شو')
+    })
+    const pagerStatus = root.querySelector('.list-pager-status')?.textContent || ''
+    expect(pagerStatus).toMatch(/۲|2/)
+  })
+})

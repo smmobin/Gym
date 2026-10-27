@@ -86,4 +86,28 @@ describe('createAutoRefresh', () => {
 
     auto.stop()
   })
+
+  it('forwards live event detail and refresh extras to loadFn (focusId)', async () => {
+    vi.useFakeTimers()
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    const loadFn = vi.fn(async () => {})
+    const auto = createAutoRefresh(root, loadFn, {
+      intervalMs: 60_000,
+      events: ['gym:live:classes'],
+    })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(loadFn).toHaveBeenCalledTimes(1)
+
+    window.dispatchEvent(new CustomEvent('gym:live:classes', { detail: { focusId: 42 } }))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(loadFn).toHaveBeenCalledTimes(2)
+    expect(loadFn.mock.calls[1][0]).toMatchObject({ silent: false, focusId: 42 })
+
+    await auto.refresh({ focusId: 99 })
+    expect(loadFn).toHaveBeenCalledTimes(3)
+    expect(loadFn.mock.calls[2][0]).toMatchObject({ silent: false, focusId: 99 })
+
+    auto.stop()
+  })
 })

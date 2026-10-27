@@ -1,5 +1,12 @@
 /**
  * Client-side list pagination (5 rows per page) for Ocean Dark panels.
+ *
+ * Live + mutation contract (reuse across panels — BUG-008):
+ * 1. After create/update, `emitLive(LIVE.*)` so other mounts refresh.
+ * 2. Pass `{ focusId }` (or call `pager.goToMatching`) so the pager lands on
+ *    the page that contains the mutated row — do not only `reset()` to page 1.
+ * 3. `load` must assign fresh `items` then `paint` (or `goToMatching`) so the
+ *    tbody is rewritten from the latest API payload.
  */
 
 export const LIST_PAGE_SIZE = 5
@@ -9,6 +16,31 @@ export const LIST_PAGE_SIZE = 5
  */
 export function faNum(n) {
   return Number(n).toLocaleString('fa-IR')
+}
+
+/**
+ * 1-based page that contains a 0-based index.
+ * @param {number} index
+ * @param {number} [pageSize]
+ */
+export function pageForIndex(index, pageSize = LIST_PAGE_SIZE) {
+  if (index < 0) return 1
+  return Math.floor(index / pageSize) + 1
+}
+
+/**
+ * Page containing the first item matching `predicate`, or null if none.
+ * @template T
+ * @param {T[]} items
+ * @param {(item: T) => boolean} predicate
+ * @param {number} [pageSize]
+ * @returns {number | null}
+ */
+export function findItemPage(items, predicate, pageSize = LIST_PAGE_SIZE) {
+  const list = Array.isArray(items) ? items : []
+  const idx = list.findIndex(predicate)
+  if (idx < 0) return null
+  return pageForIndex(idx, pageSize)
 }
 
 /**
@@ -82,6 +114,12 @@ export function createListPager(pagerEl, options = {}) {
       page = 1
     },
     /**
+     * @param {number} next 1-based
+     */
+    setPage(next) {
+      page = Math.max(1, Number(next) || 1)
+    },
+    /**
      * @template T
      * @param {T[]} all
      * @param {(rows: T[]) => void} paint
@@ -99,6 +137,20 @@ export function createListPager(pagerEl, options = {}) {
           this.paint(all, paint)
         },
       })
+    },
+    /**
+     * Jump to the page that contains the first matching row, then paint.
+     * @template T
+     * @param {T[]} all
+     * @param {(rows: T[]) => void} paint
+     * @param {(item: T) => boolean} predicate
+     * @returns {number | null} focused page, or null if not found
+     */
+    goToMatching(all, paint, predicate) {
+      const target = findItemPage(all, predicate, pageSize)
+      if (target != null) page = target
+      this.paint(all, paint)
+      return target
     },
   }
 }

@@ -4,8 +4,12 @@
  * `online` / becoming visible again.
  * Optional `events` (e.g. LIVE.PLANS) force an immediate refresh in this tab.
  *
+ * Live detail (BUG-008): `emitLive(LIVE.*, { focusId })` and
+ * `autoRefresh.refresh({ focusId })` forward extras into `loadFn` so panels
+ * can `pager.goToMatching` after mutation without sticking on page 1.
+ *
  * @param {HTMLElement} root
- * @param {(ctx: { silent: boolean }) => Promise<void>} loadFn reject/throw → retry
+ * @param {(ctx: { silent: boolean } & Record<string, unknown>) => Promise<void>} loadFn reject/throw → retry
  * @param {{
  *   intervalMs?: number,
  *   retryBaseMs?: number,
@@ -25,6 +29,8 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
   let inFlight = false
   /** When a forced refresh arrives during an in-flight load, run again after. */
   let pendingForce = false
+  /** @type {Record<string, unknown>} */
+  let pendingExtra = {}
   let consecutiveFailures = 0
   let everSucceeded = false
   /** @type {Array<() => void>} */
@@ -62,11 +68,15 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
 
   /**
    * @param {boolean} [force]
+   * @param {Record<string, unknown>} [extra]
    */
-  async function run(force = false) {
+  async function run(force = false, extra = {}) {
     if (stopped) return
     if (inFlight) {
-      if (force) pendingForce = true
+      if (force) {
+        pendingForce = true
+        pendingExtra = { ...pendingExtra, ...extra }
+      }
       return
     }
     if (!force && !shouldRun()) {
@@ -76,8 +86,9 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
     inFlight = true
     // Silent only for background polls — forced refresh (create/edit / online) stays loud.
     const silent = everSucceeded && !force
+    const ctx = { silent, ...extra }
     try {
-      await loadFn({ silent })
+      await loadFn(ctx)
       consecutiveFailures = 0
       everSucceeded = true
       schedule(intervalMs)
@@ -88,7 +99,9 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
       inFlight = false
       if (pendingForce && !stopped) {
         pendingForce = false
-        void run(true)
+        const nextExtra = pendingExtra
+        pendingExtra = {}
+        void run(true, nextExtra)
       }
     }
   }
@@ -101,8 +114,13 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
     void run(true)
   }
 
-  function onLiveEvent() {
-    void run(true)
+  /** @param {Event} ev */
+  function onLiveEvent(ev) {
+    const detail =
+      ev && typeof ev === 'object' && 'detail' in ev && ev.detail && typeof ev.detail === 'object'
+        ? /** @type {Record<string, unknown>} */ (ev.detail)
+        : {}
+    void run(true, detail)
   }
 
   document.addEventListener('visibilitychange', onResume)
@@ -116,8 +134,11 @@ export function createAutoRefresh(root, loadFn, opts = {}) {
   void run(true)
 
   return {
-    /** Force an immediate refresh (e.g. after create/edit). */
-    refresh: () => run(true),
+    /**
+     * Force an immediate refresh (e.g. after create/edit).
+     * @param {Record<string, unknown>} [extra] forwarded to loadFn (e.g. `{ focusId }`)
+     */
+    refresh: (extra = {}) => run(true, extra),
     stop() {
       stopped = true
       clearTimer()

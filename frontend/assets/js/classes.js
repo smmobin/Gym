@@ -1,7 +1,7 @@
 import { ApiError, apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { formatDateTimeShort, genderLabelFa } from './format.js'
-import { LIVE } from './live-data.js'
+import { emitLive, LIVE } from './live-data.js'
 import { bindMemberSearch } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -120,6 +120,7 @@ export function mountClasses(root, user) {
         if (idInput) idInput.value = ''
         if (form) syncGenderSelect(form)
       }
+      emitLive(LIVE.CLASSES)
       await autoRefresh.refresh()
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'غیرفعال‌سازی ناموفق'), 'error')
@@ -127,16 +128,24 @@ export function mountClasses(root, user) {
   }
 
   /**
-   * @param {{ silent?: boolean }} [ctx]
+   * @param {{ silent?: boolean, focusId?: unknown }} [ctx]
    */
   async function load(ctx = {}) {
     const silent = !!ctx.silent
+    const focusId = ctx.focusId != null && ctx.focusId !== '' ? Number(ctx.focusId) : null
     if (!silent) setStatus(status, 'بارگذاری…', 'loading')
     try {
       const data = await apiGet('/api/v1/group-classes')
-      classes = data.items || []
-      if (!silent) pager.reset()
-      pager.paint(classes, paintClassRows)
+      // Always replace local list then paint so DOM matches fresh API data (BUG-008).
+      classes = Array.isArray(data.items) ? data.items : []
+      if (focusId != null && Number.isFinite(focusId)) {
+        pager.goToMatching(classes, paintClassRows, (c) => Number(c.id) === focusId)
+      } else if (!silent) {
+        pager.reset()
+        pager.paint(classes, paintClassRows)
+      } else {
+        pager.paint(classes, paintClassRows)
+      }
       setStatus(status, `${classes.length.toLocaleString('fa-IR')} کلاس`, 'ok')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
@@ -196,7 +205,8 @@ export function mountClasses(root, user) {
         btn.addEventListener('click', async () => {
           await apiPost(`/api/v1/group-classes/${id}/bookings/${btn.getAttribute('data-cancel')}/cancel`)
           setStatus(status, 'لغو شد.', 'ok')
-          await autoRefresh.refresh()
+          emitLive(LIVE.CLASSES, { focusId: id })
+          await autoRefresh.refresh({ focusId: id })
           await selectClass(id)
         }),
       )
@@ -209,7 +219,8 @@ export function mountClasses(root, user) {
           const body = membershipId ? { membership_id: membershipId } : {}
           await apiPost(path, body)
           setStatus(status, kind === 'no-show' ? 'غیبت ثبت شد.' : 'حضور ثبت شد.', 'ok')
-          await autoRefresh.refresh()
+          emitLive(LIVE.CLASSES, { focusId: id })
+          await autoRefresh.refresh({ focusId: id })
           await selectClass(id)
         } catch (err) {
           if (err instanceof ApiError && err.detail && err.detail.code === 'membership_required') {
@@ -248,7 +259,8 @@ export function mountClasses(root, user) {
       try {
         await apiPost(`/api/v1/group-classes/${selected.id}/bookings`, { member_id: pickMember.id })
         setStatus(status, 'رزرو ثبت شد.', 'ok')
-        await autoRefresh.refresh()
+        emitLive(LIVE.CLASSES, { focusId: selected.id })
+        await autoRefresh.refresh({ focusId: selected.id })
         await selectClass(selected.id)
       } catch (err) {
         setStatus(status, err instanceof ApiError ? err.message : 'رزرو ناموفق', 'error')
@@ -272,6 +284,8 @@ export function mountClasses(root, user) {
         ends_at: new Date(String(fd.get('ends_at'))).toISOString(),
       }
       let savedOk = false
+      /** @type {number | null} */
+      let focusId = null
       try {
         const data = id
           ? await apiPatch(`/api/v1/group-classes/${id}`, body)
@@ -281,6 +295,9 @@ export function mountClasses(root, user) {
         if (saved?.id != null) {
           const idInput = form.querySelector('[name=id]')
           if (idInput instanceof HTMLInputElement) idInput.value = String(saved.id)
+          focusId = Number(saved.id)
+        } else if (id) {
+          focusId = Number(id)
         }
         if (data.trainer_schedule_conflict || data.warning) {
           setStatus(status, data.warning || 'هشدار تداخل زمان مربی — کلاس ذخیره شد.', 'ok')
@@ -292,7 +309,11 @@ export function mountClasses(root, user) {
         form.dataset.busy = '0'
         if (submitBtn) submitBtn.disabled = false
       }
-      if (savedOk) await autoRefresh.refresh()
+      if (savedOk) {
+        const liveDetail = focusId != null ? { focusId } : {}
+        emitLive(LIVE.CLASSES, liveDetail)
+        await autoRefresh.refresh(liveDetail)
+      }
     })
     root.querySelector('[data-reset]')?.addEventListener('click', () => {
       const form = root.querySelector('[data-class-form]')
