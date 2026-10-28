@@ -3,6 +3,71 @@ import { formatDateTime } from './format.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { setStatus } from './ui.js'
 
+/** @param {string} value */
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * @param {any[]} items
+ * @param {{ canWrite?: boolean }} [opts]
+ */
+export function workoutPlansTableHtml(items, opts = {}) {
+  const canWrite = !!opts.canWrite
+  if (!items.length) {
+    return `<div class="workout-plans-empty" data-plans-empty>
+      <p class="hint">هنوز برنامه‌ای برای این شاگرد ثبت نشده.</p>
+    </div>`
+  }
+  return `<div class="table-wrap workout-plans-wrap">
+    <table class="responsive-table workout-plans-table">
+      <thead>
+        <tr>
+          <th scope="col">عنوان</th>
+          <th scope="col">خلاصه برنامه</th>
+          <th scope="col">مربی</th>
+          <th scope="col">به‌روزرسانی</th>
+          ${canWrite ? '<th scope="col" class="workout-plans-actions-col">عملیات</th>' : ''}
+        </tr>
+      </thead>
+      <tbody>
+        ${items
+          .map((p) => {
+            const body = String(p.body || '')
+            const preview = body.slice(0, 140) + (body.length > 140 ? '…' : '')
+            const when = formatDateTime(p.updated_at || p.created_at)
+            return `<tr class="workout-plan-row" data-plan-id="${escapeHtml(String(p.id))}">
+              <td data-label="عنوان">
+                <strong class="workout-plan-title">${escapeHtml(p.title || '—')}</strong>
+              </td>
+              <td data-label="خلاصه برنامه">
+                <p class="workout-plan-preview">${escapeHtml(preview || '—')}</p>
+              </td>
+              <td data-label="مربی">
+                <span class="workout-plan-trainer">${escapeHtml(p.trainer_full_name || '—')}</span>
+              </td>
+              <td data-label="به‌روزرسانی">
+                <time class="workout-plan-when">${escapeHtml(when)}</time>
+              </td>
+              ${
+                canWrite
+                  ? `<td data-label="عملیات" class="workout-plans-actions-col">
+                      <button type="button" class="btn small ghost" data-edit-plan="${escapeHtml(String(p.id))}">ویرایش</button>
+                    </td>`
+                  : ''
+              }
+            </tr>`
+          })
+          .join('')}
+      </tbody>
+    </table>
+  </div>`
+}
+
 /** @param {HTMLElement} root @param {{ role: string }} user */
 export function mountWorkouts(root, user) {
   const canWrite = user.role === 'manager' || user.role === 'trainer'
@@ -15,7 +80,7 @@ export function mountWorkouts(root, user) {
         chipAttr: 'data-sel',
         emptyText: 'عضوی انتخاب نشده',
       })}
-      <div class="list" data-plans></div>
+      <div class="workout-plans-host" data-plans></div>
       ${
         canWrite
           ? `<form data-form class="form-grid" style="margin-top:1rem">
@@ -33,36 +98,33 @@ export function mountWorkouts(root, user) {
   `
   const status = root.querySelector('[data-status]')
   /** @type {any | null} */ let member = null
+  /** @type {Map<string, any>} */
+  const plansById = new Map()
+
+  function bindEditButtons() {
+    root.querySelectorAll('[data-edit-plan]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-edit-plan')
+        if (!id) return
+        const p = plansById.get(id)
+        const form = root.querySelector('[data-form]')
+        if (!p || !form) return
+        form.querySelector('[name=id]').value = String(p.id)
+        form.querySelector('[name=title]').value = p.title || ''
+        form.querySelector('[name=body]').value = p.body || ''
+      })
+    })
+  }
 
   async function loadPlans() {
     if (!member) return
     const data = await apiGet(`/api/v1/members/${member.id}/workout-plans`)
     const items = data.items || []
-    root.querySelector('[data-plans]').innerHTML = items.length
-      ? items
-          .map(
-            (p) => `<div class="row-item"><div>
-          <h3>${p.title}</h3>
-          <p>${(p.body || '').slice(0, 120)}${(p.body || '').length > 120 ? '…' : ''}</p>
-          <p class="hint">${p.trainer_full_name || '—'} · ${formatDateTime(p.updated_at || p.created_at)}</p>
-        </div>
-        ${canWrite ? `<button type="button" class="btn small ghost" data-edit='${JSON.stringify({ id: p.id, title: p.title, body: p.body })}'>ویرایش</button>` : ''}
-        </div>`,
-          )
-          .join('')
-      : '<p class="hint">برنامه‌ای نیست.</p>'
-    root.querySelectorAll('[data-edit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const raw = btn.getAttribute('data-edit')
-        if (!raw) return
-        const p = JSON.parse(raw)
-        const form = root.querySelector('[data-form]')
-        if (!form) return
-        form.querySelector('[name=id]').value = String(p.id)
-        form.querySelector('[name=title]').value = p.title
-        form.querySelector('[name=body]').value = p.body || ''
-      })
-    })
+    plansById.clear()
+    for (const p of items) plansById.set(String(p.id), p)
+    const host = root.querySelector('[data-plans]')
+    if (host) host.innerHTML = workoutPlansTableHtml(items, { canWrite })
+    bindEditButtons()
   }
 
   bindMemberSearch(
