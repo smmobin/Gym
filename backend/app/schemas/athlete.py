@@ -97,10 +97,20 @@ class AthletePaymentsResponse(BaseModel):
     total: int
 
 
+class AthleteWorkoutPlanItemOut(BaseModel):
+    exercise_name: str
+    exercise_id: Optional[int] = None
+    sets: int
+    amount: int
+    unit: str = "reps"
+    note: Optional[str] = None
+
+
 class AthleteWorkoutPlanOut(BaseModel):
     id: int
     title: str
     body: Optional[str] = None
+    items: list[AthleteWorkoutPlanItemOut] = []
     trainer_full_name: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None

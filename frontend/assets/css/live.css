@@ -862,3 +862,169 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     text-align: right;
   }
 }
+
+/* Structured workout items (editor + athlete view) */
+.workout-editor-label {
+  margin-bottom: 0.45rem;
+}
+.workout-editor-wrap,
+.workout-items-wrap {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 48%),
+    color-mix(in srgb, var(--panel-2) 60%, transparent);
+  overflow: visible;
+}
+.workout-editor-table,
+.workout-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+.workout-editor-table th,
+.workout-items-table th {
+  padding: 0.85rem 0.65rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: right;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, var(--accent) 30%);
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  white-space: nowrap;
+}
+.workout-editor-table td,
+.workout-items-table td {
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+.workout-editor-table tbody tr:last-child td,
+.workout-items-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.workout-editor-num,
+.workout-editor-note,
+.workout-editor-unit {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.45rem;
+  margin: 0;
+}
+.workout-editor-num {
+  max-width: 5.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.workout-editor-actions-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+}
+.workout-editor-toolbar {
+  margin-top: 0.65rem;
+}
+.workout-exercise-combo {
+  min-width: 9rem;
+  z-index: 4;
+}
+.workout-exercise-combo.is-open {
+  z-index: 40;
+}
+.workout-items-card {
+  margin-bottom: 1rem;
+  padding: 0.85rem 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-2) 55%, transparent);
+}
+.workout-items-card:last-child {
+  margin-bottom: 0;
+}
+.workout-items-card-head {
+  margin-bottom: 0.75rem;
+}
+.workout-items-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+.workout-items-card-meta {
+  margin: 0.3rem 0 0;
+}
+.workout-item-name {
+  font-weight: 700;
+}
+.workout-item-unit {
+  display: inline-flex;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, var(--accent) 30%);
+  background: color-mix(in srgb, var(--panel) 75%, transparent);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+.workout-items-legacy {
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px dashed var(--line);
+  background: color-mix(in srgb, var(--panel-2) 65%, transparent);
+}
+.workout-items-legacy-body {
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+.athlete-workout-plans {
+  display: grid;
+  gap: 1rem;
+}
+@media (max-width: 720px) {
+  .workout-editor-wrap,
+  .workout-items-wrap {
+    border: none;
+    background: transparent;
+  }
+  .workout-editor-table thead,
+  .workout-items-table thead {
+    display: none;
+  }
+  .workout-editor-table,
+  .workout-editor-table tbody,
+  .workout-editor-table tr,
+  .workout-editor-table td,
+  .workout-items-table,
+  .workout-items-table tbody,
+  .workout-items-table tr,
+  .workout-items-table td {
+    display: block;
+    width: 100%;
+  }
+  .workout-editor-table tr,
+  .workout-items-table tr {
+    margin-bottom: 0.75rem;
+    padding: 0.55rem 0.35rem;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  }
+  .workout-editor-table td,
+  .workout-items-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-bottom: none;
+    padding: 0.4rem 0.45rem;
+  }
+  .workout-editor-table td::before,
+  .workout-items-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
+  .workout-editor-num {
+    max-width: none;
+  }
+}

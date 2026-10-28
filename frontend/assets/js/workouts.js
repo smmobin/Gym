@@ -2,6 +2,7 @@ import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { setStatus } from './ui.js'
+import { formatWorkoutItemLine, mountWorkoutPlanEditor } from './workout-plan-editor.js'
 
 /** @param {string} value */
 function escapeHtml(value) {
@@ -37,15 +38,18 @@ export function workoutPlansTableHtml(items, opts = {}) {
       <tbody>
         ${items
           .map((p) => {
-            const body = String(p.body || '')
-            const preview = body.slice(0, 140) + (body.length > 140 ? '…' : '')
+            const planItems = Array.isArray(p.items) ? p.items : []
+            const preview = planItems.length
+              ? planItems.map((it, i) => formatWorkoutItemLine(it, i)).join(' · ')
+              : String(p.body || '')
+            const short = preview.slice(0, 140) + (preview.length > 140 ? '…' : '')
             const when = formatDateTime(p.updated_at || p.created_at)
             return `<tr class="workout-plan-row" data-plan-id="${escapeHtml(String(p.id))}">
               <td data-label="عنوان">
                 <strong class="workout-plan-title">${escapeHtml(p.title || '—')}</strong>
               </td>
               <td data-label="خلاصه برنامه">
-                <p class="workout-plan-preview">${escapeHtml(preview || '—')}</p>
+                <p class="workout-plan-preview">${escapeHtml(short || '—')}</p>
               </td>
               <td data-label="مربی">
                 <span class="workout-plan-trainer">${escapeHtml(p.trainer_full_name || '—')}</span>
@@ -83,11 +87,14 @@ export function mountWorkouts(root, user) {
       <div class="workout-plans-host" data-plans></div>
       ${
         canWrite
-          ? `<form data-form class="form-grid" style="margin-top:1rem">
+          ? `<form data-form class="form-grid workout-plan-form" style="margin-top:1rem">
         <input type="hidden" name="id" />
-        <label class="full">عنوان<input name="title" required /></label>
-        <label class="full">متن برنامه<textarea name="body" rows="6" required></textarea></label>
-        <div class="inline-actions">
+        <label class="full">عنوان برنامه<input name="title" required maxlength="160" placeholder="مثلاً برنامه هفته ۱" /></label>
+        <div class="full">
+          <p class="person-select-label workout-editor-label">جدول حرکات</p>
+          <div data-editor-host></div>
+        </div>
+        <div class="inline-actions full">
           <button class="btn" type="submit">ذخیره</button>
           <button class="btn ghost" type="button" data-reset>جدید</button>
         </div>
@@ -101,6 +108,24 @@ export function mountWorkouts(root, user) {
   /** @type {Map<string, any>} */
   const plansById = new Map()
 
+  /** @type {ReturnType<typeof mountWorkoutPlanEditor> | null} */
+  let editor = null
+  if (canWrite) {
+    const host = /** @type {HTMLElement | null} */ (root.querySelector('[data-editor-host]'))
+    if (host) {
+      editor = mountWorkoutPlanEditor(host, {
+        async loadExercises(q = '') {
+          const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''
+          const data = await apiGet(`/api/v1/workout-exercises${qs}`)
+          return data.items || []
+        },
+        async createExercise(name) {
+          return apiPost('/api/v1/workout-exercises', { name })
+        },
+      })
+    }
+  }
+
   function bindEditButtons() {
     root.querySelectorAll('[data-edit-plan]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -111,7 +136,22 @@ export function mountWorkouts(root, user) {
         if (!p || !form) return
         form.querySelector('[name=id]').value = String(p.id)
         form.querySelector('[name=title]').value = p.title || ''
-        form.querySelector('[name=body]').value = p.body || ''
+        const items = Array.isArray(p.items) ? p.items : []
+        editor?.setItems(
+          items.length
+            ? items
+            : p.body
+              ? [
+                  {
+                    exercise_name: String(p.body).slice(0, 120),
+                    sets: 1,
+                    amount: 1,
+                    unit: 'reps',
+                    note: 'از برنامهٔ متنی قبلی',
+                  },
+                ]
+              : [],
+        )
       })
     })
   }
@@ -143,16 +183,23 @@ export function mountWorkouts(root, user) {
 
   root.querySelector('[data-form]')?.addEventListener('submit', async (e) => {
     e.preventDefault()
-    if (!member) return
+    if (!member || !editor) return
     const fd = new FormData(e.target)
     const id = String(fd.get('id') || '')
-    const body = { title: String(fd.get('title')).trim(), body: String(fd.get('body')).trim() }
+    const title = String(fd.get('title') || '').trim()
+    const items = editor.getItems()
+    if (!items.length) {
+      setStatus(status, 'حداقل یک حرکت با نام وارد کنید.', 'error')
+      return
+    }
+    const payload = { title, items }
     try {
-      if (id) await apiPatch(`/api/v1/workout-plans/${id}`, body)
-      else await apiPost(`/api/v1/members/${member.id}/workout-plans`, body)
+      if (id) await apiPatch(`/api/v1/workout-plans/${id}`, payload)
+      else await apiPost(`/api/v1/members/${member.id}/workout-plans`, payload)
       setStatus(status, 'ذخیره شد.', 'ok')
       e.target.reset()
       e.target.querySelector('[name=id]').value = ''
+      editor.reset()
       await loadPlans()
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'ذخیره ناموفق', 'error')
@@ -163,5 +210,6 @@ export function mountWorkouts(root, user) {
     form?.reset()
     const id = form?.querySelector('[name=id]')
     if (id) id.value = ''
+    editor?.reset()
   })
 }

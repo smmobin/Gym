@@ -12,6 +12,7 @@ import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-inp
 import { startSessionActivityGuard } from '../session-activity.js'
 import { initThemeToggle } from '../theme.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
+import { workoutPlanItemsTableHtml } from '../workout-plan-editor.js'
 
 function payResultMessage() {
   const params = new URLSearchParams(location.search)
@@ -189,15 +190,15 @@ async function main() {
 
     const planItems = plans.items || []
     document.querySelector('[data-plans]').innerHTML = planItems.length
-      ? planItems
-          .map(
-            (p) => `<div class="workout"><div>
-          <h3>${p.title}</h3>
-          <p>${p.body || ''}</p>
-          <p class="hint">${p.trainer_full_name || '—'} · ${formatDateTime(p.updated_at || p.created_at)}</p>
-        </div></div>`,
+      ? `<div class="athlete-workout-plans">${planItems
+          .map((p) =>
+            workoutPlanItemsTableHtml(p.items || [], {
+              title: p.title || 'برنامه',
+              meta: `${p.trainer_full_name || '—'} · ${formatDateTime(p.updated_at || p.created_at)}`,
+              legacyBody: p.body || '',
+            }),
           )
-          .join('')
+          .join('')}</div>`
       : '<p class="hint">برنامه‌ای از مربی نیست.</p>'
 
     paintAthleteNotifications(

@@ -30,7 +30,7 @@ from app.models.session import StaffSession
 from app.models.trainer import TrainerMemberAssignment
 from app.models.trial_lead import TrialLead
 from app.models.user import User
-from app.models.workout import WorkoutPlan
+from app.models.workout import WorkoutExercise, WorkoutPlan
 
 __all__ = [
     "AthleteNotification",
@@ -65,5 +65,6 @@ __all__ = [
     "TrialLead",
     "TrialLeadStatus",
     "User",
+    "WorkoutExercise",
     "WorkoutPlan",
 ]

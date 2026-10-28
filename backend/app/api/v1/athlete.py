@@ -37,6 +37,7 @@ from app.schemas.athlete import (
 )
 from app.services import athlete as athlete_svc
 from app.services import athlete_classes as athlete_class_svc
+from app.services import workout_plans as plan_svc
 from app.services.athlete_session import (
     create_athlete_session,
     revoke_athlete_session_by_token,
@@ -210,6 +211,7 @@ def athlete_workout_plans(
             id=p.id,
             title=p.title,
             body=p.body,
+            items=plan_svc.plan_out_fields(p)["items"],
             trainer_full_name=p.trainer.full_name if p.trainer else None,
             created_at=p.created_at,
             updated_at=p.updated_at,

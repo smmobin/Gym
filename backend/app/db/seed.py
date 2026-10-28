@@ -53,6 +53,7 @@ from app.models import (
     TrialLead,
     TrialLeadStatus,
     User,
+    WorkoutExercise,
     WorkoutPlan,
 )
 from app.services.debt import member_debt
@@ -76,6 +77,7 @@ def clear_domain_data(session: Session) -> None:
         Locker,
         TrainerMemberAssignment,
         WorkoutPlan,
+        WorkoutExercise,
         Attendance,
         Payment,
         Membership,
@@ -857,6 +859,55 @@ def seed(session: Session | None = None) -> dict[str, int]:
         _ensure_trainer_assignment(trainer1.id, ali.id)
         _ensure_trainer_assignment(trainer2.id, ali.id)
 
+        def _seed_exercise(name: str) -> WorkoutExercise:
+            key = " ".join(name.strip().split()).casefold()
+            row = session.scalar(select(WorkoutExercise).where(WorkoutExercise.name_key == key))
+            if row is None:
+                row = WorkoutExercise(
+                    name=name.strip(),
+                    name_key=key,
+                    created_by_user_id=trainer1.id,
+                )
+                session.add(row)
+                session.flush()
+            return row
+
+        squat = _seed_exercise("اسکات")
+        bench = _seed_exercise("پرس سینه")
+        plank = _seed_exercise("پلانک")
+        seed_items = [
+            {
+                "exercise_id": squat.id,
+                "exercise_name": squat.name,
+                "sets": 3,
+                "amount": 10,
+                "unit": "reps",
+                "note": None,
+            },
+            {
+                "exercise_id": bench.id,
+                "exercise_name": bench.name,
+                "sets": 3,
+                "amount": 8,
+                "unit": "reps",
+                "note": None,
+            },
+            {
+                "exercise_id": plank.id,
+                "exercise_name": plank.name,
+                "sets": 3,
+                "amount": 45,
+                "unit": "seconds",
+                "note": None,
+            },
+        ]
+        seed_body = "\n".join(
+            [
+                "اسکات · ۳ ست · ۱۰ تکرار",
+                "پرس سینه · ۳ ست · ۸ تکرار",
+                "پلانک · ۳ ست · ۴۵ ثانیه",
+            ]
+        )
         wp_exists = session.scalar(
             select(WorkoutPlan).where(
                 WorkoutPlan.member_id == negar.id,
@@ -869,9 +920,15 @@ def seed(session: Session | None = None) -> dict[str, int]:
                     member_id=negar.id,
                     trainer_user_id=trainer1.id,
                     title="برنامه هفته ۱",
-                    body="اسکات ۳×۱۰ — پرس سینه ۳×۸ — پلانک ۳×۴۵ث",
+                    body=seed_body,
+                    items=seed_items,
                 )
             )
+        else:
+            # Keep demo plan structured if an older text-only seed row exists.
+            if not wp_exists.items:
+                wp_exists.items = seed_items
+                wp_exists.body = seed_body
 
         group_class, _ = _get_or_create_group_class(
             session,

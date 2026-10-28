@@ -16,7 +16,11 @@ describe('workout plans table', () => {
         {
           id: 7,
           title: 'برنامه هفته ۱',
-          body: 'اسکات ۳×۱۰ — پرس سینه ۳×۸ — پلانک ۳×۴۵ث',
+          body: 'اسکات · ۳ ست · ۱۰ تکرار',
+          items: [
+            { exercise_name: 'اسکات', sets: 3, amount: 10, unit: 'reps' },
+            { exercise_name: 'پرس سینه', sets: 3, amount: 8, unit: 'reps' },
+          ],
           trainer_full_name: 'مربی یک',
           updated_at: '2026-10-22T20:26:00.000Z',
         },
@@ -26,7 +30,8 @@ describe('workout plans table', () => {
     expect(html).toContain('workout-plans-table')
     expect(html).toContain('responsive-table')
     expect(html).toContain('برنامه هفته ۱')
-    expect(html).toContain('اسکات ۳×۱۰')
+    expect(html).toContain('اسکات')
+    expect(html).toContain('تکرار')
     expect(html).toContain('مربی یک')
     expect(html).toContain('data-edit-plan="7"')
     expect(html).toContain('ویرایش')

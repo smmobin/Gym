@@ -205,17 +205,40 @@ def test_workout_trainer_own_ok_other_403(client: TestClient) -> None:
 
     created = client.post(
         f"/api/v1/members/{negar_id}/workout-plans",
-        json={"title": "برنامه تست", "body": "اسکات ۳×۸"},
+        json={
+            "title": "برنامه تست",
+            "items": [
+                {
+                    "exercise_name": "اسکات",
+                    "sets": 3,
+                    "amount": 8,
+                    "unit": "reps",
+                }
+            ],
+        },
     )
     assert created.status_code == 201
     plan_id = created.json()["id"]
+    assert created.json()["items"][0]["exercise_name"] == "اسکات"
+    assert "3 ست" in (created.json().get("body") or "")
 
     patched = client.patch(
         f"/api/v1/workout-plans/{plan_id}",
-        json={"title": "برنامه تست ویرایش", "body": "اسکات ۴×۸"},
+        json={
+            "title": "برنامه تست ویرایش",
+            "items": [
+                {
+                    "exercise_name": "اسکات",
+                    "sets": 4,
+                    "amount": 8,
+                    "unit": "reps",
+                }
+            ],
+        },
     )
     assert patched.status_code == 200
     assert patched.json()["title"] == "برنامه تست ویرایش"
+    assert patched.json()["items"][0]["sets"] == 4
 
     # Member without active assignment to this trainer (guest)
     guest_id = _member_id("M-1009")
@@ -225,7 +248,12 @@ def test_workout_trainer_own_ok_other_403(client: TestClient) -> None:
     assert (
         client.post(
             f"/api/v1/members/{guest_id}/workout-plans",
-            json={"title": "ممنوع"},
+            json={
+                "title": "ممنوع",
+                "items": [
+                    {"exercise_name": "اسکات", "sets": 1, "amount": 5, "unit": "reps"}
+                ],
+            },
         ).status_code
         == 403
     )
@@ -255,7 +283,12 @@ def test_receptionist_read_ok_write_forbidden(client: TestClient) -> None:
     assert (
         client.post(
             f"/api/v1/members/{negar_id}/workout-plans",
-            json={"title": "منشی نباید"},
+            json={
+                "title": "منشی نباید",
+                "items": [
+                    {"exercise_name": "اسکات", "sets": 1, "amount": 5, "unit": "reps"}
+                ],
+            },
         ).status_code
         == 403
     )
@@ -264,6 +297,30 @@ def test_receptionist_read_ok_write_forbidden(client: TestClient) -> None:
 def test_workout_unauthorized(client: TestClient) -> None:
     member_id = _member_id("M-1004")
     assert client.get(f"/api/v1/members/{member_id}/workout-plans").status_code == 401
+
+
+def test_workout_exercise_catalog_create_and_list(client: TestClient) -> None:
+    _login(client, "09120000003")
+    empty = client.get("/api/v1/workout-exercises")
+    assert empty.status_code == 200
+    before = empty.json()["total"]
+
+    created = client.post("/api/v1/workout-exercises", json={"name": "  لانج جلو  "})
+    assert created.status_code == 201
+    assert created.json()["name"] == "لانج جلو"
+
+    again = client.post("/api/v1/workout-exercises", json={"name": "لانج جلو"})
+    assert again.status_code == 201
+    assert again.json()["id"] == created.json()["id"]
+
+    listed = client.get("/api/v1/workout-exercises", params={"q": "لانج"})
+    assert listed.status_code == 200
+    names = [i["name"] for i in listed.json()["items"]]
+    assert "لانج جلو" in names
+    assert listed.json()["total"] >= 1
+    all_rows = client.get("/api/v1/workout-exercises")
+    assert all_rows.status_code == 200
+    assert all_rows.json()["total"] >= before
 
 
 def test_assign_non_trainer_user_400(client: TestClient) -> None:

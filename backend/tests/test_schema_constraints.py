@@ -51,6 +51,7 @@ def test_expected_tables_exist_after_migration() -> None:
         "locker_assignments",
         "trainer_member_assignments",
         "workout_plans",
+        "workout_exercises",
         "trial_leads",
         "expenses",
         "staff_sessions",
@@ -78,6 +79,7 @@ def test_alembic_current_revision() -> None:
         "c3d4e5f6a7b8",
         "e5f6a7b8c9d0",
         "f6a7b8c9d0e1",
+        "g7a8b9c0d1e2",
     }
 
 
