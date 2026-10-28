@@ -1,5 +1,5 @@
 import { apiErrorMessage, apiGet, apiPost } from './api.js'
-import { bindMemberSearch } from './members.js'
+import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -56,9 +56,12 @@ export function mountTrainers(root, user) {
     <article class="panel">
       <header class="panel-head"><h2>واگذاری مربی</h2></header>
       <div class="status-msg" data-status hidden></div>
-      <label>جستجوی عضو<input type="search" data-q placeholder="نام یا موبایل" autocomplete="off" /></label>
-      <div class="member-pick" data-pick></div>
-      <p class="hint" data-sel>عضوی انتخاب نشده</p>
+      ${personSelectRowHtml({
+        label: 'جستجوی عضو',
+        chipAttr: 'data-sel',
+        placeholder: 'نام یا موبایل',
+        emptyText: 'عضوی انتخاب نشده',
+      })}
       <label>مربی<select data-trainers></select></label>
       <button type="button" class="btn" data-assign style="margin-top:1rem">وصل مربی</button>
       <header class="panel-head" style="margin-top:1.25rem"><h3 data-roster-title>شاگردان مربی</h3></header>
@@ -167,7 +170,7 @@ export function mountTrainers(root, user) {
     /** @type {HTMLInputElement} */ (root.querySelector('[data-q]')),
     async (m) => {
       member = m
-      root.querySelector('[data-sel]').textContent = `${m.first_name} ${m.last_name}`
+      setPersonChip(root.querySelector('[data-sel]'), m)
       await loadAssignments()
     },
   )

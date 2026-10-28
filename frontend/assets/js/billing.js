@@ -3,7 +3,7 @@ import { createAutoRefresh } from './auto-refresh.js'
 import { formatJalaliDate, formatToman, onlineMethodLabel, PAYMENT_METHOD_LABEL } from './format.js'
 import { LIVE } from './live-data.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
-import { bindMemberSearch } from './members.js'
+import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { setStatus } from './ui.js'
 
@@ -16,9 +16,7 @@ export function mountBilling(root, user) {
   root.innerHTML = `
     <article class="panel">
       <header class="panel-head"><h2>مالی و تمدید</h2></header>
-      <label class="full">جست‌وجوی عضو<input type="search" data-q /></label>
-      <div class="member-pick" data-pick></div>
-      <p class="hint" data-selected>عضوی انتخاب نشده</p>
+      ${personSelectRowHtml({ label: 'جست‌وجوی عضو', emptyText: 'عضوی انتخاب نشده' })}
       <p class="hint" data-lock></p>
       <p class="debt-line" data-debt></p>
       <p class="hint" data-freeze-cap></p>
@@ -226,8 +224,7 @@ export function mountBilling(root, user) {
     (root.querySelector('[data-q]')),
     async (m) => {
       selected = m
-      root.querySelector('[data-selected]').textContent =
-        `${m.first_name} ${m.last_name} — ${m.display_id}`
+      setPersonChip(root.querySelector('[data-selected]'), m)
       await locker.setMember(m.id)
       await loadMember(m.id)
     },

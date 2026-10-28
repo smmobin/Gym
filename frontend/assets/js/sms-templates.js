@@ -1,7 +1,7 @@
 /** SMS templates — live send when /sms/status enabled; otherwise placeholder. */
 
 import { apiGet, apiPost, ApiError } from './api.js'
-import { bindMemberSearch } from './members.js'
+import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 
 const FALLBACK_TEMPLATES = [
   {
@@ -32,12 +32,15 @@ export function mountSmsTemplates(root) {
         <span class="tag" data-sms-tag>در حال بررسی…</span>
       </header>
       <p class="hint" data-sms-hint></p>
-      <div class="form-grid" data-sms-picker hidden>
-        <label>عضو گیرنده
-          <input type="search" data-sms-member-q placeholder="جستجوی نام یا موبایل" autocomplete="off" />
-        </label>
-        <p class="hint" data-sms-member-label>عضوی انتخاب نشده است.</p>
-        <div data-sms-member-pick></div>
+      <div data-sms-picker hidden>
+        ${personSelectRowHtml({
+          label: 'عضو گیرنده',
+          inputAttr: 'data-sms-member-q',
+          pickAttr: 'data-sms-member-pick',
+          chipAttr: 'data-sms-member-label',
+          placeholder: 'جستجوی نام یا موبایل',
+          emptyText: 'عضوی انتخاب نشده است',
+        })}
       </div>
       <p class="hint" data-sms-result hidden></p>
       <div class="list" data-list></div>
@@ -138,7 +141,7 @@ export function mountSmsTemplates(root) {
     bindMemberSearch(memberPick, memberInput, (member) => {
       selected = member
       const name = `${member.first_name || ''} ${member.last_name || ''}`.trim()
-      memberLabel.textContent = `${name} — ${member.display_id || ''} — ${member.mobile || ''}`
+      setPersonChip(memberLabel, member)
       memberInput.value = name
       setResult('', true)
     })

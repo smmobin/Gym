@@ -3,7 +3,7 @@ import { createAutoRefresh } from './auto-refresh.js'
 import { emitLive, LIVE } from './live-data.js'
 import { ATTENDANCE_TYPE_LABEL, formatDateTime, formatToman } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
-import { bindMemberSearch } from './members.js'
+import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { setStatus } from './ui.js'
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
@@ -13,9 +13,7 @@ export function mountAttendance(root, user) {
     <div class="grid-2">
       <article class="panel">
         <header class="panel-head"><h2>ثبت حضور</h2></header>
-        <label class="full">جست‌وجوی عضو<input type="search" data-q /></label>
-        <div class="member-pick" data-pick></div>
-        <p class="hint" data-selected>عضوی انتخاب نشده</p>
+        ${personSelectRowHtml({ label: 'جست‌وجوی عضو', emptyText: 'عضوی انتخاب نشده' })}
         <p class="hint" data-lock></p>
         <label>نوع ورود
           <select data-type>
@@ -54,8 +52,7 @@ export function mountAttendance(root, user) {
     (root.querySelector('[data-q]')),
     async (m) => {
       selected = m
-      root.querySelector('[data-selected]').textContent =
-        `${m.first_name} ${m.last_name} — ${m.display_id}`
+      setPersonChip(root.querySelector('[data-selected]'), m)
       if (locker) await locker.setMember(m.id)
     },
   )

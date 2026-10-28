@@ -266,6 +266,105 @@ export function mountMembers(root, user) {
 }
 
 /**
+ * Shared search + selected-person chip row (RTL).
+ * @param {{
+ *   label?: string,
+ *   inputAttr?: string,
+ *   pickAttr?: string,
+ *   chipAttr?: string,
+ *   emptyText?: string,
+ *   placeholder?: string,
+ * }} [opts]
+ */
+export function personSelectRowHtml(opts = {}) {
+  const label = opts.label || 'جستجوی عضو'
+  const inputAttr = opts.inputAttr || 'data-q'
+  const pickAttr = opts.pickAttr || 'data-pick'
+  const chipAttr = opts.chipAttr || 'data-selected'
+  const emptyText = opts.emptyText || 'عضوی انتخاب نشده'
+  const ph = opts.placeholder ? ` placeholder="${escapeAttr(opts.placeholder)}"` : ''
+  return `<div class="person-select">
+    <div class="person-select-search member-search">
+      <label>
+        <span class="person-select-label">${escapeAttr(label)}</span>
+        <input type="search" ${inputAttr}${ph} autocomplete="off" />
+      </label>
+      <div class="member-pick is-overlay" ${pickAttr} hidden></div>
+    </div>
+    <div class="person-chip is-empty" ${chipAttr} data-person-chip>
+      <span class="person-chip-mark" aria-hidden="true"></span>
+      <div class="person-chip-text">
+        <strong class="person-chip-title">${escapeAttr(emptyText)}</strong>
+        <span class="person-chip-meta" hidden></span>
+      </div>
+    </div>
+  </div>`
+}
+
+/**
+ * @param {HTMLElement | null} el chip root (`[data-person-chip]` or legacy host)
+ * @param {any | null} person
+ * @param {{ emptyText?: string, title?: string, meta?: string }} [opts]
+ */
+export function setPersonChip(el, person, opts = {}) {
+  if (!el) return
+  const chip =
+    el.matches?.('[data-person-chip]')
+      ? el
+      : el.querySelector?.('[data-person-chip]') || el
+  if (!(chip instanceof HTMLElement)) return
+  const emptyText = opts.emptyText || 'عضوی انتخاب نشده'
+  let titleEl = chip.querySelector('.person-chip-title')
+  let metaEl = chip.querySelector('.person-chip-meta')
+  // Upgrade a plain hint node into a chip shell if needed.
+  if (!titleEl) {
+    chip.classList.add('person-chip')
+    chip.setAttribute('data-person-chip', '')
+    chip.innerHTML = `<span class="person-chip-mark" aria-hidden="true"></span>
+      <div class="person-chip-text">
+        <strong class="person-chip-title"></strong>
+        <span class="person-chip-meta" hidden></span>
+      </div>`
+    titleEl = chip.querySelector('.person-chip-title')
+    metaEl = chip.querySelector('.person-chip-meta')
+  }
+  if (!person) {
+    chip.classList.add('is-empty')
+    chip.classList.remove('is-selected')
+    if (titleEl) titleEl.textContent = emptyText
+    if (metaEl instanceof HTMLElement) {
+      metaEl.textContent = ''
+      metaEl.hidden = true
+    }
+    return
+  }
+  const title =
+    opts.title ||
+    `${person.first_name || ''} ${person.last_name || ''}`.trim() ||
+    person.full_name ||
+    '—'
+  const meta =
+    opts.meta != null
+      ? opts.meta
+      : [person.display_id, person.mobile].filter(Boolean).join(' · ')
+  chip.classList.remove('is-empty')
+  chip.classList.add('is-selected')
+  if (titleEl) titleEl.textContent = title
+  if (metaEl instanceof HTMLElement) {
+    metaEl.textContent = meta
+    metaEl.hidden = !meta
+  }
+}
+
+/** @param {string} value */
+function escapeAttr(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+}
+
+/**
  * Ensure search input + results sit in a relative wrapper for the overlay dropdown.
  * @param {HTMLInputElement} input
  * @param {HTMLElement} pickRoot

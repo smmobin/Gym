@@ -486,6 +486,106 @@ html[data-theme="light"] .login-shell {
   border: 1px dashed var(--line); padding: 1rem; margin-top: 1rem; border-radius: 12px;
   background: var(--bg-elevated);
 }
+.person-select {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(12rem, 0.9fr);
+  gap: 0.75rem;
+  align-items: end;
+  width: 100%;
+  margin: 0.35rem 0 0.75rem;
+}
+.person-select-search {
+  min-width: 0;
+}
+.person-select-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.person-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 3.05rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-2) 88%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 35%, transparent) inset;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.person-chip-mark {
+  flex: 0 0 auto;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.person-chip-mark::before {
+  content: '؟';
+}
+.person-chip-text {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+  text-align: right;
+}
+.person-chip-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.person-chip-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.person-chip.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    color-mix(in srgb, var(--panel) 92%, var(--panel-2));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent) inset,
+    0 8px 18px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.person-chip.is-selected .person-chip-mark {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  color: var(--accent-ink);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.person-chip.is-selected .person-chip-mark::before {
+  content: '✓';
+}
+.person-chip.is-selected .person-chip-title {
+  color: var(--text);
+}
+.person-chip.is-selected .person-chip-meta {
+  color: color-mix(in srgb, var(--muted) 70%, var(--accent) 30%);
+}
+@media (max-width: 720px) {
+  .person-select {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
 .member-search {
   position: relative;
   display: grid;

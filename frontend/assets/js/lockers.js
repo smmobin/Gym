@@ -2,7 +2,7 @@ import { ApiError, apiErrorMessage, apiGet, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { LIVE } from './live-data.js'
 import { formatJalaliDate } from './format.js'
-import { bindMemberSearch } from './members.js'
+import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
@@ -100,9 +100,11 @@ export function mountLockers(root, user) {
       <header class="panel-head"><h2>واگذاری</h2></header>
       <p class="hint" data-sel-label>کمدی انتخاب نشده</p>
       <p class="hint" data-plans-hint></p>
-      <label>جستجوی عضو<input type="search" data-q /></label>
-      <div class="member-pick" data-pick></div>
-      <p class="hint" data-member-label>عضوی انتخاب نشده</p>
+      ${personSelectRowHtml({
+        label: 'جستجوی عضو',
+        chipAttr: 'data-member-label',
+        emptyText: 'عضوی انتخاب نشده',
+      })}
       <div class="list" data-eligibility></div>
       <button type="button" class="btn" data-assign>واگذاری</button>
       <p class="hint">فقط عضویت فعال با طرح شامل‌کمد. اجارهٔ جدا در v1 نیست.
@@ -114,7 +116,7 @@ export function mountLockers(root, user) {
   const pager = createListPager(root.querySelector('[data-pager]'))
   const plansHint = root.querySelector('[data-plans-hint]')
   const eligibilityEl = root.querySelector('[data-eligibility]')
-  const memberLabel = root.querySelector('[data-member-label]')
+  const memberLabel = /** @type {HTMLElement | null} */ (root.querySelector('[data-member-label]'))
   /** @type {any[]} */ let lockers = []
   /** @type {any | null} */ let selected = null
   /** @type {any | null} */ let member = null
@@ -222,9 +224,7 @@ export function mountLockers(root, user) {
     async (m) => {
       member = m
       const name = `${m.first_name || ''} ${m.last_name || ''}`.trim()
-      if (memberLabel) {
-        memberLabel.textContent = `${name} — ${m.display_id || ''} — ${m.mobile || ''}`
-      }
+      setPersonChip(memberLabel, m)
       memberMemberships = []
       renderEligibility()
       try {

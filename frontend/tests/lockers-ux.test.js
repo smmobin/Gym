@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../assets/js/members.js', () => ({
   bindMemberSearch: vi.fn(),
+  personSelectRowHtml: () =>
+    `<div class="person-select"><div class="member-search"><label><input type="search" data-q /></label><div class="member-pick" data-pick></div></div><div data-member-label data-person-chip class="person-chip is-empty"><strong class="person-chip-title">عضوی انتخاب نشده</strong></div></div>`,
+  setPersonChip: vi.fn(),
 }))
 
 vi.mock('../assets/js/ui.js', () => ({

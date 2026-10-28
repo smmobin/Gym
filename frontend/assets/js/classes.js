@@ -2,7 +2,7 @@ import { ApiError, apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { formatDateTimeShort, genderLabelFa } from './format.js'
 import { emitLive, LIVE } from './live-data.js'
-import { bindMemberSearch } from './members.js'
+import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
@@ -26,8 +26,13 @@ export function mountClasses(root, user) {
         <div class="list" data-bookings></div>
         ${
           canWrite
-            ? `<label>جستجوی عضو<input type="search" data-mq /></label>
-               <div class="member-pick" data-mpick></div>
+            ? `${personSelectRowHtml({
+                label: 'جستجوی عضو',
+                inputAttr: 'data-mq',
+                pickAttr: 'data-mpick',
+                chipAttr: 'data-member-sel',
+                emptyText: 'عضوی انتخاب نشده',
+              })}
                <button type="button" class="btn" data-book style="margin-top:0.75rem">رزرو</button>`
             : ''
         }
@@ -249,6 +254,7 @@ export function mountClasses(root, user) {
       (root.querySelector('[data-mq]')),
       (m) => {
         pickMember = m
+        setPersonChip(root.querySelector('[data-member-sel]'), m)
       },
     )
     root.querySelector('[data-book]')?.addEventListener('click', async () => {

@@ -1,6 +1,6 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
-import { bindMemberSearch } from './members.js'
+import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { setStatus } from './ui.js'
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
@@ -10,9 +10,11 @@ export function mountWorkouts(root, user) {
     <article class="panel">
       <header class="panel-head"><h2>برنامه تمرینی</h2></header>
       <div class="status-msg" data-status hidden></div>
-      <label>جستجوی شاگرد<input type="search" data-q /></label>
-      <div class="member-pick" data-pick></div>
-      <p class="hint" data-sel>عضوی انتخاب نشده</p>
+      ${personSelectRowHtml({
+        label: 'جستجوی شاگرد',
+        chipAttr: 'data-sel',
+        emptyText: 'عضوی انتخاب نشده',
+      })}
       <div class="list" data-plans></div>
       ${
         canWrite
@@ -68,7 +70,7 @@ export function mountWorkouts(root, user) {
     root.querySelector('[data-q]'),
     async (m) => {
       member = m
-      root.querySelector('[data-sel]').textContent = `${m.first_name} ${m.last_name}`
+      setPersonChip(root.querySelector('[data-sel]'), m)
       try {
         await loadPlans()
       } catch (err) {
