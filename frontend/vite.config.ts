@@ -22,9 +22,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0', // phone / LAN access
     port: 5173,
-    allowedHosts: true, // Cloudflare Tunnel / Ngrok host headers
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
