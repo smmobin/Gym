@@ -497,9 +497,14 @@ html[data-theme="light"] .login-shell {
 .person-select-search {
   min-width: 0;
 }
+/* Kill label field margins so chip lines up with the search input, not the label box. */
+.person-select .person-select-search > label {
+  margin-block: 0;
+  gap: 0.35rem;
+}
 .person-select-label {
   display: block;
-  margin-bottom: 0.35rem;
+  margin: 0;
   color: var(--muted);
   font-size: 0.86rem;
   font-weight: 600;
@@ -507,27 +512,30 @@ html[data-theme="light"] .login-shell {
 .person-chip {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.65rem;
+  box-sizing: border-box;
+  width: 100%;
   min-height: 2.75rem;
+  height: 2.75rem;
   margin: 0;
-  padding: 0.55rem 0.8rem;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel-2) 88%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 35%, transparent) inset;
+  padding: 0 var(--field-pad-x);
+  border-radius: var(--field-radius);
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  box-shadow: var(--field-shadow);
   transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 .person-chip-mark {
   flex: 0 0 auto;
-  width: 2.15rem;
-  height: 2.15rem;
+  width: 1.7rem;
+  height: 1.7rem;
   border-radius: 999px;
   display: grid;
   place-items: center;
   background: var(--panel);
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
 }
 .person-chip-mark::before {
@@ -536,7 +544,7 @@ html[data-theme="light"] .login-shell {
 .person-chip-text {
   min-width: 0;
   display: grid;
-  gap: 0.12rem;
+  gap: 0.08rem;
   text-align: right;
 }
 .person-chip-title {
@@ -544,26 +552,30 @@ html[data-theme="light"] .login-shell {
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--muted);
-  line-height: 1.35;
+  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .person-chip-meta {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--muted);
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .person-chip.is-selected {
-  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  height: auto;
+  min-height: 2.75rem;
+  padding-block: 0.35rem;
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--field-border));
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
-    color-mix(in srgb, var(--panel) 92%, var(--panel-2));
+    color-mix(in srgb, var(--field-bg) 92%, var(--panel-2));
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent) inset,
+    var(--field-shadow),
     0 8px 18px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .person-chip.is-selected .person-chip-mark {
@@ -585,6 +597,9 @@ html[data-theme="light"] .login-shell {
   .person-select {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+  .person-chip.is-empty {
+    height: 2.75rem;
   }
 }
 .member-search {
