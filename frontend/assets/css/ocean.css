@@ -506,20 +506,16 @@ html[data-theme="light"] .landing-page .program img {
   border-radius: 18px;
   background: var(--panel);
   padding: 1.35rem 1.2rem;
-  display: grid;
-  align-content: space-between;
+  display: flex;
+  flex-direction: column;
   gap: 0.85rem;
   height: 100%;
   min-height: 0;
   position: relative;
 }
-/* Body (title/price/bullets) vs CTA — space-between keeps buttons level across cards */
-.plan-body {
-  display: grid;
-  gap: 0.85rem;
-  min-width: 0;
-}
+/* CTA sticks to card bottom so buttons align across unequal bullet lists */
 .plan > .btn {
+  margin-top: auto;
   width: 100%;
   box-sizing: border-box;
   text-align: center;

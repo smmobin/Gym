@@ -82,11 +82,9 @@ export function renderPublicPlanCards(plans, featuredId) {
           : ''
       return `<article class="plan${featured ? ' featured' : ''}" data-plan-id="${plan.id}">
         ${tag}
-        <div class="plan-body">
-          <h3>${escapeHtml(plan.name)}</h3>
-          <p class="price">${price} <small>تومان</small></p>
-          ${list}
-        </div>
+        <h3>${escapeHtml(plan.name)}</h3>
+        <p class="price">${price} <small>تومان</small></p>
+        ${list}
         <a class="${ctaClass}" href="#trial">${ctaLabel}</a>
       </article>`
     })
