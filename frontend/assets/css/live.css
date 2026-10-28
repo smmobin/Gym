@@ -890,8 +890,10 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .workout-editor-table,
 .workout-items-table {
   width: 100%;
+  min-width: 0;
   border-collapse: collapse;
   margin: 0;
+  table-layout: auto;
 }
 .workout-editor-table th,
 .workout-items-table th {
@@ -936,7 +938,9 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   margin-top: 0.65rem;
 }
 .workout-exercise-combo {
-  min-width: 9rem;
+  min-width: 0;
+  width: 100%;
+  max-width: 16rem;
   z-index: 4;
 }
 .workout-exercise-combo.is-open {
@@ -990,14 +994,33 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   display: grid;
   gap: 1rem;
 }
-@media (max-width: 720px) {
+
+/* Narrow / mobile: stack workout editor + related blocks as cards */
+@media (max-width: 900px) {
+  .person-select {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'label'
+      'search'
+      'chip';
+  }
+  .workout-plans-wrap,
   .workout-editor-wrap,
   .workout-items-wrap {
     border: none;
     background: transparent;
+    overflow: visible;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+  .workout-editor-table,
+  .workout-items-table,
+  .workout-plans-table {
+    min-width: 0 !important;
   }
   .workout-editor-table thead,
-  .workout-items-table thead {
+  .workout-items-table thead,
+  .workout-plans-table thead {
     display: none;
   }
   .workout-editor-table,
@@ -1007,35 +1030,85 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .workout-items-table,
   .workout-items-table tbody,
   .workout-items-table tr,
-  .workout-items-table td {
+  .workout-items-table td,
+  .workout-plans-table,
+  .workout-plans-table tbody,
+  .workout-plans-table tr,
+  .workout-plans-table td {
     display: block;
     width: 100%;
   }
   .workout-editor-table tr,
-  .workout-items-table tr {
-    margin-bottom: 0.75rem;
-    padding: 0.55rem 0.35rem;
+  .workout-items-table tr,
+  .workout-plans-table tr {
+    margin-bottom: 0.85rem;
+    padding: 0.85rem 0.9rem;
     border-radius: 14px;
     border: 1px solid var(--line);
-    background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+    background: color-mix(in srgb, var(--panel-2) 72%, transparent);
+  }
+  .workout-editor-table tr:last-child,
+  .workout-items-table tr:last-child,
+  .workout-plans-table tr:last-child {
+    margin-bottom: 0;
   }
   .workout-editor-table td,
-  .workout-items-table td {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.75rem;
+  .workout-items-table td,
+  .workout-plans-table td {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 30%) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.55rem 0.75rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    padding: 0.55rem 0;
+  }
+  .workout-editor-table td:last-child,
+  .workout-items-table td:last-child,
+  .workout-plans-table td:last-child {
     border-bottom: none;
-    padding: 0.4rem 0.45rem;
+    padding-bottom: 0;
   }
   .workout-editor-table td::before,
-  .workout-items-table td::before {
+  .workout-items-table td::before,
+  .workout-plans-table td::before {
     content: attr(data-label);
     color: var(--muted);
     font-size: 0.78rem;
-    font-weight: 600;
-    flex: 0 0 auto;
+    font-weight: 650;
   }
-  .workout-editor-num {
+  .workout-editor-table td[data-label=""]::before,
+  .workout-editor-table td:not([data-label])::before {
+    display: none;
+  }
+  .workout-editor-num,
+  .workout-editor-note,
+  .workout-editor-unit,
+  .workout-exercise-combo,
+  .workout-editor-table .custom-select,
+  .workout-editor-table .custom-combobox {
     max-width: none;
+    width: 100%;
+    min-width: 0;
+  }
+  .workout-editor-actions-col {
+    width: auto;
+    text-align: right;
+  }
+  .workout-editor-actions-col .btn,
+  .workout-plans-actions-col .btn {
+    width: 100%;
+  }
+  .workout-plan-form .inline-actions {
+    width: 100%;
+  }
+  .workout-plan-form .inline-actions .btn {
+    flex: 1 1 auto;
+    min-width: 7rem;
+  }
+  .workout-editor-toolbar {
+    width: 100%;
+  }
+  .workout-editor-toolbar .btn {
+    width: 100%;
   }
 }

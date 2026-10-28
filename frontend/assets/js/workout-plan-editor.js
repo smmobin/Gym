@@ -116,7 +116,7 @@ export function mountWorkoutPlanEditor(host, opts) {
   host.classList.add('workout-plan-editor')
   host.innerHTML = `
     <div class="table-wrap workout-editor-wrap">
-      <table class="workout-editor-table">
+      <table class="responsive-table workout-editor-table">
         <thead>
           <tr>
             <th scope="col">#</th>
@@ -125,7 +125,7 @@ export function mountWorkoutPlanEditor(host, opts) {
             <th scope="col">در هر ست</th>
             <th scope="col">واحد</th>
             <th scope="col">نکته</th>
-            <th scope="col" class="workout-editor-actions-col"></th>
+            <th scope="col" class="workout-editor-actions-col"><span class="visually-hidden">عملیات</span></th>
           </tr>
         </thead>
         <tbody data-editor-body></tbody>
@@ -351,7 +351,7 @@ export function mountWorkoutPlanEditor(host, opts) {
           </select>
         </td>
         <td data-label="نکته"><input type="text" maxlength="240" class="workout-editor-note" data-field="note" value="${escapeHtml(row.note || '')}" placeholder="اختیاری" /></td>
-        <td data-label="" class="workout-editor-actions-col">
+        <td data-label="عملیات" class="workout-editor-actions-col">
           <button type="button" class="btn small ghost" data-remove-row ${rows.length <= 1 ? 'disabled' : ''}>حذف</button>
         </td>
       `
