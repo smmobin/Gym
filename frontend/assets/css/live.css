@@ -516,9 +516,9 @@ html[data-theme="light"] .login-shell {
   box-sizing: border-box;
   width: 100%;
   min-height: 2.75rem;
-  height: 2.75rem;
+  height: auto;
   margin: 0;
-  padding: 0 var(--field-pad-x);
+  padding: 30px 16.2px;
   border-radius: var(--field-radius);
   border: 1px solid var(--field-border);
   background: var(--field-bg);
@@ -567,9 +567,6 @@ html[data-theme="light"] .login-shell {
   white-space: nowrap;
 }
 .person-chip.is-selected {
-  height: auto;
-  min-height: 2.75rem;
-  padding-block: 0.35rem;
   border-color: color-mix(in srgb, var(--accent) 48%, var(--field-border));
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
@@ -597,9 +594,6 @@ html[data-theme="light"] .login-shell {
   .person-select {
     grid-template-columns: 1fr;
     align-items: stretch;
-  }
-  .person-chip.is-empty {
-    height: 2.75rem;
   }
 }
 .member-search {
