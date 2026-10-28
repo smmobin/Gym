@@ -36,6 +36,49 @@ async function startOnlinePayment(body) {
   throw new Error('آدرس درگاه دریافت نشد.')
 }
 
+/**
+ * @param {HTMLElement | null} root
+ * @param {any[]} items
+ * @param {HTMLElement | null} status
+ */
+function paintAthleteNotifications(root, items, status) {
+  if (!root) return
+  root.innerHTML = items.length
+    ? items
+        .map(
+          (n) => `<div class="row-item ${n.is_read ? '' : 'unread'}"><div>
+          <h3>${n.title}</h3>
+          <p>${n.body || ''}</p>
+          <p class="hint">${formatDateTime(n.created_at)}</p></div>
+          ${n.is_read ? '' : `<button type="button" class="btn small ghost" data-read="${n.id}">خواندم</button>`}
+        </div>`,
+        )
+        .join('')
+    : '<p class="hint">اعلانی نیست.</p>'
+  root.querySelectorAll('[data-read]').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      try {
+        await apiPost(`/api/v1/athlete/notifications/${btn.getAttribute('data-read')}/read`)
+        await reloadAthleteNotifications(status)
+      } catch (err) {
+        if (status) {
+          setStatus(status, err instanceof ApiError ? err.message : 'علامت‌خوانی ناموفق', 'error')
+        }
+      }
+    }),
+  )
+}
+
+/** @param {HTMLElement | null} status */
+async function reloadAthleteNotifications(status) {
+  const data = await apiGet('/api/v1/athlete/notifications')
+  paintAthleteNotifications(
+    document.querySelector('[data-notifs]'),
+    data.items || [],
+    status,
+  )
+}
+
 async function main() {
   const member = await requireAthlete()
   if (!member) return
@@ -43,6 +86,18 @@ async function main() {
   initThemeToggle(document)
   bindSidebarClose()
   bindHashNav('dash')
+
+  const banner = document.querySelector('[data-api-banner]')
+  const status = document.querySelector('[data-status]')
+
+  // Re-fetch when opening اعلان‌ها so mutations (e.g. renew request) show without full reload.
+  window.addEventListener('hashchange', () => {
+    if (location.hash.slice(1) === 'notif') {
+      void reloadAthleteNotifications(/** @type {HTMLElement} */ (status)).catch(() => {
+        /* keep previous list; banner/status handled on full load */
+      })
+    }
+  })
 
   const nameEl = document.querySelector('[data-user-name]')
   if (nameEl) nameEl.textContent = `${member.first_name} ${member.last_name}`
@@ -64,9 +119,6 @@ async function main() {
     touchPath: '/api/v1/athlete/auth/touch',
     logoutPath: '/api/v1/athlete/auth/logout',
   })
-
-  const banner = document.querySelector('[data-api-banner]')
-  const status = document.querySelector('[data-status]')
 
   const payFlash = payResultMessage()
   if (payFlash?.text) {
@@ -148,24 +200,10 @@ async function main() {
           .join('')
       : '<p class="hint">برنامه‌ای از مربی نیست.</p>'
 
-    const notifItems = notifications.items || []
-    document.querySelector('[data-notifs]').innerHTML = notifItems.length
-      ? notifItems
-          .map(
-            (n) => `<div class="row-item ${n.is_read ? '' : 'unread'}"><div>
-          <h3>${n.title}</h3>
-          <p>${n.body || ''}</p>
-          <p class="hint">${formatDateTime(n.created_at)}</p></div>
-          ${n.is_read ? '' : `<button type="button" class="btn small ghost" data-read="${n.id}">خواندم</button>`}
-        </div>`,
-          )
-          .join('')
-      : '<p class="hint">اعلانی نیست.</p>'
-    document.querySelectorAll('[data-read]').forEach((btn) =>
-      btn.addEventListener('click', async () => {
-        await apiPost(`/api/v1/athlete/notifications/${btn.getAttribute('data-read')}/read`)
-        location.reload()
-      }),
+    paintAthleteNotifications(
+      document.querySelector('[data-notifs]'),
+      notifications.items || [],
+      /** @type {HTMLElement} */ (status),
     )
 
     const classItems = classes.items || []
@@ -233,6 +271,7 @@ async function main() {
           res.detail || 'درخواست تمدید برای منشی ارسال شد.',
           'ok',
         )
+        await reloadAthleteNotifications(/** @type {HTMLElement} */ (status))
       } catch (err) {
         setStatus(
           /** @type {HTMLElement} */ (status),
