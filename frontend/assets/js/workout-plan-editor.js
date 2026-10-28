@@ -1,5 +1,5 @@
 /**
- * Structured workout plan table editor (trainer) + read-only renderer (athlete).
+ * Structured workout plan editor (trainer) + read-only table (athlete).
  */
 
 /** @param {string} value */
@@ -54,34 +54,25 @@ export function workoutPlanItemsTableHtml(items, opts = {}) {
     : ''
   return `<div class="workout-items-card">
     ${head}
-    <div class="table-wrap workout-items-wrap">
-      <table class="responsive-table workout-items-table">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">حرکت</th>
-            <th scope="col">ست</th>
-            <th scope="col">در هر ست</th>
-            <th scope="col">واحد</th>
-            <th scope="col">نکته</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows
-            .map(
-              (it, i) => `<tr>
-              <td data-label="#">${i + 1}</td>
-              <td data-label="حرکت"><strong class="workout-item-name">${escapeHtml(it.exercise_name || '—')}</strong></td>
-              <td data-label="ست">${escapeHtml(String(it.sets ?? '—'))}</td>
-              <td data-label="در هر ست">${escapeHtml(String(it.amount ?? '—'))}</td>
-              <td data-label="واحد"><span class="workout-item-unit">${escapeHtml(workoutUnitLabel(it.unit))}</span></td>
-              <td data-label="نکته">${escapeHtml(it.note || '—')}</td>
-            </tr>`,
-            )
-            .join('')}
-        </tbody>
-      </table>
-    </div>
+    <ol class="workout-items-list">
+      ${rows
+        .map((it, i) => {
+          const note = String(it.note || '').trim()
+          return `<li class="workout-item-row">
+            <span class="workout-item-index" aria-hidden="true">${i + 1}</span>
+            <div class="workout-item-body">
+              <strong class="workout-item-name">${escapeHtml(it.exercise_name || '—')}</strong>
+              <p class="workout-item-dose">
+                <span>${Number(it.sets) || 0} ست</span>
+                <span class="workout-item-dose-sep" aria-hidden="true">·</span>
+                <span>${Number(it.amount) || 0} ${escapeHtml(workoutUnitLabel(it.unit))}</span>
+              </p>
+              ${note ? `<p class="workout-item-note">${escapeHtml(note)}</p>` : ''}
+            </div>
+          </li>`
+        })
+        .join('')}
+    </ol>
   </div>`
 }
 
@@ -115,28 +106,13 @@ export function mountWorkoutPlanEditor(host, opts) {
 
   host.classList.add('workout-plan-editor')
   host.innerHTML = `
-    <div class="table-wrap workout-editor-wrap">
-      <table class="responsive-table workout-editor-table">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">حرکت</th>
-            <th scope="col">ست</th>
-            <th scope="col">در هر ست</th>
-            <th scope="col">واحد</th>
-            <th scope="col">نکته</th>
-            <th scope="col" class="workout-editor-actions-col"><span class="visually-hidden">عملیات</span></th>
-          </tr>
-        </thead>
-        <tbody data-editor-body></tbody>
-      </table>
-    </div>
+    <div class="workout-editor-list" data-editor-body></div>
     <div class="inline-actions workout-editor-toolbar">
-      <button type="button" class="btn ghost small" data-add-row>افزودن حرکت</button>
+      <button type="button" class="btn ghost" data-add-row>افزودن حرکت</button>
     </div>
   `
 
-  const tbody = /** @type {HTMLElement} */ (host.querySelector('[data-editor-body]'))
+  const list = /** @type {HTMLElement} */ (host.querySelector('[data-editor-body]'))
 
   function emptyRow() {
     return {
@@ -173,7 +149,7 @@ export function mountWorkoutPlanEditor(host, opts) {
       empty.setAttribute('aria-disabled', 'true')
       empty.textContent = q
         ? `ثبت حرکت جدید: «${q}» — Enter`
-        : 'هنوز حرکتی در کاتالوگ نیست — بنویسید و Enter بزنید'
+        : 'کاتالوگ خالی است — بنویسید و Enter بزنید'
       menu.appendChild(empty)
       return
     }
@@ -213,6 +189,7 @@ export function mountWorkoutPlanEditor(host, opts) {
     input.maxLength = 120
     input.required = true
     input.value = rows[rowIndex]?.exercise_name || ''
+    input.setAttribute('aria-label', 'نام حرکت')
 
     const caret = document.createElement('button')
     caret.type = 'button'
@@ -279,7 +256,7 @@ export function mountWorkoutPlanEditor(host, opts) {
           pick(created)
           return
         } catch {
-          /* fall through — keep local name for save-time create */
+          /* keep local */
         }
       }
       pick({ id: null, name })
@@ -310,7 +287,6 @@ export function mountWorkoutPlanEditor(host, opts) {
       }
     })
     input.addEventListener('blur', () => {
-      // Delay so menu click can fire first.
       setTimeout(() => {
         if (!root.contains(document.activeElement)) close()
       }, 120)
@@ -336,52 +312,68 @@ export function mountWorkoutPlanEditor(host, opts) {
   }
 
   function paint() {
-    tbody.innerHTML = ''
+    list.innerHTML = ''
     rows.forEach((row, index) => {
-      const tr = document.createElement('tr')
-      tr.innerHTML = `
-        <td data-label="#">${index + 1}</td>
-        <td data-label="حرکت" data-ex-cell></td>
-        <td data-label="ست"><input type="number" min="1" max="99" class="workout-editor-num" data-field="sets" value="${escapeHtml(String(row.sets))}" required /></td>
-        <td data-label="در هر ست"><input type="number" min="1" max="9999" class="workout-editor-num" data-field="amount" value="${escapeHtml(String(row.amount))}" required /></td>
-        <td data-label="واحد">
-          <select data-field="unit" class="workout-editor-unit">
-            <option value="reps"${row.unit !== 'seconds' ? ' selected' : ''}>تکرار</option>
-            <option value="seconds"${row.unit === 'seconds' ? ' selected' : ''}>ثانیه</option>
-          </select>
-        </td>
-        <td data-label="نکته"><input type="text" maxlength="240" class="workout-editor-note" data-field="note" value="${escapeHtml(row.note || '')}" placeholder="اختیاری" /></td>
-        <td data-label="عملیات" class="workout-editor-actions-col">
+      const article = document.createElement('article')
+      article.className = 'workout-editor-row'
+      article.innerHTML = `
+        <header class="workout-editor-row-head">
+          <span class="workout-editor-row-index" aria-hidden="true">${index + 1}</span>
           <button type="button" class="btn small ghost" data-remove-row ${rows.length <= 1 ? 'disabled' : ''}>حذف</button>
-        </td>
+        </header>
+        <label class="workout-editor-field">
+          <span class="workout-editor-field-label">حرکت</span>
+          <div data-ex-cell></div>
+        </label>
+        <div class="workout-editor-metrics" role="group" aria-label="ست و مقدار">
+          <label class="workout-editor-metric">
+            <span class="workout-editor-field-label">ست</span>
+            <input type="number" min="1" max="99" inputmode="numeric" class="workout-editor-num" data-field="sets" value="${escapeHtml(String(row.sets))}" required />
+          </label>
+          <label class="workout-editor-metric">
+            <span class="workout-editor-field-label">در هر ست</span>
+            <input type="number" min="1" max="9999" inputmode="numeric" class="workout-editor-num" data-field="amount" value="${escapeHtml(String(row.amount))}" required />
+          </label>
+          <label class="workout-editor-metric workout-editor-metric-unit">
+            <span class="workout-editor-field-label">واحد</span>
+            <select data-field="unit" class="workout-editor-unit custom-select-skip">
+              <option value="reps"${row.unit !== 'seconds' ? ' selected' : ''}>تکرار</option>
+              <option value="seconds"${row.unit === 'seconds' ? ' selected' : ''}>ثانیه</option>
+            </select>
+          </label>
+        </div>
+        <label class="workout-editor-field">
+          <span class="workout-editor-field-label">نکته</span>
+          <input type="text" maxlength="240" class="workout-editor-note" data-field="note" value="${escapeHtml(row.note || '')}" placeholder="اختیاری — مثلاً استراحت ۶۰ ثانیه" />
+        </label>
       `
-      const exCell = /** @type {HTMLElement} */ (tr.querySelector('[data-ex-cell]'))
+      const exCell = /** @type {HTMLElement} */ (article.querySelector('[data-ex-cell]'))
       mountExerciseCombobox(index, exCell)
 
-      tr.querySelectorAll('[data-field]').forEach((el) => {
-        el.addEventListener('change', () => syncRow(index, tr))
-        el.addEventListener('input', () => syncRow(index, tr))
+      article.querySelectorAll('[data-field]').forEach((el) => {
+        el.addEventListener('change', () => syncRow(index, article))
+        el.addEventListener('input', () => syncRow(index, article))
       })
-      tr.querySelector('[data-remove-row]')?.addEventListener('click', () => {
+      article.querySelector('[data-remove-row]')?.addEventListener('click', () => {
         if (rows.length <= 1) return
         rows.splice(index, 1)
         paint()
       })
-      tbody.appendChild(tr)
+      list.appendChild(article)
     })
   }
 
   /**
    * @param {number} index
-   * @param {HTMLElement} tr
+   * @param {HTMLElement} rowEl
    */
-  function syncRow(index, tr) {
-    const setsEl = /** @type {HTMLInputElement | null} */ (tr.querySelector('[data-field="sets"]'))
+  function syncRow(index, rowEl) {
+    const setsEl = /** @type {HTMLInputElement | null} */ (rowEl.querySelector('[data-field="sets"]'))
     const amountEl = /** @type {HTMLInputElement | null} */ (
-      tr.querySelector('[data-field="amount"]')
+      rowEl.querySelector('[data-field="amount"]')
     )
-    const unitEl = /** @type {HTMLSelectElement | null} */ (tr.querySelector('[data-field="unit"]'))
-    const noteEl = /** @type {HTMLInputElement | null} */ (tr.querySelector('[data-field="note"]'))
+    const unitEl = /** @type {HTMLSelectElement | null} */ (rowEl.querySelector('[data-field="unit"]'))
+    const noteEl = /** @type {HTMLInputElement | null} */ (rowEl.querySelector('[data-field="note"]'))
     if (!rows[index]) return
     rows[index].sets = Math.max(1, Number(setsEl?.value) || 1)
     rows[index].amount = Math.max(1, Number(amountEl?.value) || 1)

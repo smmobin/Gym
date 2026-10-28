@@ -1891,6 +1891,9 @@ label > .date-picker { width: 100%; }
   padding: 1.35rem 1.5rem 2rem;
   display: grid;
   gap: 1.15rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .stats {

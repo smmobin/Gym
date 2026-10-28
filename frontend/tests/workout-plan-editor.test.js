@@ -28,7 +28,7 @@ describe('workout plan structured table', () => {
     ).toBe('1. اسکات · 3 ست · 10 تکرار · استراحت ۶۰ث')
   })
 
-  it('renders read-only items table for athlete', () => {
+  it('renders read-only item rows for athlete', () => {
     const html = workoutPlanItemsTableHtml(
       [
         {
@@ -41,7 +41,8 @@ describe('workout plan structured table', () => {
       ],
       { title: 'برنامه هفته ۱', meta: 'مربی یک · امروز' },
     )
-    expect(html).toContain('workout-items-table')
+    expect(html).toContain('workout-items-list')
+    expect(html).toContain('workout-item-row')
     expect(html).toContain('اسکات')
     expect(html).toContain('تکرار')
     expect(html).toContain('برنامه هفته ۱')
@@ -68,6 +69,10 @@ describe('workout plan structured table', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }))
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     await vi.waitFor(() => expect(createExercise).toHaveBeenCalledWith('اسکوات'))
+
+    expect(host.querySelector('.workout-editor-row')).toBeTruthy()
+    expect(host.querySelector('.workout-editor-metrics')).toBeTruthy()
+    expect(host.querySelector('select.custom-select-skip')).toBeTruthy()
 
     const items = editor.getItems()
     expect(items).toHaveLength(1)
