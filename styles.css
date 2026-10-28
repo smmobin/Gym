@@ -274,9 +274,21 @@ a { color: inherit; }
   background: var(--panel);
   padding: 1.35rem 1.2rem;
   display: grid;
+  align-content: space-between;
   gap: 0.85rem;
-  align-content: start;
+  height: 100%;
+  min-height: 0;
   position: relative;
+}
+.plan-body {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+.plan > .btn {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 .plan.featured {
   background: linear-gradient(165deg, rgba(62, 199, 194, 0.16), var(--panel) 45%);

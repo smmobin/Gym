@@ -90,6 +90,9 @@ describe('public landing plans', () => {
     expect(grid.querySelector('.plan.featured')).toBeTruthy()
     expect(grid.querySelector('[data-plan-id="11"]')?.classList.contains('featured')).toBe(true)
     expect(grid.innerHTML).not.toContain('۱٬۲۰۰٬۰۰۰')
+    const card = grid.querySelector('[data-plan-id="11"]')
+    expect(card?.querySelector('.plan-body')).toBeTruthy()
+    expect(card?.querySelector('.plan-body + .btn, .plan-body + a.btn')).toBeTruthy()
   })
 
   it('mountPublicPlans shows Persian error when API fails', async () => {
