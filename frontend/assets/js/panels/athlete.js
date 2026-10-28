@@ -89,13 +89,11 @@ async function main() {
     showApiDown(/** @type {HTMLElement} */ (banner), false)
 
     const gatewayOn = !!gateway?.enabled
-    const gwLabel = document.querySelector('[data-gateway-label]')
-    if (gwLabel) gwLabel.textContent = gateway?.label || ''
     const payHint = document.querySelector('[data-gateway-pay-hint]')
     if (payHint) {
-      payHint.textContent = gatewayOn
-        ? gateway.label
-        : 'درگاه آنلاین هنوز پیکربندی نشده؛ برای تمدید از درخواست میز استفاده کنید.'
+      // Only show a positive status when gateway is on; avoid the “not configured” nag on this page.
+      payHint.textContent = gatewayOn ? gateway.label || '' : ''
+      payHint.hidden = !gatewayOn
     }
     document.querySelector('[data-online-renew]')?.toggleAttribute('hidden', !gatewayOn)
     document.querySelector('[data-online-debt]')?.toggleAttribute('hidden', !gatewayOn)
