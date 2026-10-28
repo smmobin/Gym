@@ -489,34 +489,43 @@ html[data-theme="light"] .login-shell {
 .person-select {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(12rem, 0.9fr);
-  gap: 0.75rem;
-  align-items: end;
+  grid-template-areas:
+    'label .'
+    'search chip';
+  column-gap: 0.75rem;
+  row-gap: 0.35rem;
+  align-items: stretch;
   width: 100%;
   margin: 0.35rem 0 0.75rem;
 }
-.person-select-search {
-  min-width: 0;
-}
-/* Kill label field margins so chip lines up with the search input, not the label box. */
-.person-select .person-select-search > label {
-  margin-block: 0;
-  gap: 0.35rem;
-}
 .person-select-label {
+  grid-area: label;
   display: block;
   margin: 0;
   color: var(--muted);
   font-size: 0.86rem;
   font-weight: 600;
+  line-height: 1.35;
+}
+.person-select-search {
+  grid-area: search;
+  min-width: 0;
+  align-self: stretch;
+}
+.person-select-search > input {
+  width: 100%;
+  height: 100%;
+  min-height: 2.75rem;
 }
 .person-chip {
+  grid-area: chip;
   display: flex;
   align-items: center;
   gap: 0.65rem;
   box-sizing: border-box;
   width: 100%;
   min-height: 2.75rem;
-  height: 2.75rem;
+  height: 100%;
   margin: 0;
   padding: 0 var(--field-pad-x);
   border-radius: var(--field-radius);
@@ -567,8 +576,6 @@ html[data-theme="light"] .login-shell {
   white-space: nowrap;
 }
 .person-chip.is-selected {
-  height: auto;
-  min-height: 2.75rem;
   padding-block: 0.35rem;
   border-color: color-mix(in srgb, var(--accent) 48%, var(--field-border));
   background:
@@ -596,7 +603,10 @@ html[data-theme="light"] .login-shell {
 @media (max-width: 720px) {
   .person-select {
     grid-template-columns: 1fr;
-    align-items: stretch;
+    grid-template-areas:
+      'label'
+      'search'
+      'chip';
   }
 }
 .member-search {

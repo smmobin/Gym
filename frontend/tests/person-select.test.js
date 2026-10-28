@@ -10,10 +10,13 @@ describe('person select row + chip', () => {
     })
     expect(html).toContain('class="person-select"')
     expect(html).toContain('person-select-search')
+    expect(html).toContain('person-select-label')
     expect(html).toContain('data-person-chip')
     expect(html).toContain('عضوی انتخاب نشده')
+    expect(html).toContain('aria-label="جست‌وجوی عضو"')
     expect(html).toContain('data-q')
     expect(html).toContain('data-pick')
+    expect(html).not.toContain('<label>')
   })
 
   it('setPersonChip fills selected state with name and meta', () => {

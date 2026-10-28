@@ -284,11 +284,9 @@ export function personSelectRowHtml(opts = {}) {
   const emptyText = opts.emptyText || 'عضوی انتخاب نشده'
   const ph = opts.placeholder ? ` placeholder="${escapeAttr(opts.placeholder)}"` : ''
   return `<div class="person-select">
+    <span class="person-select-label">${escapeAttr(label)}</span>
     <div class="person-select-search member-search">
-      <label>
-        <span class="person-select-label">${escapeAttr(label)}</span>
-        <input type="search" ${inputAttr}${ph} autocomplete="off" />
-      </label>
+      <input type="search" ${inputAttr}${ph} autocomplete="off" aria-label="${escapeAttr(label)}" />
       <div class="member-pick is-overlay" ${pickAttr} hidden></div>
     </div>
     <div class="person-chip is-empty" ${chipAttr} data-person-chip>
