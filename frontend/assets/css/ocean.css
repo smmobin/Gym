@@ -506,15 +506,25 @@ html[data-theme="light"] .landing-page .program img {
   border-radius: 18px;
   background: var(--panel);
   padding: 1.35rem 1.2rem;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.85rem;
-  align-content: start;
+  height: 100%;
+  min-height: 0;
   position: relative;
+}
+/* CTA sticks to card bottom so buttons align across unequal bullet lists */
+.plan > .btn {
+  margin-top: auto;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 .plan.featured {
   background: linear-gradient(165deg, rgba(62, 199, 194, 0.16), var(--panel) 45%);
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  transform: translateY(-6px);
+  /* no translateY — keeps card bottoms / CTAs aligned with neighbors */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 .plan-tag {
   position: absolute;
@@ -2345,7 +2355,7 @@ input[data-money] {
     grid-row: auto;
     min-height: 220px;
   }
-  .plan.featured { transform: none; }
+  .plan.featured { box-shadow: none; }
   .stats,
   .stats.six,
   .stats.stats-3 {
