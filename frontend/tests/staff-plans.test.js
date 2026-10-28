@@ -3,10 +3,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mountPlans } from '../assets/js/plans.js'
 import { mountStaff } from '../assets/js/staff.js'
 
+/** @returns {HTMLElement | null} */
+function latestToast() {
+  const host = document.getElementById('gym-toast-host')
+  const list = host?.querySelectorAll('.gym-toast')
+  if (!list?.length) return null
+  return /** @type {HTMLElement} */ (list[list.length - 1])
+}
+
 describe('mountStaff / mountPlans', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.unstubAllGlobals()
+    document.getElementById('gym-toast-host')?.remove()
     document.body.innerHTML = ''
   })
 
@@ -105,11 +114,11 @@ describe('mountStaff / mountPlans', () => {
     form.requestSubmit()
 
     await vi.waitFor(() => {
-      const st = root.querySelector('[data-status]')
-      expect(st?.textContent).not.toContain('ثبت ناموفق')
-      expect(st?.className).toMatch(/ok/)
+      const toast = latestToast()
+      expect(toast?.textContent || '').not.toContain('ثبت ناموفق')
+      expect(toast?.className).toMatch(/ok/)
     })
-    expect(root.querySelector('[data-status]')?.textContent).not.toMatch(/ناموفق/)
+    expect(latestToast()?.textContent || '').not.toMatch(/ناموفق/)
   })
 
   it('mountStaff receptionist only offers trainer role', async () => {
@@ -201,9 +210,9 @@ describe('mountStaff / mountPlans', () => {
     form.requestSubmit()
 
     await vi.waitFor(() => {
-      const st = root.querySelector('[data-status]')
-      expect(st?.textContent).not.toMatch(/is not a function/i)
-      expect(st?.className).toMatch(/ok/)
+      const toast = latestToast()
+      expect(toast?.textContent || '').not.toMatch(/is not a function/i)
+      expect(toast?.className).toMatch(/ok/)
     })
     expect(root.querySelector('[data-tbody]')?.textContent).toContain('طرح تست')
   })
@@ -289,15 +298,15 @@ describe('mountStaff / mountPlans', () => {
     mountPlans(root, { role: 'manager' })
 
     await vi.waitFor(() => {
-      expect(root.querySelector('[data-status]')?.className).toMatch(/error/)
+      expect(latestToast()?.className).toMatch(/error/)
     })
-    expect(root.querySelector('[data-status]')?.textContent).toMatch(/تلاش مجدد|ناموفق|unavailable/i)
+    expect(latestToast()?.textContent || '').toMatch(/تلاش مجدد|ناموفق|unavailable/i)
 
     await vi.advanceTimersByTimeAsync(2_500)
     await vi.waitFor(() => {
       expect(root.querySelector('[data-tbody]')?.textContent).toContain('ماهانه')
     })
-    expect(root.querySelector('[data-status]')?.className).toMatch(/ok/)
+    expect(latestToast()?.className).toMatch(/ok/)
     vi.clearAllTimers()
   })
 })

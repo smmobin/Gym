@@ -1,15 +1,112 @@
 import { ROLE_LABEL } from './format.js'
 
+const TOAST_MS = {
+  ok: 4200,
+  error: 6500,
+  loading: 0,
+  '': 4200,
+}
+
 /**
+ * @returns {HTMLElement}
+ */
+function ensureToastHost() {
+  let host = document.getElementById('gym-toast-host')
+  if (!host) {
+    host = document.createElement('div')
+    host.id = 'gym-toast-host'
+    host.className = 'gym-toast-host'
+    host.setAttribute('aria-live', 'polite')
+    host.setAttribute('aria-relevant', 'additions text')
+    document.body.appendChild(host)
+  }
+  return host
+}
+
+/**
+ * @param {HTMLElement} el
+ * @param {boolean} [animate]
+ */
+function dismissToast(el, animate = true) {
+  if (!el || !el.isConnected || el.dataset.leaving === '1') return
+  const timer = /** @type {any} */ (el)._toastTimer
+  if (timer) clearTimeout(timer)
+  if (!animate) {
+    el.remove()
+    return
+  }
+  el.dataset.leaving = '1'
+  el.classList.remove('is-in')
+  el.classList.add('is-out')
+  window.setTimeout(() => el.remove(), 320)
+}
+
+function clearLoadingToasts() {
+  const host = document.getElementById('gym-toast-host')
+  if (!host) return
+  host.querySelectorAll('.gym-toast.loading').forEach((node) => {
+    if (node instanceof HTMLElement) dismissToast(node, false)
+  })
+}
+
+/**
+ * Floating toast (top-right). Used site-wide via setStatus.
+ * @param {string} text
+ * @param {'ok' | 'error' | 'loading' | ''} [kind]
+ * @returns {HTMLElement | null}
+ */
+export function showToast(text, kind = 'ok') {
+  if (!text || typeof document === 'undefined') return null
+  const type = kind || 'ok'
+  // Replace prior loading spinner toast whenever a new message arrives.
+  clearLoadingToasts()
+
+  const host = ensureToastHost()
+  const el = document.createElement('div')
+  el.className = `gym-toast ${type}`
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status')
+
+  const msg = document.createElement('p')
+  msg.className = 'gym-toast-text'
+  msg.textContent = text
+
+  const close = document.createElement('button')
+  close.type = 'button'
+  close.className = 'gym-toast-close'
+  close.setAttribute('aria-label', 'بستن اعلان')
+  close.textContent = '×'
+  close.addEventListener('click', () => dismissToast(el))
+
+  el.append(msg, close)
+  host.appendChild(el)
+  requestAnimationFrame(() => {
+    el.classList.add('is-in')
+  })
+
+  const ms = TOAST_MS[type] ?? TOAST_MS.ok
+  if (ms > 0) {
+    /** @type {any} */ (el)._toastTimer = window.setTimeout(() => dismissToast(el), ms)
+  }
+  return el
+}
+
+/**
+ * Site-wide status → floating toast (inline status-msg stays hidden).
  * @param {HTMLElement | null} el
  * @param {string} text
  * @param {'ok' | 'error' | 'loading' | ''} [kind]
  */
 export function setStatus(el, text, kind = '') {
-  if (!el) return
-  el.textContent = text || ''
-  el.className = 'status-msg' + (kind ? ` ${kind}` : '')
-  el.hidden = !text
+  if (el) {
+    el.hidden = true
+    el.textContent = ''
+    el.className = 'status-msg'
+  }
+  if (!text) {
+    clearLoadingToasts()
+    return
+  }
+  showToast(text, kind || 'ok')
 }
 
 /** @param {HTMLElement | null} el @param {boolean} on */
