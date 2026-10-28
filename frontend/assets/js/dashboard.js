@@ -58,7 +58,6 @@ export function mountDashboard(root, user) {
         <a class="btn ghost small" href="#finance">گزارش کامل و ثبت هزینه</a>
       </header>
       <p class="hint" data-range-label></p>
-      <p class="hint">درآمد = فقط پرداخت‌های paid · بدهی ≠ درآمد. جزئیات بازه و ثبت هزینه در «گزارش مالی» است.</p>
       <div class="list" data-expenses style="margin-top:0.75rem"></div>
     </article>
   `
