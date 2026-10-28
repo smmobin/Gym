@@ -13,22 +13,22 @@ describe('workout plan structured table', () => {
     expect(workoutUnitLabel('seconds')).toBe('ثانیه')
   })
 
-  it('formats a clear athlete-facing line with Persian digits', () => {
+  it('formats a clear athlete-facing line', () => {
     expect(
       formatWorkoutItemLine(
         { exercise_name: 'پلانک', sets: 3, amount: 45, unit: 'seconds' },
         0,
       ),
-    ).toBe('۱. پلانک · ۳ ست · ۴۵ ثانیه')
+    ).toBe('1. پلانک · 3 ست · 45 ثانیه')
     expect(
       formatWorkoutItemLine(
         { exercise_name: 'اسکات', sets: 3, amount: 10, unit: 'reps', note: 'استراحت ۶۰ث' },
         0,
       ),
-    ).toBe('۱. اسکات · ۳ ست · ۱۰ تکرار · استراحت ۶۰ث')
+    ).toBe('1. اسکات · 3 ست · 10 تکرار · استراحت ۶۰ث')
   })
 
-  it('renders read-only item rows for athlete', () => {
+  it('renders read-only items table for athlete', () => {
     const html = workoutPlanItemsTableHtml(
       [
         {
@@ -41,8 +41,7 @@ describe('workout plan structured table', () => {
       ],
       { title: 'برنامه هفته ۱', meta: 'مربی یک · امروز' },
     )
-    expect(html).toContain('workout-items-list')
-    expect(html).toContain('workout-item-row')
+    expect(html).toContain('workout-items-table')
     expect(html).toContain('اسکات')
     expect(html).toContain('تکرار')
     expect(html).toContain('برنامه هفته ۱')
@@ -69,9 +68,6 @@ describe('workout plan structured table', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }))
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     await vi.waitFor(() => expect(createExercise).toHaveBeenCalledWith('اسکوات'))
-
-    expect(host.querySelector('.workout-editor-row')).toBeTruthy()
-    expect(host.querySelector('.workout-editor-metrics')).toBeTruthy()
 
     const items = editor.getItems()
     expect(items).toHaveLength(1)

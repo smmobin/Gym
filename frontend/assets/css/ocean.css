@@ -2218,6 +2218,7 @@ a.row-item:hover h3 {
   cursor: not-allowed;
 }
 .form-grid label.full,
+.form-grid .full,
 .form-grid .btn.wide,
 .form-grid button[type="submit"] {
   grid-column: 1 / -1;
