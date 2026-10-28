@@ -97,14 +97,6 @@ async function main() {
     }
     document.querySelector('[data-online-renew]')?.toggleAttribute('hidden', !gatewayOn)
     document.querySelector('[data-online-debt]')?.toggleAttribute('hidden', !gatewayOn)
-    const deskRenew = document.querySelector('[data-desk-renew]')
-    if (deskRenew && gatewayOn) {
-      const hint = document.querySelector('[data-desk-renew-hint]')
-      if (hint) {
-        hint.textContent =
-          'درگاه فعال است؛ ترجیحاً پرداخت آنلاین. درخواست میز فقط اگر درگاه در دسترس نبود.'
-      }
-    }
 
     const debt = memberships.debt_toman || 0
     const memItems = memberships.items || []
