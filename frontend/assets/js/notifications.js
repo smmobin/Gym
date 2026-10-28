@@ -11,7 +11,8 @@ export function mountNotificationBell(root) {
       <button type="button" class="icon-btn" data-bell aria-label="اعلان‌ها">🔔</button>
       <span class="badge count" data-count hidden>0</span>
       <div class="notif-panel" data-panel hidden>
-        <div class="inline-actions">
+        <div class="notif-panel-head">
+          <p class="hint" data-empty hidden>اعلانی نیست.</p>
           <button type="button" class="btn ghost small" data-read-all>همه خوانده شد</button>
         </div>
         <div data-list></div>
@@ -22,7 +23,21 @@ export function mountNotificationBell(root) {
   const countEl = root.querySelector('[data-count]')
   const panel = root.querySelector('[data-panel]')
   const list = root.querySelector('[data-list]')
+  const emptyEl = root.querySelector('[data-empty]')
   const readAll = root.querySelector('[data-read-all]')
+
+  /** @param {string} [msg] */
+  function showEmpty(msg = 'اعلانی نیست.') {
+    if (list) list.innerHTML = ''
+    if (emptyEl instanceof HTMLElement) {
+      emptyEl.textContent = msg
+      emptyEl.hidden = false
+    }
+  }
+
+  function hideEmpty() {
+    if (emptyEl instanceof HTMLElement) emptyEl.hidden = true
+  }
 
   async function load() {
     try {
@@ -34,9 +49,10 @@ export function mountNotificationBell(root) {
       }
       if (!list) return
       if (!data.items?.length) {
-        list.innerHTML = '<p class="hint">اعلانی نیست.</p>'
+        showEmpty('اعلانی نیست.')
         return
       }
+      hideEmpty()
       list.innerHTML = data.items
         .map(
           (n) => `
@@ -59,7 +75,7 @@ export function mountNotificationBell(root) {
       })
     } catch (err) {
       if (err && err.status === 401) return
-      if (list) list.innerHTML = '<p class="hint">بارگذاری اعلان‌ها ناموفق بود.</p>'
+      showEmpty('بارگذاری اعلان‌ها ناموفق بود.')
     }
   }
 
