@@ -2,7 +2,7 @@ import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { setStatus } from './ui.js'
-import { formatWorkoutItemLine, mountWorkoutPlanEditor } from './workout-plan-editor.js'
+import { mountWorkoutPlanEditor, workoutPlanPreviewHtml } from './workout-plan-editor.js'
 
 /** @param {string} value */
 function escapeHtml(value) {
@@ -39,17 +39,14 @@ export function workoutPlansTableHtml(items, opts = {}) {
         ${items
           .map((p) => {
             const planItems = Array.isArray(p.items) ? p.items : []
-            const preview = planItems.length
-              ? planItems.map((it, i) => formatWorkoutItemLine(it, i)).join(' · ')
-              : String(p.body || '')
-            const short = preview.slice(0, 140) + (preview.length > 140 ? '…' : '')
+            const preview = workoutPlanPreviewHtml(planItems, { legacyBody: p.body || '' })
             const when = formatDateTime(p.updated_at || p.created_at)
             return `<tr class="workout-plan-row" data-plan-id="${escapeHtml(String(p.id))}">
               <td data-label="عنوان">
                 <strong class="workout-plan-title">${escapeHtml(p.title || '—')}</strong>
               </td>
               <td data-label="خلاصه برنامه">
-                <p class="workout-plan-preview">${escapeHtml(short || '—')}</p>
+                ${preview}
               </td>
               <td data-label="مربی">
                 <span class="workout-plan-trainer">${escapeHtml(p.trainer_full_name || '—')}</span>

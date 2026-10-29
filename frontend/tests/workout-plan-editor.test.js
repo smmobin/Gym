@@ -4,6 +4,7 @@ import {
   formatWorkoutItemLine,
   mountWorkoutPlanEditor,
   workoutPlanItemsTableHtml,
+  workoutPlanPreviewHtml,
   workoutUnitLabel,
 } from '../assets/js/workout-plan-editor.js'
 
@@ -52,6 +53,24 @@ describe('workout plan structured table', () => {
     const html = workoutPlanItemsTableHtml([], { legacyBody: 'متن قدیمی' })
     expect(html).toContain('workout-items-legacy')
     expect(html).toContain('متن قدیمی')
+  })
+
+  it('renders stacked preview rows for the plans table', () => {
+    const html = workoutPlanPreviewHtml(
+      [
+        { exercise_name: 'اسکات', sets: 3, amount: 10, unit: 'reps' },
+        { exercise_name: 'پلانک', sets: 3, amount: 45, unit: 'seconds' },
+        { exercise_name: 'زیر بغل', sets: 4, amount: 12, unit: 'reps' },
+        { exercise_name: 'لانگز', sets: 3, amount: 10, unit: 'reps' },
+        { exercise_name: 'کرانچ', sets: 3, amount: 15, unit: 'reps' },
+      ],
+      { maxRows: 4 },
+    )
+    expect(html).toContain('workout-plan-preview-row')
+    expect(html).toContain('اسکات')
+    expect(html).toContain('45 ثانیه')
+    expect(html).toContain('و 1 حرکت دیگر')
+    expect(html).not.toContain(' · 2. ')
   })
 
   it('collects editor rows and creates missing exercises on demand', async () => {

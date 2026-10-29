@@ -30,12 +30,16 @@ describe('workout plans table', () => {
     expect(html).toContain('workout-plans-table')
     expect(html).toContain('responsive-table')
     expect(html).toContain('برنامه هفته ۱')
+    expect(html).toContain('workout-plan-preview-row')
+    expect(html).toContain('workout-plan-preview-name')
     expect(html).toContain('اسکات')
-    expect(html).toContain('تکرار')
+    expect(html).toContain('پرس سینه')
+    expect(html).toContain('3 ست · 10 تکرار')
     expect(html).toContain('مربی یک')
     expect(html).toContain('data-edit-plan="7"')
     expect(html).toContain('ویرایش')
     expect(html).toContain('<th scope="col">عنوان</th>')
+    expect(html).not.toMatch(/اسکات · 3 ست · 10 تکرار · 2\./)
   })
 
   it('hides actions column for read-only roles', () => {

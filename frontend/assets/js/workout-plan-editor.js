@@ -31,6 +31,47 @@ export function formatWorkoutItemLine(item, index = 0) {
 }
 
 /**
+ * Stacked preview list for trainer plans table (scannable, not one dense line).
+ * @param {any[]} items
+ * @param {{ legacyBody?: string, maxRows?: number }} [opts]
+ */
+export function workoutPlanPreviewHtml(items, opts = {}) {
+  const rows = Array.isArray(items) ? items : []
+  if (!rows.length) {
+    const legacy = String(opts.legacyBody || '').trim()
+    if (!legacy) return `<p class="workout-plan-preview workout-plan-preview-empty">—</p>`
+    return `<p class="workout-plan-preview workout-plan-preview-legacy">${escapeHtml(legacy)}</p>`
+  }
+  const maxRows = Math.max(1, Number(opts.maxRows) || 4)
+  const shown = rows.slice(0, maxRows)
+  const rest = rows.length - shown.length
+  const list = shown
+    .map((item, index) => {
+      const name = String(item?.exercise_name || '—').trim() || '—'
+      const sets = Number(item?.sets) || 0
+      const amount = Number(item?.amount) || 0
+      const unit = workoutUnitLabel(item?.unit)
+      const note = String(item?.note || '').trim()
+      const meta = note
+        ? `${sets} ست · ${amount} ${unit} · ${note}`
+        : `${sets} ست · ${amount} ${unit}`
+      return `<li class="workout-plan-preview-row">
+        <span class="workout-plan-preview-index" aria-hidden="true">${index + 1}</span>
+        <div class="workout-plan-preview-body">
+          <strong class="workout-plan-preview-name">${escapeHtml(name)}</strong>
+          <span class="workout-plan-preview-meta">${escapeHtml(meta)}</span>
+        </div>
+      </li>`
+    })
+    .join('')
+  const more =
+    rest > 0
+      ? `<li class="workout-plan-preview-more">و ${rest} حرکت دیگر</li>`
+      : ''
+  return `<ul class="workout-plan-preview" role="list">${list}${more}</ul>`
+}
+
+/**
  * @param {any[]} items
  * @param {{ legacyBody?: string, title?: string, meta?: string }} [opts]
  */
