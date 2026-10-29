@@ -839,6 +839,7 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   overflow: hidden;
 }
 .workout-plan-preview-row {
+  margin: 5px;
   display: grid;
   grid-template-columns: 1.65rem minmax(0, 1fr);
   gap: 0.55rem;
