@@ -2515,7 +2515,7 @@ input[data-money] {
   .topbar-actions {
     flex: 1 1 auto;
     min-width: min(100%, 200px);
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
   .search { flex: 1 1 160px; }
   .search input { max-width: none; }
