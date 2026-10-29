@@ -7,6 +7,39 @@ const TOAST_MS = {
   '': 4200,
 }
 
+/** Swipe-right dismiss thresholds (logical units for tests + gesture). */
+export const TOAST_SWIPE = {
+  DISMISS_RATIO: 0.35,
+  DISMISS_MIN_PX: 80,
+  AXIS_LOCK_PX: 8,
+  EXIT_MS: 360,
+}
+
+/**
+ * @param {number} width
+ * @returns {number}
+ */
+export function toastDismissThresholdPx(width) {
+  const w = Number.isFinite(width) && width > 0 ? width : 280
+  return Math.max(TOAST_SWIPE.DISMISS_MIN_PX, w * TOAST_SWIPE.DISMISS_RATIO)
+}
+
+/**
+ * Rightward drag past threshold → dismiss. Negative/zero dx never dismisses.
+ * @param {number} dx
+ * @param {number} width
+ * @returns {boolean}
+ */
+export function toastSwipeShouldDismiss(dx, width) {
+  return dx >= toastDismissThresholdPx(width)
+}
+
+/** @returns {boolean} */
+function prefersReducedMotion() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 /**
  * @returns {HTMLElement}
  */
@@ -25,20 +58,55 @@ function ensureToastHost() {
 
 /**
  * @param {HTMLElement} el
+ */
+function clearToastTimer(el) {
+  const bag = /** @type {{ _toastTimer?: ReturnType<typeof setTimeout> | null }} */ (el)
+  const timer = bag._toastTimer
+  if (timer != null) {
+    clearTimeout(timer)
+    bag._toastTimer = null
+  }
+}
+
+/**
+ * @param {HTMLElement} el
+ * @param {string} type
+ */
+function scheduleToastAutoDismiss(el, type) {
+  clearToastTimer(el)
+  const ms = TOAST_MS[type] ?? TOAST_MS.ok
+  if (ms > 0) {
+    const bag = /** @type {{ _toastTimer?: ReturnType<typeof setTimeout> | null }} */ (el)
+    bag._toastTimer = window.setTimeout(() => dismissToast(el), ms)
+  }
+}
+
+/**
+ * @param {HTMLElement} el
  * @param {boolean} [animate]
  */
 function dismissToast(el, animate = true) {
   if (!el || !el.isConnected || el.dataset.leaving === '1') return
-  const timer = /** @type {any} */ (el)._toastTimer
-  if (timer) clearTimeout(timer)
-  if (!animate) {
+  clearToastTimer(el)
+  const reduced = prefersReducedMotion()
+  if (!animate || reduced) {
     el.remove()
     return
   }
   el.dataset.leaving = '1'
-  el.classList.remove('is-in')
+  el.classList.remove('is-in', 'is-dragging', 'is-snap-back')
   el.classList.add('is-out')
-  window.setTimeout(() => el.remove(), 320)
+  // Keep current drag offset as start, then slide further right.
+  const fromX = el.style.transform
+  if (fromX) {
+    el.style.transition = 'none'
+    // force reflow so exit transition starts from drag position
+    void el.offsetWidth
+  }
+  el.style.transition = ''
+  el.style.transform = ''
+  el.style.opacity = ''
+  window.setTimeout(() => el.remove(), TOAST_SWIPE.EXIT_MS)
 }
 
 function clearLoadingToasts() {
@@ -47,6 +115,110 @@ function clearLoadingToasts() {
   host.querySelectorAll('.gym-toast.loading').forEach((node) => {
     if (node instanceof HTMLElement) dismissToast(node, false)
   })
+}
+
+/**
+ * Pointer drag-to-dismiss (rightward). Pauses auto-dismiss while dragging.
+ * @param {HTMLElement} el
+ * @param {string} type
+ */
+function bindToastDismissGesture(el, type) {
+  let startX = 0
+  let startY = 0
+  let pointerId = /** @type {number | null} */ (null)
+  let tracking = false
+  let dragging = false
+  let lastDx = 0
+
+  const resetInlineMotion = () => {
+    el.style.transform = ''
+    el.style.opacity = ''
+    el.classList.remove('is-dragging', 'is-snap-back')
+  }
+
+  const onPointerDown = (e) => {
+    if (el.dataset.leaving === '1') return
+    if (!(e instanceof PointerEvent)) return
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (e.target instanceof Element && e.target.closest('.gym-toast-close')) return
+    tracking = true
+    dragging = false
+    pointerId = e.pointerId
+    startX = e.clientX
+    startY = e.clientY
+    lastDx = 0
+    try {
+      el.setPointerCapture(e.pointerId)
+    } catch {
+      /* jsdom / unsupported */
+    }
+  }
+
+  const onPointerMove = (e) => {
+    if (!tracking || e.pointerId !== pointerId) return
+    const dx = e.clientX - startX
+    const dy = e.clientY - startY
+    if (!dragging) {
+      if (Math.abs(dx) < TOAST_SWIPE.AXIS_LOCK_PX && Math.abs(dy) < TOAST_SWIPE.AXIS_LOCK_PX) return
+      // Vertical intent → abandon (allow page scroll).
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        tracking = false
+        pointerId = null
+        return
+      }
+      // Only engage dismiss drag when moving right.
+      if (dx <= 0) {
+        tracking = false
+        pointerId = null
+        return
+      }
+      dragging = true
+      clearToastTimer(el)
+      el.classList.remove('is-snap-back')
+      el.classList.add('is-dragging')
+    }
+    lastDx = Math.max(0, dx)
+    const width = el.offsetWidth || 280
+    const threshold = toastDismissThresholdPx(width)
+    const progress = Math.min(1, lastDx / threshold)
+    el.style.transform = `translate3d(${lastDx}px, 0, 0)`
+    el.style.opacity = String(1 - progress * 0.42)
+  }
+
+  const finishGesture = (e) => {
+    if (!tracking && !dragging) return
+    if (pointerId != null && e.pointerId !== pointerId) return
+    const wasDragging = dragging
+    const dx = wasDragging ? lastDx : 0
+    tracking = false
+    dragging = false
+    pointerId = null
+    if (!wasDragging) return
+
+    const width = el.offsetWidth || 280
+    if (toastSwipeShouldDismiss(dx, width)) {
+      dismissToast(el)
+      return
+    }
+    el.classList.remove('is-dragging')
+    el.classList.add('is-snap-back')
+    el.style.transform = ''
+    el.style.opacity = ''
+    const clearSnap = () => {
+      el.classList.remove('is-snap-back')
+      el.removeEventListener('transitionend', clearSnap)
+    }
+    el.addEventListener('transitionend', clearSnap)
+    if (prefersReducedMotion()) {
+      resetInlineMotion()
+    }
+    scheduleToastAutoDismiss(el, type)
+  }
+
+  el.addEventListener('pointerdown', onPointerDown)
+  el.addEventListener('pointermove', onPointerMove)
+  el.addEventListener('pointerup', finishGesture)
+  el.addEventListener('pointercancel', finishGesture)
 }
 
 /**
@@ -64,6 +236,7 @@ export function showToast(text, kind = 'ok') {
   const host = ensureToastHost()
   const el = document.createElement('div')
   el.className = `gym-toast ${type}`
+  el.dataset.kind = type
   el.setAttribute('role', type === 'error' ? 'alert' : 'status')
 
   const msg = document.createElement('p')
@@ -79,14 +252,20 @@ export function showToast(text, kind = 'ok') {
 
   el.append(msg, close)
   host.appendChild(el)
-  requestAnimationFrame(() => {
-    el.classList.add('is-in')
-  })
+  bindToastDismissGesture(el, type)
 
-  const ms = TOAST_MS[type] ?? TOAST_MS.ok
-  if (ms > 0) {
-    /** @type {any} */ (el)._toastTimer = window.setTimeout(() => dismissToast(el), ms)
+  const reduced = prefersReducedMotion()
+  if (reduced) {
+    el.classList.add('is-in', 'is-reduced')
+  } else {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.classList.add('is-in')
+      })
+    })
   }
+
+  scheduleToastAutoDismiss(el, type)
   return el
 }
 

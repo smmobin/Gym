@@ -17,7 +17,7 @@
 .status-msg.ok { border-color: var(--ok); color: var(--ok); }
 .status-msg.loading { color: var(--accent); }
 
-/* Floating toasts (setStatus / showToast) — top-right, animated */
+/* Floating toasts (setStatus / showToast) — top-right, animated + swipe-right dismiss */
 .gym-toast-host {
   position: fixed;
   top: 1rem;
@@ -32,6 +32,8 @@
 }
 .gym-toast {
   pointer-events: auto;
+  touch-action: pan-y;
+  user-select: none;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
@@ -43,23 +45,43 @@
     0 18px 48px rgba(0, 0, 0, 0.42),
     0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--text);
-  transform: translate3d(118%, 0, 0) scale(0.96);
+  /* Enter: from upper-right with soft scale (premium, not bouncy) */
+  transform: translate3d(28%, -1.15rem, 0) scale(0.92);
   opacity: 0;
+  filter: blur(2px);
   transition:
-    transform 0.42s cubic-bezier(0.22, 1.15, 0.36, 1),
-    opacity 0.28s ease;
+    transform 0.52s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.4s ease;
   backdrop-filter: blur(10px);
+  will-change: transform, opacity;
+  cursor: grab;
 }
 .gym-toast.is-in {
   transform: translate3d(0, 0, 0) scale(1);
   opacity: 1;
+  filter: blur(0);
 }
 .gym-toast.is-out {
-  transform: translate3d(110%, -8px, 0) scale(0.94);
+  transform: translate3d(118%, -0.35rem, 0) scale(0.94);
   opacity: 0;
+  filter: blur(1px);
+  pointer-events: none;
   transition:
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.24s ease;
+    transform 0.34s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+}
+.gym-toast.is-dragging {
+  transition: none !important;
+  cursor: grabbing;
+  filter: none;
+  will-change: transform, opacity;
+}
+.gym-toast.is-snap-back {
+  transition:
+    transform 0.48s cubic-bezier(0.22, 1.15, 0.36, 1),
+    opacity 0.32s ease !important;
 }
 .gym-toast.ok {
   border-color: color-mix(in srgb, var(--ok) 55%, var(--line));
@@ -84,6 +106,8 @@
   line-height: 1.55;
   font-weight: 600;
   text-align: right;
+  user-select: text;
+  cursor: auto;
 }
 .gym-toast-close {
   flex: 0 0 auto;
@@ -111,6 +135,30 @@
     right: 0.75rem;
     left: 0.75rem;
     width: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gym-toast,
+  .gym-toast.is-in,
+  .gym-toast.is-out,
+  .gym-toast.is-snap-back,
+  .gym-toast.is-reduced {
+    transform: none !important;
+    filter: none !important;
+    transition: opacity 0.12s ease !important;
+    will-change: auto;
+  }
+  .gym-toast:not(.is-in) {
+    opacity: 0;
+  }
+  .gym-toast.is-in {
+    opacity: 1;
+  }
+  .gym-toast.is-out {
+    opacity: 0;
+  }
+  .gym-toast.is-dragging {
+    transition: none !important;
   }
 }
 .form-error { color: var(--danger); margin: 0.5rem 0; }
