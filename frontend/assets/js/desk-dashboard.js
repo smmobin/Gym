@@ -133,7 +133,7 @@ export function mountDeskDashboard(root, user) {
           ),
         ].join('')
       }
-      if (!silent) setStatus(status, 'خلاصهٔ امروز به‌روز شد.', 'ok')
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا در بارگذاری داشبورد', 'error')
       throw err

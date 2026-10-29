@@ -202,9 +202,7 @@ export function mountLockers(root, user) {
       await loadLockersOnly()
       await loadPlans()
       if (member) renderEligibility()
-      if (!silent) {
-        setStatus(status, `${lockers.length.toLocaleString('fa-IR')} کمد`, 'ok')
-      }
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
       throw err

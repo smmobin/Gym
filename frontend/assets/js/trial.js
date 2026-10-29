@@ -117,7 +117,7 @@ export function mountTrialLeads(root, user) {
       const items = data.items || []
       pager.reset()
       pager.paint(items, paintTrials)
-      setStatus(status, `${items.length.toLocaleString('fa-IR')} درخواست`, 'ok')
+      setStatus(status, '')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
     }

@@ -37,7 +37,7 @@ export function mountSettings(root, user) {
       form.freeze_annual_cap_days.value = s.freeze_annual_cap_days ?? 14
       form.working_hours_note.value = s.working_hours_note || ''
       form.renewal_rules_note.value = s.renewal_rules_note || ''
-      setStatus(status, 'بارگذاری شد.', 'ok')
+      setStatus(status, '')
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
     }

@@ -151,7 +151,7 @@ export function mountStaff(root, user) {
       items = data.items || []
       if (!silent) pager.reset()
       renderTable()
-      setStatus(status, `${items.length.toLocaleString('fa-IR')} نفر`, 'ok')
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
       throw err

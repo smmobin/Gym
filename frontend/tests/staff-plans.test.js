@@ -306,7 +306,8 @@ describe('mountStaff / mountPlans', () => {
     await vi.waitFor(() => {
       expect(root.querySelector('[data-tbody]')?.textContent).toContain('ماهانه')
     })
-    expect(latestToast()?.className).toMatch(/ok/)
+    // Load success no longer toasts «N طرح»; leftover error may still auto-dismiss.
+    expect(latestToast()?.textContent || '').not.toMatch(/طرح/)
     vi.clearAllTimers()
   })
 })

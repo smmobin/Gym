@@ -70,6 +70,7 @@ function mountTrainees(root) {
    */
   async function load(ctx = {}) {
     const silent = !!ctx.silent
+    if (!silent) setStatus(status, 'بارگذاری…', 'loading')
     try {
       const data = await apiGet('/api/v1/members')
       const items = data.items || data.members || []
@@ -88,7 +89,7 @@ function mountTrainees(root) {
               .join('')
           : '<p class="hint">شاگرد تخصیص‌یافته‌ای ندارید.</p>'
       })
-      setStatus(status, `${items.length.toLocaleString('fa-IR')} شاگرد`, 'ok')
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'خطا در بارگذاری شاگردان'), 'error')
       list.innerHTML = ''

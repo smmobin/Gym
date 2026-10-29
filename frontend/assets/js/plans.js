@@ -164,7 +164,7 @@ export function mountPlans(root, user) {
       if (selectedId != null && items.some((p) => p.id === selectedId)) {
         select(selectedId)
       }
-      setStatus(status, `${items.length.toLocaleString('fa-IR')} طرح`, 'ok')
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(
         status,
