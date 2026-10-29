@@ -12,6 +12,7 @@ import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-inp
 import { startSessionActivityGuard } from '../session-activity.js'
 import { initThemeToggle } from '../theme.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
+import { athleteMembershipCardsHtml } from '../athlete-memberships.js'
 import { workoutPlanItemsTableHtml } from '../workout-plan-editor.js'
 
 function payResultMessage() {
@@ -163,16 +164,8 @@ async function main() {
       : 'تسویه‌شده'
     document.querySelector('[data-debt-line]').textContent = `بدهی: ${formatToman(debt)}`
 
-    document.querySelector('[data-memberships]').innerHTML = memItems.length
-      ? memItems
-          .map(
-            (m) => `<div class="row-item"><div>
-          <h3>${m.plan_name || 'طرح ' + m.plan_id}</h3>
-          <p>${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)} · ${formatToman(m.agreed_amount_toman)}</p></div>
-          <span class="badge">${m.status}</span></div>`,
-          )
-          .join('')
-      : '<p class="hint">اشتراکی نیست.</p>'
+    document.querySelector('[data-memberships]').innerHTML =
+      athleteMembershipCardsHtml(memItems)
 
     const payItems = payments.items || []
     document.querySelector('[data-payments]').innerHTML = payItems.length

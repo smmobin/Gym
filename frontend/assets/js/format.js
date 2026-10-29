@@ -170,6 +170,18 @@ export const MEMBER_STATUS = {
   archived: 'آرشیو',
 }
 
+export const MEMBERSHIP_STATUS_LABEL = {
+  active: 'فعال',
+  frozen: 'یخ‌زده',
+  expired: 'منقضی',
+}
+
+/** @param {string | null | undefined} value */
+export function membershipStatusLabelFa(value) {
+  if (!value) return '—'
+  return MEMBERSHIP_STATUS_LABEL[value] ?? value
+}
+
 export const PAYMENT_METHOD_LABEL = {
   cash: 'نقد',
   card: 'کارت',
