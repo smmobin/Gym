@@ -1000,7 +1000,7 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   display: grid;
   grid-template-columns: minmax(0, 1fr) 4.75rem 5.75rem;
   gap: 0.55rem;
-  align-items: end;
+  align-items: center;
   width: 100%;
   min-width: 0;
 }
@@ -1357,5 +1357,6 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .workout-editor-main {
     grid-template-columns: minmax(0, 1fr) 4.25rem 5rem;
     gap: 0.45rem;
+    display: block;
   }
 }
