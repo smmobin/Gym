@@ -2789,25 +2789,25 @@ input[data-money] {
     text-align: center;
   }
 
-  /* panel tables -> stacked cards */
-  .responsive-table,
-  .responsive-table tbody,
-  .responsive-table tr,
-  .responsive-table td {
+  /* panel tables -> stacked cards (workout plans use their own card layout in live.css) */
+  .responsive-table:not(.workout-plans-table),
+  .responsive-table:not(.workout-plans-table) tbody,
+  .responsive-table:not(.workout-plans-table) tr,
+  .responsive-table:not(.workout-plans-table) td {
     display: block;
     width: 100%;
     min-width: 0;
   }
-  .responsive-table thead { display: none; }
-  .responsive-table tr {
+  .responsive-table:not(.workout-plans-table) thead { display: none; }
+  .responsive-table:not(.workout-plans-table) tr {
     background: var(--bg-elevated);
     border: 1px solid var(--line);
     border-radius: 14px;
     padding: 0.7rem 0.85rem;
     margin-bottom: 0.7rem;
   }
-  .responsive-table tr:last-child { margin-bottom: 0; }
-  .responsive-table td {
+  .responsive-table:not(.workout-plans-table) tr:last-child { margin-bottom: 0; }
+  .responsive-table:not(.workout-plans-table) td {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -2816,11 +2816,11 @@ input[data-money] {
     border-bottom: 1px dashed var(--line);
     text-align: left;
   }
-  .responsive-table td:last-child {
+  .responsive-table:not(.workout-plans-table) td:last-child {
     border-bottom: none;
     padding-top: 0.65rem;
   }
-  .responsive-table td::before {
+  .responsive-table:not(.workout-plans-table) td::before {
     content: attr(data-label);
     color: var(--muted);
     font-size: 0.8rem;
@@ -2828,11 +2828,11 @@ input[data-money] {
     flex-shrink: 0;
     max-width: 42%;
   }
-  .responsive-table td[data-label="اقدام"] {
+  .responsive-table:not(.workout-plans-table) td[data-label="اقدام"] {
     justify-content: stretch;
   }
-  .responsive-table td[data-label="اقدام"]::before { content: none; }
-  .responsive-table td[data-label="اقدام"] .btn {
+  .responsive-table:not(.workout-plans-table) td[data-label="اقدام"]::before { content: none; }
+  .responsive-table:not(.workout-plans-table) td[data-label="اقدام"] .btn {
     width: 100%;
     text-align: center;
   }

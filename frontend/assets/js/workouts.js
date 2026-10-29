@@ -42,21 +42,21 @@ export function workoutPlansTableHtml(items, opts = {}) {
             const preview = workoutPlanPreviewHtml(planItems, { legacyBody: p.body || '' })
             const when = formatDateTime(p.updated_at || p.created_at)
             return `<tr class="workout-plan-row" data-plan-id="${escapeHtml(String(p.id))}">
-              <td data-label="عنوان">
+              <td data-label="عنوان" class="workout-plan-cell-title">
                 <strong class="workout-plan-title">${escapeHtml(p.title || '—')}</strong>
               </td>
-              <td data-label="خلاصه برنامه">
+              <td data-label="خلاصه برنامه" class="workout-plan-cell-preview">
                 ${preview}
               </td>
-              <td data-label="مربی">
+              <td data-label="مربی" class="workout-plan-cell-trainer">
                 <span class="workout-plan-trainer">${escapeHtml(p.trainer_full_name || '—')}</span>
               </td>
-              <td data-label="به‌روزرسانی">
+              <td data-label="به‌روزرسانی" class="workout-plan-cell-when">
                 <time class="workout-plan-when">${escapeHtml(when)}</time>
               </td>
               ${
                 canWrite
-                  ? `<td data-label="عملیات" class="workout-plans-actions-col">
+                  ? `<td data-label="عملیات" class="workout-plans-actions-col workout-plan-cell-actions">
                       <button type="button" class="btn small ghost" data-edit-plan="${escapeHtml(String(p.id))}">ویرایش</button>
                     </td>`
                   : ''

@@ -917,17 +917,6 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   text-align: left;
 }
 @media (max-width: 720px) {
-  .workout-plans-wrap {
-    border: none;
-    background: transparent;
-    overflow: visible;
-  }
-  .workout-plans-table tbody tr {
-    border-radius: 14px;
-    border: 1px solid var(--line);
-    background: color-mix(in srgb, var(--panel-2) 70%, transparent);
-    padding: 0.35rem 0.15rem;
-  }
   .workout-plans-actions-col {
     width: auto;
     text-align: right;
@@ -1283,45 +1272,84 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     background: transparent;
     overflow: visible;
   }
-  .workout-plans-table {
+  .workout-plans-wrap .workout-plans-table {
     min-width: 0 !important;
   }
-  .workout-plans-table thead {
+  .workout-plans-wrap .workout-plans-table thead {
     display: none;
   }
-  .workout-plans-table,
-  .workout-plans-table tbody,
-  .workout-plans-table tr,
-  .workout-plans-table td {
+  .workout-plans-wrap .workout-plans-table,
+  .workout-plans-wrap .workout-plans-table tbody,
+  .workout-plans-wrap .workout-plans-table tr,
+  .workout-plans-wrap .workout-plans-table td {
     display: block;
     width: 100%;
+    min-width: 0;
   }
-  .workout-plans-table tr {
+  .workout-plans-wrap .workout-plans-table tr.workout-plan-row {
+    display: grid;
+    gap: 0.75rem;
     margin-bottom: 0.85rem;
-    padding: 0.85rem 0.9rem;
-    border-radius: 14px;
+    padding: 0.95rem 1rem;
+    border-radius: 16px;
     border: 1px solid var(--line);
     background: color-mix(in srgb, var(--panel-2) 72%, transparent);
   }
-  .workout-plans-table td {
+  .workout-plans-wrap .workout-plans-table tr.workout-plan-row:last-child {
+    margin-bottom: 0;
+  }
+  .workout-plans-wrap .workout-plans-table td {
     display: grid;
-    grid-template-columns: minmax(5.5rem, 32%) minmax(0, 1fr);
-    align-items: start;
-    gap: 0.45rem 0.7rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
-    padding: 0.5rem 0;
-  }
-  .workout-plans-table td:last-child {
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: initial;
+    align-items: stretch;
+    gap: 0.35rem;
     border-bottom: none;
-    padding-bottom: 0;
+    padding: 0;
+    width: 100%;
+    min-width: 0;
+    text-align: start;
   }
-  .workout-plans-table td::before {
+  .workout-plans-wrap .workout-plans-table td::before {
     content: attr(data-label);
     color: var(--muted);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 650;
+    max-width: none;
+    text-align: start;
   }
-  .workout-plans-actions-col .btn {
+  .workout-plans-wrap .workout-plans-table .workout-plan-cell-title::before,
+  .workout-plans-wrap .workout-plans-table .workout-plan-cell-actions::before {
+    content: none;
+  }
+  .workout-plans-wrap .workout-plans-table .workout-plan-title {
+    font-size: 1.05rem;
+    line-height: 1.4;
+  }
+  .workout-plans-wrap .workout-plans-table .workout-plan-preview {
+    max-width: none;
+    width: 100%;
+    gap: 0.55rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    background: color-mix(in srgb, var(--panel) 55%, transparent);
+  }
+  .workout-plans-wrap .workout-plans-table .workout-plan-preview-row {
+    grid-template-columns: 1.65rem minmax(0, 1fr);
+    align-items: center;
+  }
+  .workout-plans-wrap .workout-plans-table .workout-plan-preview-name,
+  .workout-plans-wrap .workout-plans-table .workout-plan-preview-meta {
+    white-space: normal;
+  }
+  .workout-plans-wrap .workout-plans-table .workout-plan-when {
+    white-space: normal;
+  }
+  .workout-plans-wrap .workout-plans-actions-col {
+    width: auto;
+  }
+  .workout-plans-wrap .workout-plans-actions-col .btn {
     width: 100%;
   }
   .workout-plan-form .inline-actions,

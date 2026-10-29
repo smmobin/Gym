@@ -32,6 +32,8 @@ describe('workout plans table', () => {
     expect(html).toContain('برنامه هفته ۱')
     expect(html).toContain('workout-plan-preview-row')
     expect(html).toContain('workout-plan-preview-name')
+    expect(html).toContain('workout-plan-cell-title')
+    expect(html).toContain('workout-plan-cell-preview')
     expect(html).toContain('اسکات')
     expect(html).toContain('پرس سینه')
     expect(html).toContain('3 ست · 10 تکرار')
