@@ -362,11 +362,11 @@ export function mountWorkoutPlanEditor(host, opts) {
           <span class="workout-editor-row-index" aria-hidden="true">${index + 1}</span>
           <button type="button" class="btn small ghost" data-remove-row ${rows.length <= 1 ? 'disabled' : ''}>حذف</button>
         </header>
-        <label class="workout-editor-field">
-          <span class="workout-editor-field-label">حرکت</span>
-          <div data-ex-cell></div>
-        </label>
-        <div class="workout-editor-metrics" role="group" aria-label="ست و مقدار">
+        <div class="workout-editor-main" role="group" aria-label="حرکت و ست">
+          <label class="workout-editor-field workout-editor-ex">
+            <span class="workout-editor-field-label">حرکت</span>
+            <div data-ex-cell></div>
+          </label>
           <label class="workout-editor-metric">
             <span class="workout-editor-field-label">ست</span>
             <input type="number" min="1" max="99" inputmode="numeric" class="workout-editor-num" data-field="sets" value="${escapeHtml(String(row.sets))}" required />
@@ -374,13 +374,6 @@ export function mountWorkoutPlanEditor(host, opts) {
           <label class="workout-editor-metric">
             <span class="workout-editor-field-label">در هر ست</span>
             <input type="number" min="1" max="9999" inputmode="numeric" class="workout-editor-num" data-field="amount" value="${escapeHtml(String(row.amount))}" required />
-          </label>
-          <label class="workout-editor-metric workout-editor-metric-unit">
-            <span class="workout-editor-field-label">واحد</span>
-            <select data-field="unit" class="workout-editor-unit" data-block>
-              <option value="reps"${row.unit !== 'seconds' ? ' selected' : ''}>تکرار</option>
-              <option value="seconds"${row.unit === 'seconds' ? ' selected' : ''}>ثانیه</option>
-            </select>
           </label>
         </div>
         <label class="workout-editor-field">
@@ -416,12 +409,10 @@ export function mountWorkoutPlanEditor(host, opts) {
     const amountEl = /** @type {HTMLInputElement | null} */ (
       rowEl.querySelector('[data-field="amount"]')
     )
-    const unitEl = /** @type {HTMLSelectElement | null} */ (rowEl.querySelector('[data-field="unit"]'))
     const noteEl = /** @type {HTMLInputElement | null} */ (rowEl.querySelector('[data-field="note"]'))
     if (!rows[index]) return
     rows[index].sets = Math.max(1, Number(setsEl?.value) || 1)
     rows[index].amount = Math.max(1, Number(amountEl?.value) || 1)
-    rows[index].unit = unitEl?.value === 'seconds' ? 'seconds' : 'reps'
     rows[index].note = noteEl?.value || ''
   }
 
