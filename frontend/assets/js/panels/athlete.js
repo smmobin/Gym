@@ -13,6 +13,7 @@ import { startSessionActivityGuard } from '../session-activity.js'
 import { initThemeToggle } from '../theme.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
 import { athleteMembershipCardsHtml } from '../athlete-memberships.js'
+import { athletePaymentCardsHtml } from '../athlete-payments.js'
 import { workoutPlanItemsTableHtml } from '../workout-plan-editor.js'
 
 function payResultMessage() {
@@ -168,18 +169,7 @@ async function main() {
       athleteMembershipCardsHtml(memItems)
 
     const payItems = payments.items || []
-    document.querySelector('[data-payments]').innerHTML = payItems.length
-      ? `<div class="table-wrap"><table class="responsive-table"><thead><tr><th>رسید</th><th>مبلغ</th><th>وضعیت</th></tr></thead><tbody>
-        ${payItems
-          .map(
-            (p) => `<tr>
-          <td>${p.receipt_number}</td>
-          <td>${formatToman(p.amount_toman)}</td>
-          <td>${p.status}</td></tr>`,
-          )
-          .join('')}
-      </tbody></table></div>`
-      : '<p class="hint">پرداختی نیست.</p>'
+    document.querySelector('[data-payments]').innerHTML = athletePaymentCardsHtml(payItems)
 
     const planItems = plans.items || []
     document.querySelector('[data-plans]').innerHTML = planItems.length

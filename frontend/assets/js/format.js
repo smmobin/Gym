@@ -190,6 +190,26 @@ export const PAYMENT_METHOD_LABEL = {
   online: 'آنلاین',
 }
 
+export const PAYMENT_STATUS_LABEL = {
+  paid: 'پرداخت‌شده',
+  pending: 'در انتظار',
+  refunded: 'بازگشت‌خورده',
+  failed: 'ناموفق',
+  cancelled: 'لغو‌شده',
+}
+
+/** @param {string | null | undefined} value */
+export function paymentStatusLabelFa(value) {
+  if (!value) return '—'
+  return PAYMENT_STATUS_LABEL[value] ?? value
+}
+
+/** @param {string | null | undefined} value */
+export function paymentMethodLabelFa(value) {
+  if (!value) return '—'
+  return PAYMENT_METHOD_LABEL[value] ?? value
+}
+
 /** Display-only class gender tag (API: men | women | mixed). */
 export const GENDER_LABEL = {
   mixed: 'مختلط',
