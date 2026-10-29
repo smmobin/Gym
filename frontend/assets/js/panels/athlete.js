@@ -40,6 +40,17 @@ async function startOnlinePayment(body) {
 }
 
 /**
+ * @param {any[]} items
+ */
+function syncAthleteReadAllButton(items) {
+  const btn = document.querySelector('[data-read-all-notifs]')
+  if (!(btn instanceof HTMLButtonElement)) return
+  const unread = (items || []).filter((n) => !n.is_read).length
+  btn.hidden = unread === 0
+  btn.disabled = unread === 0
+}
+
+/**
  * @param {HTMLElement | null} root
  * @param {any[]} items
  * @param {HTMLElement | null} status
@@ -58,6 +69,7 @@ function paintAthleteNotifications(root, items, status) {
         )
         .join('')
     : '<p class="hint">اعلانی نیست.</p>'
+  syncAthleteReadAllButton(items)
   root.querySelectorAll('[data-read]').forEach((btn) =>
     btn.addEventListener('click', async () => {
       try {
@@ -99,6 +111,19 @@ async function main() {
       void reloadAthleteNotifications(/** @type {HTMLElement} */ (status)).catch(() => {
         /* keep previous list; banner/status handled on full load */
       })
+    }
+  })
+
+  document.querySelector('[data-read-all-notifs]')?.addEventListener('click', async () => {
+    try {
+      await apiPost('/api/v1/athlete/notifications/read-all')
+      await reloadAthleteNotifications(/** @type {HTMLElement} */ (status))
+    } catch (err) {
+      setStatus(
+        /** @type {HTMLElement} */ (status),
+        err instanceof ApiError ? err.message : 'خواندن همه ناموفق',
+        'error',
+      )
     }
   })
 

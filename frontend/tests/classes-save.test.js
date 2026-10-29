@@ -27,6 +27,7 @@ vi.mock('../assets/js/api.js', () => ({
 
 import { apiGet, apiPatch, apiPost } from '../assets/js/api.js'
 import { mountClasses } from '../assets/js/classes.js'
+import { setStatus } from '../assets/js/ui.js'
 
 function fillClassForm(form, { title = 'کلاس تست', capacity = '8', gender = 'men', start, end } = {}) {
   const starts = start || '2030-06-01T10:00'
@@ -271,5 +272,38 @@ describe('class list focus after save (BUG-008)', () => {
     })
     const pagerStatus = root.querySelector('.list-pager-status')?.textContent || ''
     expect(pagerStatus).toMatch(/۲|2/)
+  })
+
+  it('does not toast green «N کلاس» after load; clears loading instead', async () => {
+    vi.mocked(setStatus).mockClear()
+    vi.mocked(apiGet).mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          title: 'نمونه',
+          capacity: 8,
+          gender_label: 'mixed',
+          booked_count: 0,
+          remaining: 8,
+          starts_at: '2030-06-01T10:00:00.000Z',
+          ends_at: '2030-06-01T11:00:00.000Z',
+          is_active: true,
+        },
+      ],
+      total: 1,
+    })
+
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountClasses(root, { role: 'receptionist' })
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-tbody]')?.textContent).toContain('نمونه')
+    })
+
+    const okCalls = vi.mocked(setStatus).mock.calls.filter((args) => args[2] === 'ok')
+    expect(okCalls.some((args) => String(args[1] || '').includes('کلاس'))).toBe(false)
+    expect(vi.mocked(setStatus).mock.calls.some((args) => args[1] === 'بارگذاری…')).toBe(true)
+    expect(vi.mocked(setStatus).mock.calls.some((args) => args[1] === '')).toBe(true)
   })
 })

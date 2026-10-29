@@ -24,6 +24,7 @@ from app.schemas.athlete import (
     AthleteMeResponse,
     AthleteNotificationListResponse,
     AthleteNotificationOut,
+    AthleteNotificationReadAllResponse,
     AthleteNotificationReadResponse,
     AthleteOut,
     AthletePaymentOut,
@@ -235,6 +236,20 @@ def athlete_notifications(
         total=len(rows),
         unread_count=unread,
     )
+
+
+@router.post(
+    "/notifications/read-all",
+    response_model=AthleteNotificationReadAllResponse,
+    status_code=status.HTTP_200_OK,
+)
+def athlete_mark_all_notifications_read(
+    db: Session = Depends(get_db),
+    member: Member = Depends(get_current_athlete),
+) -> AthleteNotificationReadAllResponse:
+    marked = athlete_svc.mark_own_notifications_read_all(db, member=member)
+    db.commit()
+    return AthleteNotificationReadAllResponse(marked=marked)
 
 
 @router.post(

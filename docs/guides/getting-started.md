@@ -211,7 +211,8 @@ API ورزشکار (همه فقط «خودش»):
 - `GET /api/v1/athlete/payments`
 - `GET /api/v1/athlete/workout-plans`
 - `GET /api/v1/athlete/group-classes` ، `POST …/group-classes/{id}/book` ، `GET /athlete/class-bookings` ، `POST …/class-bookings/{id}/cancel`
-- `GET /api/v1/athlete/notifications` ، `POST …/notifications/{id}/read`
+- `GET /api/v1/athlete/notifications` ، `POST …/notifications/{id}/read` ، `POST …/notifications/read-all`
+- رزرو موفق کلاس → اعلان ورزشکار `class_booked` (عنوان «رزرو کلاس»)
 - `POST /api/v1/athlete/renewal-requests` → اعلان desk از نوع `renewal_request` (بدون تمدید خودکار؛ وقتی درگاه خاموش است)
 - `GET /api/v1/athlete/membership-plans` ، `POST /api/v1/athlete/payments/online/start` — وقتی درگاه از env فعال باشد
 - `GET /api/v1/payments/gateway/status` — فلگ غیرحساس فعال/sandbox

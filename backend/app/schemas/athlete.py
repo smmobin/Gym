@@ -147,6 +147,10 @@ class AthleteNotificationReadResponse(BaseModel):
     is_read: bool
 
 
+class AthleteNotificationReadAllResponse(BaseModel):
+    marked: int
+
+
 class RenewalRequestCreate(BaseModel):
     note: Optional[str] = Field(default=None, max_length=1000)
 

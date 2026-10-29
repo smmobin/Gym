@@ -151,7 +151,8 @@ export function mountClasses(root, user) {
       } else {
         pager.paint(classes, paintClassRows)
       }
-      setStatus(status, `${classes.length.toLocaleString('fa-IR')} کلاس`, 'ok')
+      // Do not toast «N کلاس» — auto-refresh (~15s) made it noisy. Clear loading only.
+      if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'بارگذاری ناموفق — تلاش مجدد خودکار…'), 'error')
       throw err

@@ -5,9 +5,11 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.jalali import format_datetime_fa
 from app.core.security import hash_password, verify_password
 from app.models.athlete_notification import AthleteNotification
 from app.models.enums import MemberStatus, StaffRole
+from app.models.group_class import GroupClass
 from app.models.member import Member
 from app.models.membership import Membership, MembershipPlan
 from app.models.payment import Payment
@@ -18,6 +20,8 @@ from app.services.debt import member_debt
 from app.services.notifications import KIND_RENEWAL_REQUEST, create_notification
 
 MIN_PASSWORD_LEN = 8
+
+KIND_CLASS_BOOKED = "class_booked"
 
 
 class AthleteError(Exception):
@@ -166,6 +170,44 @@ def mark_own_notification_read(
         # Same message for missing / other member — no leak
         raise AthleteError(404, "اعلان یافت نشد.")
     row.is_read = True
+    db.flush()
+    return row
+
+
+def mark_own_notifications_read_all(db: Session, *, member: Member) -> int:
+    rows = list(
+        db.scalars(
+            select(AthleteNotification).where(
+                AthleteNotification.member_id == member.id,
+                AthleteNotification.is_read.is_(False),
+            )
+        ).all()
+    )
+    for row in rows:
+        row.is_read = True
+    db.flush()
+    return len(rows)
+
+
+def notify_class_booked(
+    db: Session,
+    *,
+    member_id: int,
+    group_class: GroupClass,
+    booking_id: int,
+) -> AthleteNotification:
+    """In-app inbox row for the booked member (desk + self-book share this)."""
+    when = format_datetime_fa(group_class.starts_at)
+    row = AthleteNotification(
+        member_id=member_id,
+        kind=KIND_CLASS_BOOKED,
+        title="رزرو کلاس",
+        body=f"کلاس «{group_class.title}» برای {when} رزرو شد.",
+        entity_type="class_booking",
+        entity_id=str(booking_id),
+        is_read=False,
+    )
+    db.add(row)
     db.flush()
     return row
 

@@ -387,6 +387,15 @@ def book_member_core(
         db.add(booking)
 
     db.flush()
+    # Late import avoids circular import with athlete ↔ group_classes callers.
+    from app.services.athlete import notify_class_booked
+
+    notify_class_booked(
+        db,
+        member_id=member_id,
+        group_class=group_class,
+        booking_id=booking.id,
+    )
     snap = snapshot(db, group_class)
     return BookingSnapshot(
         booking=booking,

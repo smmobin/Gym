@@ -10,8 +10,9 @@ from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
 from app.db.seed import DEV_ATHLETE_PASSWORD, DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
-from app.models import ClassBooking, GroupClass, Member
+from app.models import AthleteNotification, ClassBooking, GroupClass, Member
 from app.models.enums import BookingStatus
+from app.services.athlete import KIND_CLASS_BOOKED
 from app.services.class_booking import remaining_capacity
 
 
@@ -122,6 +123,73 @@ def test_athlete_book_and_cancel_own(client: TestClient) -> None:
     listed2 = client.get("/api/v1/athlete/group-classes")
     mine2 = next(c for c in listed2.json()["items"] if c["id"] == class_id)
     assert mine2["booked_by_me"] is False
+
+
+def test_athlete_book_creates_class_booked_notification(client: TestClient) -> None:
+    _clear_ali_pilates_booking()
+    ali_id = _ali_id()
+    db = SessionLocal()
+    try:
+        for row in db.scalars(
+            select(AthleteNotification).where(
+                AthleteNotification.member_id == ali_id,
+                AthleteNotification.kind == KIND_CLASS_BOOKED,
+            )
+        ).all():
+            db.delete(row)
+        db.commit()
+    finally:
+        db.close()
+
+    _athlete_login(client)
+    class_id = _pilates_id()
+    book = client.post(f"/api/v1/athlete/group-classes/{class_id}/book")
+    assert book.status_code == 201, book.text
+    booking_id = book.json()["booking"]["id"]
+
+    notifs = client.get("/api/v1/athlete/notifications").json()["items"]
+    booked = [n for n in notifs if n["kind"] == KIND_CLASS_BOOKED]
+    assert len(booked) == 1
+    assert booked[0]["title"] == "رزرو کلاس"
+    assert "پیلاتس" in (booked[0]["body"] or "")
+    assert booked[0]["entity_id"] == str(booking_id)
+    assert booked[0]["is_read"] is False
+
+    dup = client.post(f"/api/v1/athlete/group-classes/{class_id}/book")
+    assert dup.status_code == 409
+    notifs2 = client.get("/api/v1/athlete/notifications").json()["items"]
+    assert len([n for n in notifs2 if n["kind"] == KIND_CLASS_BOOKED]) == 1
+
+
+def test_desk_book_creates_athlete_notification(client: TestClient) -> None:
+    _clear_ali_pilates_booking()
+    ali_id = _ali_id()
+    db = SessionLocal()
+    try:
+        for row in db.scalars(
+            select(AthleteNotification).where(
+                AthleteNotification.member_id == ali_id,
+                AthleteNotification.kind == KIND_CLASS_BOOKED,
+            )
+        ).all():
+            db.delete(row)
+        db.commit()
+    finally:
+        db.close()
+
+    _staff_login(client)
+    class_id = _pilates_id()
+    res = client.post(
+        f"/api/v1/group-classes/{class_id}/bookings",
+        json={"member_id": ali_id},
+    )
+    assert res.status_code == 201, res.text
+
+    _athlete_login(client)
+    notifs = client.get("/api/v1/athlete/notifications").json()["items"]
+    booked = [n for n in notifs if n["kind"] == KIND_CLASS_BOOKED]
+    assert len(booked) == 1
+    assert booked[0]["title"] == "رزرو کلاس"
 
 
 def test_athlete_cannot_cancel_others_booking(client: TestClient) -> None:

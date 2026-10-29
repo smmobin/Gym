@@ -149,6 +149,61 @@ def test_athlete_a_cannot_read_b_notification(client: TestClient) -> None:
     )
 
 
+def test_athlete_read_all_only_own(client: TestClient) -> None:
+    from app.models import AthleteNotification
+
+    with SessionLocal() as session:
+        hosein = session.scalar(select(Member).where(Member.mobile == "09121111005"))
+        ali = session.scalar(select(Member).where(Member.mobile == "09121111001"))
+        assert hosein is not None and ali is not None
+        hosein_unread_before = session.scalar(
+            select(AthleteNotification)
+            .where(
+                AthleteNotification.member_id == hosein.id,
+                AthleteNotification.is_read.is_(False),
+            )
+            .limit(1)
+        )
+        assert hosein_unread_before is not None
+        hosein_id = hosein_unread_before.id
+
+        # Ensure Ali has at least one unread
+        ali_unread = session.scalar(
+            select(AthleteNotification).where(
+                AthleteNotification.member_id == ali.id,
+                AthleteNotification.is_read.is_(False),
+            )
+        )
+        if ali_unread is None:
+            session.add(
+                AthleteNotification(
+                    member_id=ali.id,
+                    kind="test_unread",
+                    title="نمونه خوانده‌نشده",
+                    body="برای تست read-all",
+                    is_read=False,
+                )
+            )
+            session.commit()
+
+    _athlete_login(client, "09121111001")
+    before = client.get("/api/v1/athlete/notifications").json()
+    assert before["unread_count"] >= 1
+
+    marked = client.post("/api/v1/athlete/notifications/read-all")
+    assert marked.status_code == 200
+    assert marked.json()["marked"] >= 1
+
+    after = client.get("/api/v1/athlete/notifications").json()
+    assert after["unread_count"] == 0
+    assert all(n["is_read"] for n in after["items"])
+
+    with SessionLocal() as session:
+        hosein_row = session.get(AthleteNotification, hosein_id)
+        assert hosein_row is not None
+        assert hosein_row.is_read is False
+
+
 def test_workout_plans_only_own(client: TestClient) -> None:
     _athlete_login(client, "09121111001")
     data = client.get("/api/v1/athlete/workout-plans").json()
