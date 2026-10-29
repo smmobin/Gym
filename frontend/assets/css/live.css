@@ -822,7 +822,7 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
+  display: ruby;
   gap: 0.45rem;
   max-width: 28rem;
   min-width: 0;
