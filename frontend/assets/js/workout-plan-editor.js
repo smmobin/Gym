@@ -336,7 +336,7 @@ export function mountWorkoutPlanEditor(host, opts) {
           </label>
           <label class="workout-editor-metric workout-editor-metric-unit">
             <span class="workout-editor-field-label">واحد</span>
-            <select data-field="unit" class="workout-editor-unit custom-select-skip">
+            <select data-field="unit" class="workout-editor-unit" data-block>
               <option value="reps"${row.unit !== 'seconds' ? ' selected' : ''}>تکرار</option>
               <option value="seconds"${row.unit === 'seconds' ? ' selected' : ''}>ثانیه</option>
             </select>
@@ -361,6 +361,9 @@ export function mountWorkoutPlanEditor(host, opts) {
       })
       list.appendChild(article)
     })
+    if (typeof window !== 'undefined' && window.GymCustomSelect?.refresh) {
+      window.GymCustomSelect.refresh(list)
+    }
   }
 
   /**

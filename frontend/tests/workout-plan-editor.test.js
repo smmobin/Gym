@@ -72,7 +72,9 @@ describe('workout plan structured table', () => {
 
     expect(host.querySelector('.workout-editor-row')).toBeTruthy()
     expect(host.querySelector('.workout-editor-metrics')).toBeTruthy()
-    expect(host.querySelector('select.custom-select-skip')).toBeTruthy()
+    const unitSelect = host.querySelector('select.workout-editor-unit')
+    expect(unitSelect).toBeTruthy()
+    expect(unitSelect?.classList.contains('custom-select-skip')).toBe(false)
 
     const items = editor.getItems()
     expect(items).toHaveLength(1)

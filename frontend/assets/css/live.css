@@ -885,6 +885,12 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 #mount-workouts .panel {
   overflow-x: clip;
 }
+#mount-workouts .panel:has(.custom-select.is-open),
+.workout-plan-editor:has(.custom-select.is-open),
+.workout-editor-list:has(.custom-select.is-open),
+.workout-editor-row:has(.custom-select.is-open) {
+  overflow: visible;
+}
 .workout-editor-label {
   margin-bottom: 0.45rem;
 }
@@ -962,6 +968,19 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   min-height: 2.55rem;
   margin: 0;
   box-sizing: border-box;
+}
+.workout-editor-metric-unit .custom-select {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  gap: 0;
+}
+.workout-editor-metric-unit .custom-select.is-open {
+  z-index: 40;
+}
+.workout-editor-metric-unit .custom-select-trigger {
+  min-height: 2.55rem;
+  padding: 0.55rem 0.75rem;
 }
 .workout-editor-num {
   text-align: center;
