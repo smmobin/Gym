@@ -56,14 +56,61 @@ export function membershipEligibilityHtml(memberships, lockerPlanIds) {
     .join('')
 }
 
+/** @param {string} s */
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+const LOCKER_MARK_SVG =
+  '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 8.5h6M9 12.5h6M9 16.5h4"/><circle cx="15.5" cy="16.5" r="0.9" fill="currentColor" stroke="none"/></svg>'
+
+/**
+ * Selected-locker chip for the assign panel (empty or filled).
+ * @param {{ code?: string, is_free?: boolean, is_active?: boolean, current_assignment?: any } | null | undefined} locker
+ */
+export function lockerSelectionChipHtml(locker) {
+  if (!locker) {
+    return `<div class="locker-sel is-empty" data-sel-label>
+      <span class="locker-sel-mark" aria-hidden="true">${LOCKER_MARK_SVG}</span>
+      <div class="locker-sel-text">
+        <span class="locker-sel-kicker">انتخاب کمد</span>
+        <strong class="locker-sel-title">کمدی انتخاب نشده</strong>
+        <span class="locker-sel-meta">از جدول بالا یک کمد را انتخاب کنید</span>
+      </div>
+    </div>`
+  }
+  const free = !!locker.is_free
+  const a = locker.current_assignment
+  const occupant = a ? String(a.member_name || a.member_display_id || '').trim() : ''
+  const bits = [free ? 'آزاد · آماده واگذاری' : `اشغال${occupant ? ` · ${occupant}` : ''}`]
+  if (locker.is_active === false) bits.push('غیرفعال')
+  const badgeClass = free ? 'ok' : 'warn'
+  const badgeText = free ? 'آزاد' : 'اشغال'
+  return `<div class="locker-sel is-selected" data-sel-label>
+      <span class="locker-sel-mark" aria-hidden="true">${LOCKER_MARK_SVG}</span>
+      <div class="locker-sel-text">
+        <span class="locker-sel-kicker">کمد انتخاب‌شده</span>
+        <strong class="locker-sel-title">${escapeHtml(locker.code || '—')}</strong>
+        <span class="locker-sel-meta">${escapeHtml(bits.join(' · '))}</span>
+      </div>
+      <span class="badge ${badgeClass}">${badgeText}</span>
+    </div>`
+}
+
 /**
  * @param {Array<{ id: number, code: string, is_free: boolean, is_active: boolean, current_assignment?: any }>} lockers
+ * @param {number | null} [selectedId]
  */
-export function lockersTableRowsHtml(lockers) {
+export function lockersTableRowsHtml(lockers, selectedId = null) {
   return (lockers || [])
     .map((l) => {
       const a = l.current_assignment
-      return `<tr>
+      const sel = selectedId != null && l.id === selectedId
+      return `<tr class="${sel ? 'is-locker-selected' : ''}">
             <td data-label="کد">${l.code}</td>
             <td data-label="وضعیت"><span class="badge ${l.is_free ? 'ok' : 'warn'}">${l.is_free ? 'آزاد' : 'اشغال'}${!l.is_active ? ' · غیرفعال' : ''}</span></td>
             <td data-label="عضو">${a ? `${a.member_name || a.member_display_id}` : '—'}</td>
@@ -98,7 +145,7 @@ export function mountLockers(root, user) {
     </article>
     <article class="panel" style="margin-top:1rem">
       <header class="panel-head"><h2>واگذاری</h2></header>
-      <p class="hint" data-sel-label>کمدی انتخاب نشده</p>
+      <div class="locker-sel-host" data-sel-host>${lockerSelectionChipHtml(null)}</div>
       <p class="hint" data-plans-hint></p>
       ${personSelectRowHtml({
         label: 'جستجوی عضو',
@@ -135,14 +182,23 @@ export function mountLockers(root, user) {
       : 'هیچ طرح شامل‌کمدی در فهرست فعال نیست.'
   }
 
+  function paintSelection() {
+    const host = root.querySelector('[data-sel-host]')
+    if (!host) return
+    if (selected?.id != null) {
+      const fresh = lockers.find((x) => x.id === selected.id)
+      if (fresh) selected = fresh
+    }
+    host.innerHTML = lockerSelectionChipHtml(selected)
+  }
+
   function bindTableActions() {
     if (!tbody) return
     tbody.querySelectorAll('[data-sel]').forEach((b) =>
       b.addEventListener('click', () => {
-        selected = lockers.find((x) => x.id === Number(b.getAttribute('data-sel')))
-        root.querySelector('[data-sel-label]').textContent = selected
-          ? `کمد ${selected.code}`
-          : 'کمدی انتخاب نشده'
+        selected = lockers.find((x) => x.id === Number(b.getAttribute('data-sel'))) || null
+        paintSelection()
+        renderTable()
       }),
     )
     tbody.querySelectorAll('[data-rel]').forEach((b) =>
@@ -151,6 +207,7 @@ export function mountLockers(root, user) {
           await apiPost(`/api/v1/lockers/${b.getAttribute('data-rel')}/release`)
           setStatus(status, 'آزاد شد.', 'ok')
           await autoRefresh.refresh()
+          paintSelection()
         } catch (err) {
           setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
         }
@@ -160,8 +217,9 @@ export function mountLockers(root, user) {
 
   function renderTable() {
     if (!tbody) return
+    const selectedId = selected?.id ?? null
     pager.paint(lockers, (rows) => {
-      tbody.innerHTML = lockersTableRowsHtml(rows)
+      tbody.innerHTML = lockersTableRowsHtml(rows, selectedId)
       bindTableActions()
     })
   }
@@ -201,6 +259,7 @@ export function mountLockers(root, user) {
     try {
       await loadLockersOnly()
       await loadPlans()
+      paintSelection()
       if (member) renderEligibility()
       if (!silent) setStatus(status, '')
     } catch (err) {

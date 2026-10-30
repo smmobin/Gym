@@ -27,6 +27,7 @@ import { apiGet, apiPost } from '../assets/js/api.js'
 import {
   ineligibleLockerAssignMessage,
   lockerPlanNames,
+  lockerSelectionChipHtml,
   lockersTableRowsHtml,
   membershipEligibilityHtml,
   mountLockers,
@@ -157,6 +158,33 @@ describe('locker create → table refresh (BUG-003)', () => {
   })
 })
 
+describe('lockerSelectionChipHtml', () => {
+  it('shows empty state when no locker selected', () => {
+    const html = lockerSelectionChipHtml(null)
+    expect(html).toContain('locker-sel is-empty')
+    expect(html).toContain('کمدی انتخاب نشده')
+    expect(html).toContain('data-sel-label')
+  })
+
+  it('shows code, status and occupant when selected', () => {
+    const free = lockerSelectionChipHtml({ code: 'L-03', is_free: true, is_active: true })
+    expect(free).toContain('is-selected')
+    expect(free).toContain('L-03')
+    expect(free).toContain('آزاد')
+    expect(free).toContain('آماده واگذاری')
+
+    const busy = lockerSelectionChipHtml({
+      code: 'L-02',
+      is_free: false,
+      is_active: true,
+      current_assignment: { member_name: 'سارا' },
+    })
+    expect(busy).toContain('L-02')
+    expect(busy).toContain('اشغال')
+    expect(busy).toContain('سارا')
+  })
+})
+
 describe('lockersTableRowsHtml', () => {
   it('renders free and occupied rows', () => {
     const html = lockersTableRowsHtml([
@@ -173,5 +201,50 @@ describe('lockersTableRowsHtml', () => {
     expect(html).toContain('آزاد')
     expect(html).toContain('سارا')
     expect(html).toContain('data-rel="2"')
+  })
+
+  it('marks the selected locker row', () => {
+    const html = lockersTableRowsHtml(
+      [{ id: 1, code: 'L-01', is_free: true, is_active: true }],
+      1,
+    )
+    expect(html).toContain('is-locker-selected')
+  })
+})
+
+describe('locker selection chip in mount', () => {
+  beforeEach(() => {
+    vi.mocked(apiGet).mockReset()
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('upgrades assign panel chip when a locker is chosen', async () => {
+    vi.mocked(apiGet).mockImplementation(async (path) => {
+      if (String(path).includes('membership-plans')) {
+        return { items: [], total: 0 }
+      }
+      if (String(path).includes('/lockers')) {
+        return {
+          items: [{ id: 3, code: 'L-03', is_free: true, is_active: true }],
+          total: 1,
+        }
+      }
+      return { items: [], total: 0 }
+    })
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountLockers(root, { role: 'manager' })
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-tbody]')?.textContent).toContain('L-03')
+    })
+    expect(root.querySelector('.locker-sel.is-empty')).toBeTruthy()
+    root.querySelector('[data-sel="3"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await vi.waitFor(() => {
+      expect(root.querySelector('.locker-sel.is-selected')?.textContent).toContain('L-03')
+      expect(root.querySelector('tr.is-locker-selected')).toBeTruthy()
+    })
   })
 })
