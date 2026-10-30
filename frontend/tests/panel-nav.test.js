@@ -41,6 +41,23 @@ describe('sidebar nav icons', () => {
     history.replaceState(null, '', ' ')
   })
 
+  function extractSidebar(html) {
+    const match = html.match(/<aside class="sidebar">[\s\S]*?<\/aside>/)
+    expect(match).toBeTruthy()
+    return match[0]
+  }
+
+  function assertEveryNavItemHasIcon() {
+    const items = [...document.querySelectorAll('.sidebar .nav-item[href^="#"]')]
+    expect(items.length).toBeGreaterThan(0)
+    items.forEach((a) => {
+      const hash = (a.getAttribute('href') || '').slice(1)
+      expect(NAV_ICON_BY_HASH[hash], `missing icon map for #${hash}`).toBeTruthy()
+      expect(a.querySelector('svg.nav-item-icon')).toBeTruthy()
+      expect(a.querySelector('.nav-item-label')?.textContent?.trim().length).toBeGreaterThan(0)
+    })
+  }
+
   it('navIconSvg and hash map cover core panel routes', () => {
     expect(navIconSvg('users')).toContain('nav-item-icon')
     expect(navIconSvg('users')).toContain('viewBox="0 0 24 24"')
@@ -48,29 +65,30 @@ describe('sidebar nav icons', () => {
     expect(NAV_ICON_BY_HASH.settings).toBe('gear')
     expect(NAV_ICON_BY_HASH.notif).toBe('bell')
     expect(NAV_ICON_BY_HASH.lockers).toBe('lock')
+    expect(NAV_ICON_BY_HASH.trainees).toBe('user')
+    expect(NAV_ICON_BY_HASH.plan).toBe('dumbbell')
   })
 
-  it('applyNavIcons adds outline svg beside label on all four panel nav shapes', () => {
-    document.body.innerHTML = `
-      <aside class="sidebar">
-        <nav class="nav">
-          <a class="nav-item" href="#dash">داشبورد</a>
-          <a class="nav-item" href="#members">اعضا</a>
-          <a class="nav-item" href="#settings">تنظیمات</a>
-          <a class="nav-item" href="#notif">اعلان‌ها</a>
-        </nav>
-      </aside>`
-    applyNavIcons(document)
-    const items = [...document.querySelectorAll('.nav-item')]
-    expect(items).toHaveLength(4)
-    items.forEach((a) => {
-      expect(a.querySelector('svg.nav-item-icon')).toBeTruthy()
-      expect(a.querySelector('.nav-item-label')?.textContent?.trim().length).toBeGreaterThan(0)
-    })
-    expect(document.querySelector('[href="#settings"] .nav-item-label')?.textContent).toContain('تنظیمات')
-    applyNavIcons(document)
-    expect(document.querySelectorAll('.nav-item-icon')).toHaveLength(4)
+  it('shell (desk+trainer) and athlete panels wire applyNavIcons', () => {
+    const shell = readFileSync(join(root, 'assets/js/panels/shell.js'), 'utf8')
+    const athlete = readFileSync(join(root, 'assets/js/panels/athlete.js'), 'utf8')
+    const trainer = readFileSync(join(root, 'assets/js/panels/trainer.js'), 'utf8')
+    expect(shell).toMatch(/applyNavIcons/)
+    expect(athlete).toMatch(/applyNavIcons/)
+    expect(trainer).toMatch(/initStaffShell/)
   })
+
+  it.each(['receptionist', 'manager', 'trainer', 'athlete'])(
+    '%s sidebar gets an outline icon on every nav-item',
+    (panel) => {
+      document.body.innerHTML = extractSidebar(readPanelHtml(panel))
+      applyNavIcons(document)
+      assertEveryNavItemHasIcon()
+      const before = document.querySelectorAll('.nav-item-icon').length
+      applyNavIcons(document)
+      expect(document.querySelectorAll('.nav-item-icon')).toHaveLength(before)
+    },
+  )
 
   it('bindHashNav falls back when section missing (receptionist #settings)', () => {
     document.body.innerHTML = `
