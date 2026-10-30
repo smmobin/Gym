@@ -1,5 +1,6 @@
 import { apiErrorMessage, apiPost } from './api.js'
 import { formatJalaliDate, formatToman, PAYMENT_METHOD_LABEL } from './format.js'
+import { enhanceMobileInputs } from './mobile-input.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { setStatus } from './ui.js'
 
@@ -15,7 +16,7 @@ export function mountGuests(root, user) {
       <form data-form class="form-grid">
         <label>نام *<input name="first_name" required /></label>
         <label>نام خانوادگی *<input name="last_name" required /></label>
-        <label>موبایل *<input name="mobile" required /></label>
+        <label>موبایل *<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" required /></label>
         <label>مبلغ توافقی (تومان)<input data-money name="agreed_amount_toman" inputmode="numeric" value="0" required /></label>
         <label>روش پرداخت
           <select name="payment_method" data-method>
@@ -34,6 +35,7 @@ export function mountGuests(root, user) {
     </article>
   `
   const status = root.querySelector('[data-status]')
+  enhanceMobileInputs(root)
   enhanceMoneyInputs(root)
   const payNow = /** @type {HTMLInputElement} */ (root.querySelector('[data-pay]'))
   const method = /** @type {HTMLSelectElement} */ (root.querySelector('[data-method]'))

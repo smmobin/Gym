@@ -5,6 +5,7 @@ import { formatDateTime, MEMBER_STATUS } from './format.js'
 import { bindLiveSearch } from './live-search.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { createListPager } from './pagination.js'
+import { enhanceMobileInputs, sanitizeMobileInput } from './mobile-input.js'
 import { enhancePasswordFields } from './password-toggle.js'
 import { renderMemberPick, setStatus } from './ui.js'
 
@@ -37,7 +38,7 @@ export function mountMembers(root, user) {
         <form data-create class="form-grid">
           <label>نام *<input name="first_name" required /></label>
           <label>نام خانوادگی *<input name="last_name" required /></label>
-          <label>موبایل *<input name="mobile" required /></label>
+          <label>موبایل *<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" required /></label>
           <label class="full">یادداشت<textarea name="notes"></textarea></label>
           <button class="btn" type="submit">ثبت</button>
           <p class="hint full">برای کمد: بعد از ثبت، در <a href="#billing">مالی</a> طرح با برچسب «شامل کمد» تمدید کنید؛ واگذاری از <a href="#lockers">کمدها</a> است (اجارهٔ جدا در v1 نیست).</p>
@@ -49,7 +50,7 @@ export function mountMembers(root, user) {
         <form data-edit class="form-grid">
           <label>نام<input name="first_name" /></label>
           <label>نام خانوادگی<input name="last_name" /></label>
-          <label>موبایل<input name="mobile" /></label>
+          <label>موبایل<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" /></label>
           <label class="full">یادداشت<textarea name="notes"></textarea></label>
           <div class="inline-actions full">
             <button class="btn" type="submit" data-save disabled>ذخیره</button>
@@ -67,6 +68,7 @@ export function mountMembers(root, user) {
     }
   `
 
+  enhanceMobileInputs(root)
   const status = root.querySelector('[data-status]')
   const tbody = root.querySelector('[data-tbody]')
   const pager = createListPager(root.querySelector('[data-pager]'))
@@ -153,7 +155,7 @@ export function mountMembers(root, user) {
     if (form && m) {
       form.querySelector('[name=first_name]').value = m.first_name
       form.querySelector('[name=last_name]').value = m.last_name
-      form.querySelector('[name=mobile]').value = m.mobile
+      form.querySelector('[name=mobile]').value = sanitizeMobileInput(m.mobile || '')
       form.querySelector('[name=notes]').value = m.notes || ''
     }
     if (locker) await locker.setMember(canWrite ? id : null)

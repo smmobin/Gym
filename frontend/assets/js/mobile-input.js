@@ -57,6 +57,10 @@ export function enhanceMobileInputs(root = document, opts = {}) {
       if (el.value !== next) el.value = next
     }
     el.addEventListener('input', apply)
+    el.addEventListener('paste', () => {
+      // After paste settles, strip non-digits and enforce max length.
+      setTimeout(apply, 0)
+    })
     el.addEventListener('blur', apply)
     apply()
   })

@@ -3,6 +3,7 @@ import { createAutoRefresh } from './auto-refresh.js'
 import { emitLive, LIVE } from './live-data.js'
 import { ROLE_LABEL } from './format.js'
 import { createListPager } from './pagination.js'
+import { enhanceMobileInputs, sanitizeMobileInput } from './mobile-input.js'
 import { enhancePasswordFields } from './password-toggle.js'
 import { setStatus } from './ui.js'
 
@@ -41,7 +42,7 @@ export function mountStaff(root, user) {
         <header class="panel-head"><h2>${isManager ? 'کارمند جدید' : 'مربی جدید'}</h2></header>
         <form data-create class="form-grid">
           <label>نام کامل *<input name="full_name" required minlength="2" /></label>
-          <label>موبایل *<input name="mobile" required /></label>
+          <label>موبایل *<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" required /></label>
           <label>نقش *
             <select name="role" required>${roleOptions}</select>
           </label>
@@ -54,7 +55,7 @@ export function mountStaff(root, user) {
         <form data-edit class="form-grid">
           <input type="hidden" name="id" />
           <label>نام کامل<input name="full_name" minlength="2" /></label>
-          <label>موبایل<input name="mobile" /></label>
+          <label>موبایل<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" /></label>
           <label>نقش
             <select name="role">${roleOptions}</select>
           </label>
@@ -72,6 +73,7 @@ export function mountStaff(root, user) {
     }
   `
 
+  enhanceMobileInputs(root)
   const status = root.querySelector('[data-status]')
   const tbody = root.querySelector('[data-tbody]')
   const pager = createListPager(root.querySelector('[data-pager]'))
@@ -128,7 +130,7 @@ export function mountStaff(root, user) {
     if (!form) return
     form.id.value = String(u.id)
     form.full_name.value = u.full_name
-    form.mobile.value = u.mobile
+    form.mobile.value = sanitizeMobileInput(u.mobile || '')
     form.role.value = u.role
     form.password.value = ''
     setEditEnabled(true)
