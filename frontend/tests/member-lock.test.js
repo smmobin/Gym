@@ -51,7 +51,6 @@ describe('createMemberLock live poll', () => {
     expect(paints.at(-1)?.held).toBe(false)
     expect(paints.at(-1)?.err).toMatch(/منشی دو|قفل/)
 
-    // Now free on GET; next acquire succeeds
     vi.mocked(apiGet).mockResolvedValue({
       locked: false,
       member_id: 7,
@@ -74,7 +73,7 @@ describe('createMemberLock live poll', () => {
     await locker.setMember(null)
   })
 
-  it('after release does not immediately re-acquire (lets other desks take it)', async () => {
+  it('after release auto-reacquires without requiring another select click', async () => {
     /** @type {Array<{ held?: boolean, err?: string | null }>} */
     const paints = []
     const locker = createMemberLock((st, err) => {
@@ -94,21 +93,21 @@ describe('createMemberLock live poll', () => {
 
     await locker.release()
     expect(locker.memberId).toBeNull()
-    expect(paints.at(-1)?.held).toBe(false)
-    expect(paints.at(-1)?.err).toMatch(/انتخاب/)
+    expect(paints.at(-1)?.err).toMatch(/آزاد|آماده‌سازی/)
+    expect(String(paints.at(-1)?.err || '')).not.toMatch(/انتخاب/)
 
-    const postsBefore = vi.mocked(apiPost).mock.calls.length
-    await vi.advanceTimersByTimeAsync(3000)
-    const acquireCalls = vi
-      .mocked(apiPost)
-      .mock.calls.slice(postsBefore)
-      .filter(([url]) => String(url).endsWith('/lock') && !String(url).includes('touch'))
-    expect(acquireCalls).toHaveLength(0)
+    await vi.advanceTimersByTimeAsync(1500)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(locker.memberId).toBe(3)
+    expect(paints.at(-1)?.held).toBe(true)
+    expect(paints.at(-1)?.err).toBeNull()
 
     await locker.setMember(null)
   })
 
-  it('when lock becomes free, acquires before leaving UI on held=false without hint', async () => {
+  it('when lock becomes free, acquires before leaving UI stuck unlocked', async () => {
     /** @type {Array<{ held?: boolean, err?: string | null }>} */
     const paints = []
     const locker = createMemberLock((st, err) => {
@@ -136,16 +135,13 @@ describe('createMemberLock live poll', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    const lastHeld = [...paints].reverse().find((p) => p.held)
-    expect(lastHeld).toBeTruthy()
-    // Final held paint must not be stuck on bare «free» without acquire
     expect(paints.at(-1)?.held).toBe(true)
     expect(paints.at(-1)?.err).toBeNull()
 
     await locker.setMember(null)
   })
 
-  it('while watching a free member, detects when another desk locks it', async () => {
+  it('while watching after release, detects when another desk locks it', async () => {
     const paints = []
     const locker = createMemberLock((st, err) => {
       paints.push({ held: !!(st && st.held_by_me), err })

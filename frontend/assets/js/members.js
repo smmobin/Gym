@@ -92,7 +92,7 @@ export function mountMembers(root, user) {
           else if (st?.locked)
             info.textContent = `قفل نزد ${st.locked_by_name || 'دیگری'}`
           else if (selectedId && st && !st.held_by_me)
-            info.textContent = 'قفل آزاد است — برای ویرایش دوباره «انتخاب» را بزنید'
+            info.textContent = 'در حال گرفتن قفل…'
           else info.textContent = selectedId ? 'در حال آماده‌سازی قفل…' : 'عضوی انتخاب نشده'
         }
         root.querySelectorAll('[data-save],[data-archive],[data-pw-btn]').forEach((b) => {

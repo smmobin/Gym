@@ -52,8 +52,13 @@ export function createMemberLock(onChange, opts = {}) {
   let watchedId = null
   /** @type {number | null} lock successfully held by this client */
   let heldId = null
-  /** After intentional unlock, do not steal the lock back until setMember again. */
+  /**
+   * Brief window after unlock so another desk can grab the file before we
+   * auto-reacquire for the same selection (no extra «انتخاب» click).
+   */
   let suppressAcquire = false
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  let reacquireTimer = null
   /** @type {ReturnType<typeof setInterval> | null} */
   let pollTimer = null
   /** @type {ReturnType<typeof setInterval> | null} */
@@ -71,6 +76,13 @@ export function createMemberLock(onChange, opts = {}) {
     if (touchTimer) {
       clearInterval(touchTimer)
       touchTimer = null
+    }
+  }
+
+  function clearReacquireTimer() {
+    if (reacquireTimer) {
+      clearTimeout(reacquireTimer)
+      reacquireTimer = null
     }
   }
 
@@ -160,6 +172,8 @@ export function createMemberLock(onChange, opts = {}) {
 
       if (status.held_by_me) {
         heldId = id
+        suppressAcquire = false
+        clearReacquireTimer()
         onChange(status, null)
         ensureTouch()
         return
@@ -169,14 +183,15 @@ export function createMemberLock(onChange, opts = {}) {
       stopTouch()
 
       if (status.locked) {
+        // Someone else took it during our unlock grace — cancel auto-reacquire.
+        clearReacquireTimer()
+        suppressAcquire = false
         onChange(status, formatMemberLockConflict(status) || 'پرونده قفل است.')
         return
       }
 
-      // Free on server — acquire before painting "unlocked", otherwise UI shows
-      // «بدون قفل» while Save stays disabled (held_by_me still false).
       if (suppressAcquire) {
-        onChange(status, 'قفل آزاد است — برای ادامهٔ ویرایش دوباره «انتخاب» را بزنید.')
+        onChange(status, 'قفل آزاد شد — در حال آماده‌سازی ویرایش…')
         return
       }
       onChange(status, 'در حال گرفتن قفل…')
@@ -189,6 +204,7 @@ export function createMemberLock(onChange, opts = {}) {
   async function release() {
     const id = heldId ?? watchedId
     stopTouch()
+    clearReacquireTimer()
     suppressAcquire = true
     heldId = null
     if (id == null) {
@@ -200,23 +216,32 @@ export function createMemberLock(onChange, opts = {}) {
     } catch {
       /* ignore */
     }
-    // Keep watching this member (no auto re-acquire) so UI updates while others take the lock.
     if (watchedId == null) watchedId = id
     if (watchedId !== id) return
+
     try {
       const status = await apiGet(`/api/v1/members/${id}/lock`)
       if (watchedId !== id) return
-      onChange(status, 'قفل آزاد شد — برای ادامهٔ ویرایش دوباره «انتخاب» را بزنید.')
+      onChange(status, 'قفل آزاد شد — در حال آماده‌سازی ویرایش…')
       startPoll()
     } catch {
       if (watchedId === id) {
         onChange(
           { locked: false, member_id: id, held_by_me: false },
-          'قفل آزاد شد — برای ادامهٔ ویرایش دوباره «انتخاب» را بزنید.',
+          'قفل آزاد شد — در حال آماده‌سازی ویرایش…',
         )
         startPoll()
       }
     }
+
+    // Give other desks one poll window, then auto-reacquire without another «انتخاب».
+    const graceMs = Math.max(pollMs + 200, 1200)
+    reacquireTimer = setTimeout(() => {
+      reacquireTimer = null
+      if (watchedId !== id) return
+      suppressAcquire = false
+      void tryAcquire(id)
+    }, graceMs)
   }
 
   /**
@@ -224,6 +249,8 @@ export function createMemberLock(onChange, opts = {}) {
    */
   async function setMember(id) {
     if (id != null && watchedId === id && heldId === id && !suppressAcquire) return
+
+    clearReacquireTimer()
 
     if (heldId != null && heldId !== id) {
       const prev = heldId
