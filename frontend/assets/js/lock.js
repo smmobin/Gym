@@ -1,6 +1,10 @@
 import { ApiError, apiErrorMessage, apiGet, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
 
+/** Default poll while a member is selected (other desks learn unlock/lock without refresh). */
+export const MEMBER_LOCK_POLL_MS = 2500
+export const MEMBER_LOCK_TOUCH_MS = 60_000
+
 /** @param {unknown} detail */
 export function formatMemberLockConflict(detail) {
   if (!detail || typeof detail !== 'object' || Array.isArray(detail)) return null
@@ -36,86 +40,224 @@ export function lockErrorMessage(err, fallback) {
 }
 
 /**
- * Soft file lock for a member — acquire / touch / release.
+ * Soft file lock for a member — acquire / touch / release + live poll while selected.
  * @param {(status: object | null, error: string | null) => void} onChange
+ * @param {{ pollMs?: number, touchMs?: number }} [opts]
  */
-export function createMemberLock(onChange) {
-  /** @type {number | null} */
-  let memberId = null
+export function createMemberLock(onChange, opts = {}) {
+  const pollMs = opts.pollMs ?? MEMBER_LOCK_POLL_MS
+  const touchMs = opts.touchMs ?? MEMBER_LOCK_TOUCH_MS
+
+  /** @type {number | null} member still open in the UI */
+  let watchedId = null
+  /** @type {number | null} lock successfully held by this client */
+  let heldId = null
+  /** After intentional unlock, do not steal the lock back until setMember again. */
+  let suppressAcquire = false
   /** @type {ReturnType<typeof setInterval> | null} */
-  let timer = null
+  let pollTimer = null
+  /** @type {ReturnType<typeof setInterval> | null} */
+  let touchTimer = null
   let busy = false
 
+  function stopPoll() {
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+  }
+
+  function stopTouch() {
+    if (touchTimer) {
+      clearInterval(touchTimer)
+      touchTimer = null
+    }
+  }
+
+  function startPoll() {
+    stopPoll()
+    if (watchedId == null) return
+    pollTimer = setInterval(() => {
+      void syncFromServer()
+    }, pollMs)
+  }
+
+  function ensureTouch() {
+    stopTouch()
+    if (heldId == null) return
+    touchTimer = setInterval(() => {
+      if (heldId == null) return
+      const id = heldId
+      void apiPost(`/api/v1/members/${id}/lock/touch`).catch(async () => {
+        try {
+          const status = await apiGet(`/api/v1/members/${id}/lock`)
+          if (watchedId !== id) return
+          if (!status.held_by_me) {
+            heldId = null
+            stopTouch()
+            onChange(
+              status,
+              status.locked ? formatMemberLockConflict(status) || 'پرونده قفل است.' : null,
+            )
+          } else {
+            onChange(status, null)
+          }
+        } catch {
+          /* ignore */
+        }
+      })
+    }, touchMs)
+  }
+
+  /**
+   * @param {number} id
+   */
+  async function tryAcquire(id) {
+    if (suppressAcquire || busy) return
+    busy = true
+    try {
+      const data = await apiPost(`/api/v1/members/${id}/lock`)
+      if (watchedId !== id) {
+        if (data.held_by_me) {
+          await apiPost(`/api/v1/members/${id}/unlock`).catch(() => undefined)
+        }
+        return
+      }
+      if (!data.held_by_me && data.locked) {
+        heldId = null
+        stopTouch()
+        onChange(data, formatMemberLockConflict(data) || 'پرونده قفل است.')
+        return
+      }
+      heldId = id
+      onChange(data, null)
+      ensureTouch()
+    } catch (err) {
+      const msg = lockErrorMessage(err, 'قفل پرونده گرفته نشد.')
+      try {
+        const status = await apiGet(`/api/v1/members/${id}/lock`)
+        if (watchedId !== id) return
+        heldId = status.held_by_me ? id : null
+        if (heldId) ensureTouch()
+        else stopTouch()
+        onChange(status, status.held_by_me ? null : msg)
+      } catch {
+        if (watchedId === id) onChange(null, msg)
+        heldId = null
+        stopTouch()
+      }
+    } finally {
+      busy = false
+    }
+  }
+
+  async function syncFromServer() {
+    if (watchedId == null || busy) return
+    const id = watchedId
+    try {
+      const status = await apiGet(`/api/v1/members/${id}/lock`)
+      if (watchedId !== id) return
+
+      if (status.held_by_me) {
+        heldId = id
+        onChange(status, null)
+        ensureTouch()
+        return
+      }
+
+      heldId = null
+      stopTouch()
+
+      if (status.locked) {
+        onChange(status, formatMemberLockConflict(status) || 'پرونده قفل است.')
+        return
+      }
+
+      // Free on server
+      onChange(status, null)
+      if (!suppressAcquire) {
+        await tryAcquire(id)
+      }
+    } catch {
+      /* transient network — next poll retries */
+    }
+  }
+
   async function release() {
-    if (memberId == null) return
-    const id = memberId
-    memberId = null
-    if (timer) {
-      clearInterval(timer)
-      timer = null
+    const id = heldId ?? watchedId
+    stopTouch()
+    suppressAcquire = true
+    heldId = null
+    if (id == null) {
+      onChange(null, null)
+      return
     }
     try {
       await apiPost(`/api/v1/members/${id}/unlock`)
     } catch {
-      // ignore
+      /* ignore */
     }
-    onChange(null, null)
+    // Keep watching this member (no auto re-acquire) so UI updates while others take the lock.
+    if (watchedId == null) watchedId = id
+    if (watchedId !== id) return
+    try {
+      const status = await apiGet(`/api/v1/members/${id}/lock`)
+      if (watchedId !== id) return
+      onChange(status, null)
+      startPoll()
+    } catch {
+      if (watchedId === id) {
+        onChange({ locked: false, member_id: id, held_by_me: false }, null)
+        startPoll()
+      }
+    }
   }
 
   /**
    * @param {number | null} id
    */
   async function setMember(id) {
-    if (memberId === id) return
-    if (memberId != null) await release()
+    if (id != null && watchedId === id && heldId === id && !suppressAcquire) return
+
+    if (heldId != null && heldId !== id) {
+      const prev = heldId
+      heldId = null
+      stopTouch()
+      try {
+        await apiPost(`/api/v1/members/${prev}/unlock`)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    watchedId = id
+    suppressAcquire = false
+    stopPoll()
+
     if (id == null) {
+      stopTouch()
+      heldId = null
       onChange(null, null)
       return
     }
-    memberId = id
-    busy = true
-    try {
-      const data = await apiPost(`/api/v1/members/${id}/lock`)
-      if (!data.held_by_me && data.locked) {
-        await apiPost(`/api/v1/members/${id}/unlock`).catch(() => undefined)
-        onChange(data, formatMemberLockConflict(data) || 'پرونده قفل است.')
-        memberId = null
-        return
-      }
-      onChange(data, null)
-      timer = setInterval(() => {
-        if (memberId == null) return
-        void apiPost(`/api/v1/members/${memberId}/lock/touch`).catch(async () => {
-          try {
-            const status = await apiGet(`/api/v1/members/${id}/lock`)
-            onChange(status, status.held_by_me ? null : formatMemberLockConflict(status))
-          } catch {
-            // ignore
-          }
-        })
-      }, 60_000)
-    } catch (err) {
-      const msg = lockErrorMessage(err, 'قفل پرونده گرفته نشد.')
-      try {
-        const status = await apiGet(`/api/v1/members/${id}/lock`)
-        onChange(status, msg)
-      } catch {
-        onChange(null, msg)
-      }
-      memberId = null
-    } finally {
-      busy = false
-    }
+
+    await tryAcquire(id)
+    startPoll()
   }
 
   return {
     setMember,
     release,
+    /** @internal test helper */
+    syncNow: syncFromServer,
     get busy() {
       return busy
     },
     get memberId() {
-      return memberId
+      return heldId
+    },
+    get watchedId() {
+      return watchedId
     },
   }
 }
