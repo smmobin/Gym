@@ -426,7 +426,7 @@ API: `POST /api/v1/guests` — trainer → ۴۰۳
 
 1. لاگین مدیر → http://127.0.0.1:5173/manager/#settings
 2. نام / تلفن / نشانی / ساعت پایان روز / روز هشدار انقضا / سقف freeze / یادداشت ساعت کاری و قوانین تمدید را ویرایش کن
-3. منشی اگر URL را باز کند → پیام عدم دسترسی UI؛ `PATCH` سرور → ۴۰۳؛ `GET /gym-settings` برای همهٔ کارکنان OK است
+3. UI تنظیمات **فقط پنل مدیر** است؛ پنل منشی لینک/بخش تنظیمات ندارد. اگر منشی `PATCH` بزند → ۴۰۳؛ `GET /gym-settings` برای کارکنان OK است (منطق سرور مثل حضور)
 4. حضور از قبل `day_end_time` را از `gym_settings` می‌خواند (hardcode جدا نیست)
 
 API: `GET /api/v1/gym-settings` (staff)، `PATCH /api/v1/gym-settings` (manager) — تغییر حساس → `audit_logs`
