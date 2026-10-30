@@ -10,6 +10,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.models.enums import MemberStatus, MembershipStatus, StaffRole
+from app.models.locker import Locker, LockerAssignment
 from app.models.member import Member
 from app.models.membership import Membership, MembershipPlan
 from app.models.trainer import TrainerMemberAssignment
@@ -129,14 +130,37 @@ def members_with_locker_eligible_membership(
     return set(rows)
 
 
+def members_active_locker_codes(
+    db: Session,
+    member_ids: Iterable[int],
+) -> dict[int, str]:
+    """member_id → locker code for open assignments (released_at IS NULL). One query."""
+    ids = {int(i) for i in member_ids}
+    if not ids:
+        return {}
+    rows = db.execute(
+        select(LockerAssignment.member_id, Locker.code)
+        .join(Locker, Locker.id == LockerAssignment.locker_id)
+        .where(
+            LockerAssignment.member_id.in_(ids),
+            LockerAssignment.released_at.is_(None),
+        )
+    ).all()
+    return {int(member_id): str(code) for member_id, code in rows}
+
+
 def serialize_member(db: Session, member: Member, *, today: date | None = None) -> MemberOut:
     active = members_with_active_membership(db, [member.id], today=today)
     locker_ok = members_with_locker_eligible_membership(db, [member.id])
+    lockers = members_active_locker_codes(db, [member.id])
+    code = lockers.get(member.id)
     return MemberOut.model_validate(member).model_copy(
         update={
             "role": "athlete",
             "has_active_membership": member.id in active,
             "can_receive_locker": member.id in locker_ok,
+            "has_active_locker": code is not None,
+            "current_locker_code": code,
         }
     )
 
@@ -148,14 +172,18 @@ def serialize_members(
     today: date | None = None,
 ) -> list[MemberOut]:
     rows = list(members)
-    active = members_with_active_membership(db, [m.id for m in rows], today=today)
-    locker_ok = members_with_locker_eligible_membership(db, [m.id for m in rows])
+    ids = [m.id for m in rows]
+    active = members_with_active_membership(db, ids, today=today)
+    locker_ok = members_with_locker_eligible_membership(db, ids)
+    lockers = members_active_locker_codes(db, ids)
     return [
         MemberOut.model_validate(m).model_copy(
             update={
                 "role": "athlete",
                 "has_active_membership": m.id in active,
                 "can_receive_locker": m.id in locker_ok,
+                "has_active_locker": m.id in lockers,
+                "current_locker_code": lockers.get(m.id),
             }
         )
         for m in rows

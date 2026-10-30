@@ -73,6 +73,9 @@ class MemberOut(BaseModel):
     has_active_membership: bool = False
     # Active membership on a plan with includes_locker (same rule as locker assign).
     can_receive_locker: bool = False
+    # Open locker_assignments row (released_at IS NULL) — separate from plan eligibility.
+    has_active_locker: bool = False
+    current_locker_code: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

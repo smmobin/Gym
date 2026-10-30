@@ -52,8 +52,12 @@ def test_list_members_as_manager_hides_archived_by_default(client: TestClient) -
     ali = next(m for m in members if m["display_id"] == "M-1001")
     assert ali["has_active_membership"] is True
     assert ali["can_receive_locker"] is False  # seed: علی بدون includes_locker
+    assert ali["has_active_locker"] is False
+    assert ali["current_locker_code"] is None
     sara = next(m for m in members if m["display_id"] == "M-1002")
     assert sara["can_receive_locker"] is True  # seed: سارا با طرح شامل‌کمد
+    assert sara["has_active_locker"] is True  # seed: واگذاری L-01
+    assert sara["current_locker_code"] == "L-01"
 
     created = client.post(
         "/api/v1/members",

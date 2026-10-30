@@ -396,12 +396,23 @@ export function renderMemberPick(root, items, onPick, opts = {}) {
     const hasSub = !!m.has_active_membership
     const subClass = hasSub ? 'ok' : 'warn'
     const subText = hasSub ? 'اشتراک فعال' : 'بدون اشتراک فعال'
+    const hasActiveLocker = !!m.has_active_locker
+    const lockerCode = String(m.current_locker_code || '').trim()
     const canLocker = !!m.can_receive_locker
-    const lockerBadge = showLocker
-      ? `<span class="badge ${canLocker ? 'ok' : 'warn'}">${
+    let lockerBadge = ''
+    if (showLocker) {
+      if (hasActiveLocker) {
+        const codeLabel = lockerCode || '—'
+        lockerBadge = `<span class="badge warn">کمد دارد (${escapeHtml(codeLabel)})</span>`
+        btn.classList.add('is-disabled')
+        btn.disabled = true
+        btn.title = 'اول همان کمد را آزاد کنید'
+      } else {
+        lockerBadge = `<span class="badge ${canLocker ? 'ok' : 'warn'}">${
           canLocker ? 'می‌تواند کمد بگیرد' : 'نمی‌تواند کمد بگیرد'
         }</span>`
-      : ''
+      }
+    }
     const meta = [m.display_id, m.mobile].filter(Boolean).join(' · ')
     btn.innerHTML = `
       <span class="member-pick-main">
@@ -419,6 +430,7 @@ export function renderMemberPick(root, items, onPick, opts = {}) {
       event.preventDefault()
     })
     btn.addEventListener('click', () => {
+      if (btn.disabled || btn.classList.contains('is-disabled')) return
       root.querySelectorAll('.member-pick-item').forEach((b) => b.classList.remove('is-selected'))
       btn.classList.add('is-selected')
       onPick(m.id)
