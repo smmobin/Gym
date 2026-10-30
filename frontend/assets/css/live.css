@@ -1483,6 +1483,11 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.84em;
 }
+.sms-ph.is-filled {
+  font-family: inherit;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--accent) 55%, var(--text));
+}
 .sms-card-actions {
   display: flex;
   align-items: center;

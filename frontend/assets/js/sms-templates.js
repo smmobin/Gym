@@ -1,6 +1,7 @@
 /** SMS templates — card UI + quick/custom send when /sms/status enabled. */
 
 import { apiGet, apiPost, ApiError } from './api.js'
+import { formatJalaliDate } from './format.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 
 const FALLBACK_TEMPLATES = [
@@ -62,12 +63,46 @@ function escapeHtml(s) {
 }
 
 /**
- * Highlight {{placeholders}} inside escaped body text.
- * @param {string} body
+ * Preview variables for the selected member (null = keep raw {{tags}}).
+ * @param {{ first_name?: string, last_name?: string, display_id?: string } | null | undefined} member
+ * @param {{ end_date?: string, debt?: string } | null | undefined} extras
+ * @returns {Record<string, string> | null}
  */
-function formatBodyHtml(body) {
-  const esc = escapeHtml(body)
-  return esc.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, '<span class="sms-ph">{{$1}}</span>')
+export function previewVarsFromMember(member, extras = null) {
+  if (!member) return null
+  const name = `${member.first_name || ''} ${member.last_name || ''}`.trim() || '—'
+  return {
+    name,
+    display_id: member.display_id || '—',
+    end_date: (extras && extras.end_date) || '—',
+    debt: (extras && extras.debt) || '—',
+  }
+}
+
+/**
+ * Replace {{placeholders}} with preview values (or leave tags if unknown / no vars).
+ * @param {string} body
+ * @param {Record<string, string> | null | undefined} vars
+ */
+export function renderBodyText(body, vars = null) {
+  if (!vars) return String(body || '')
+  return String(body || '').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (full, key) =>
+    Object.prototype.hasOwnProperty.call(vars, key) ? vars[key] : full,
+  )
+}
+
+/**
+ * Highlight {{placeholders}} (or filled values) inside escaped body text.
+ * @param {string} body
+ * @param {Record<string, string> | null | undefined} vars
+ */
+export function formatBodyHtml(body, vars = null) {
+  return escapeHtml(body).replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (full, key) => {
+    if (vars && Object.prototype.hasOwnProperty.call(vars, key)) {
+      return `<span class="sms-ph is-filled">${escapeHtml(vars[key])}</span>`
+    }
+    return `<span class="sms-ph">${full}</span>`
+  })
 }
 
 /**
@@ -107,12 +142,16 @@ export function mountSmsTemplates(root) {
 
   /** @type {{ id: number, display_id?: string, first_name?: string, last_name?: string, mobile?: string } | null} */
   let selected = null
+  /** @type {{ end_date?: string, debt?: string }} */
+  let previewExtras = {}
   /** @type {boolean} */
   let enabled = false
   /** @type {Array<{id: string, title: string, body: string}>} */
   let templates = [...FALLBACK_TEMPLATES]
   /** @type {Set<string>} */
   const hiddenIds = new Set()
+  /** @type {string} */
+  let customDraft = ''
 
   function setResult(text, ok) {
     resultEl.hidden = !text
@@ -121,7 +160,43 @@ export function mountSmsTemplates(root) {
     resultEl.classList.toggle('err', !!text && !ok)
   }
 
+  function currentPreviewVars() {
+    return previewVarsFromMember(selected, previewExtras)
+  }
+
+  /**
+   * Latest membership end_date + debt for SMS preview tags.
+   * @param {number} memberId
+   */
+  async function loadPreviewExtras(memberId) {
+    try {
+      const mem = await apiGet(`/api/v1/members/${memberId}/memberships`)
+      if (!selected || selected.id !== memberId) return
+      const items = Array.isArray(mem.items) ? mem.items : []
+      let endRaw = ''
+      for (const row of items) {
+        const ed = row && row.end_date ? String(row.end_date) : ''
+        if (ed && (!endRaw || ed > endRaw)) endRaw = ed
+      }
+      previewExtras = {
+        end_date: endRaw ? formatJalaliDate(endRaw) : '—',
+        debt: faNum(Number(mem.debt_toman || 0)),
+      }
+      paint()
+    } catch {
+      if (!selected || selected.id !== memberId) return
+      previewExtras = { end_date: '—', debt: '—' }
+      paint()
+    }
+  }
+
   function paint() {
+    const existingCustom = /** @type {HTMLTextAreaElement | null} */ (
+      board.querySelector('[data-sms-custom-text]')
+    )
+    if (existingCustom) customDraft = existingCustom.value
+
+    const vars = currentPreviewVars()
     const visible = templates.filter((t) => !hiddenIds.has(t.id))
     const cards = visible
       .map((t) => {
@@ -132,7 +207,7 @@ export function mountSmsTemplates(root) {
             <h3>${escapeHtml(title)}</h3>
             <span class="sms-card-icon" aria-hidden="true">${iconSvg(meta.icon)}</span>
           </header>
-          <div class="sms-card-body">${formatBodyHtml(t.body)}</div>
+          <div class="sms-card-body">${formatBodyHtml(t.body, vars)}</div>
           <div class="sms-card-actions">
             <button type="button" class="btn sms-send-btn" data-sms-send="${escapeHtml(t.id)}" ${
               enabled ? '' : 'disabled'
@@ -151,7 +226,7 @@ export function mountSmsTemplates(root) {
       })
       .join('')
 
-    const stats = smsCharStats('')
+    const stats = smsCharStats(customDraft)
     board.innerHTML = `
       <div class="sms-grid">
         ${cards}
@@ -184,9 +259,11 @@ export function mountSmsTemplates(root) {
 
     const customText = /** @type {HTMLTextAreaElement | null} */ (board.querySelector('[data-sms-custom-text]'))
     const charCount = /** @type {HTMLElement | null} */ (board.querySelector('[data-sms-char-count]'))
+    if (customText) customText.value = customDraft
 
     const syncCount = () => {
       if (!charCount || !customText) return
+      customDraft = customText.value
       const s = smsCharStats(customText.value)
       charCount.textContent = `تعداد کاراکتر: ${faNum(s.len)} (${faNum(s.segments)} پیامک)`
     }
@@ -202,7 +279,8 @@ export function mountSmsTemplates(root) {
         const id = /** @type {HTMLButtonElement} */ (btn).getAttribute('data-sms-edit') || ''
         const t = templates.find((x) => x.id === id)
         if (!t || !customText) return
-        customText.value = t.body
+        customText.value = renderBodyText(t.body, currentPreviewVars())
+        customDraft = customText.value
         customText.focus()
         syncCount()
         customText.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -223,6 +301,7 @@ export function mountSmsTemplates(root) {
     board.querySelector('[data-sms-custom-clear]')?.addEventListener('click', () => {
       if (!customText) return
       customText.value = ''
+      customDraft = ''
       syncCount()
     })
     board.querySelector('[data-sms-custom-send]')?.addEventListener('click', () => {
@@ -305,10 +384,13 @@ export function mountSmsTemplates(root) {
 
     bindMemberSearch(memberPick, memberInput, (member) => {
       selected = member
+      previewExtras = { end_date: '—', debt: '—' }
       const name = `${member.first_name || ''} ${member.last_name || ''}`.trim()
       setPersonChip(memberLabel, member)
       memberInput.value = name
       setResult('', true)
+      paint()
+      void loadPreviewExtras(member.id)
     })
 
     templates = [...FALLBACK_TEMPLATES]
