@@ -173,11 +173,14 @@ export function createMemberLock(onChange, opts = {}) {
         return
       }
 
-      // Free on server
-      onChange(status, null)
-      if (!suppressAcquire) {
-        await tryAcquire(id)
+      // Free on server — acquire before painting "unlocked", otherwise UI shows
+      // «بدون قفل» while Save stays disabled (held_by_me still false).
+      if (suppressAcquire) {
+        onChange(status, 'قفل آزاد است — برای ادامهٔ ویرایش دوباره «انتخاب» را بزنید.')
+        return
       }
+      onChange(status, 'در حال گرفتن قفل…')
+      await tryAcquire(id)
     } catch {
       /* transient network — next poll retries */
     }
@@ -203,11 +206,14 @@ export function createMemberLock(onChange, opts = {}) {
     try {
       const status = await apiGet(`/api/v1/members/${id}/lock`)
       if (watchedId !== id) return
-      onChange(status, null)
+      onChange(status, 'قفل آزاد شد — برای ادامهٔ ویرایش دوباره «انتخاب» را بزنید.')
       startPoll()
     } catch {
       if (watchedId === id) {
-        onChange({ locked: false, member_id: id, held_by_me: false }, null)
+        onChange(
+          { locked: false, member_id: id, held_by_me: false },
+          'قفل آزاد شد — برای ادامهٔ ویرایش دوباره «انتخاب» را بزنید.',
+        )
         startPoll()
       }
     }

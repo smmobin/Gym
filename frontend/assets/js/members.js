@@ -91,7 +91,9 @@ export function mountMembers(root, user) {
             info.textContent = `قفل نزد شما تا ${st.expires_at ? formatDateTime(st.expires_at) : '—'}`
           else if (st?.locked)
             info.textContent = `قفل نزد ${st.locked_by_name || 'دیگری'}`
-          else info.textContent = selectedId ? 'بدون قفل فعال' : 'عضوی انتخاب نشده'
+          else if (selectedId && st && !st.held_by_me)
+            info.textContent = 'قفل آزاد است — برای ویرایش دوباره «انتخاب» را بزنید'
+          else info.textContent = selectedId ? 'در حال آماده‌سازی قفل…' : 'عضوی انتخاب نشده'
         }
         root.querySelectorAll('[data-save],[data-archive],[data-pw-btn]').forEach((b) => {
           b.disabled = !lockHeldByMe
