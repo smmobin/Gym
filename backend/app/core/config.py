@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     payment_gateway_front_return_url: str = ""
 
     # SMS provider (secrets only via env — never commit real API keys)
-    # provider: none | kavenegar (extensible via adapter factory)
+    # provider: none | fake (local demo) | kavenegar
     sms_provider: str = "none"
     sms_api_key: str = ""
     sms_sender: str = ""
@@ -99,10 +99,16 @@ class Settings(BaseSettings):
 
     @property
     def sms_enabled(self) -> bool:
-        """True only when a real SMS provider is named and API key is present."""
+        """
+        Fake: enabled in non-production without API key (local demo only).
+        Kavenegar (and other real providers): need API key.
+        none / production+fake: disabled.
+        """
         provider = (self.sms_provider or "").strip().lower()
         if provider in {"", "none", "off", "disabled"}:
             return False
+        if provider == "fake":
+            return not self.is_production_like
         return bool((self.sms_api_key or "").strip())
 
 

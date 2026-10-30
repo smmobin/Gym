@@ -235,3 +235,111 @@ def test_templates_list_desk_only(client: TestClient, enabled_sms) -> None:
     items = res.json()["items"]
     ids = {t["id"] for t in items}
     assert {"welcome", "expiry", "debt"} <= ids
+
+
+@pytest.fixture
+def fake_sms(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("SMS_PROVIDER", "fake")
+    monkeypatch.setenv("SMS_API_KEY", "")
+    monkeypatch.setenv("APP_ENV", "development")
+    get_settings.cache_clear()
+    yield get_settings()
+    get_settings.cache_clear()
+
+
+def test_fake_sms_status_enabled_without_api_key(client: TestClient, fake_sms) -> None:
+    _ = fake_sms
+    data = client.get("/api/v1/sms/status").json()
+    assert data["enabled"] is True
+    assert data["provider"] == "fake"
+    assert "آزمایشی" in data["label"]
+    blob = str(data).lower()
+    assert "api_key" not in blob
+
+
+def test_fake_sms_disabled_in_production_like(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.services.sms.factory import public_sms_status
+
+    monkeypatch.setenv("SMS_PROVIDER", "fake")
+    monkeypatch.setenv("SMS_API_KEY", "")
+    monkeypatch.setenv("APP_ENV", "production")
+    get_settings.cache_clear()
+    try:
+        settings = get_settings()
+        assert settings.sms_enabled is False
+        status = public_sms_status(settings)
+        assert status["enabled"] is False
+        assert "production" in status["label"].lower() or "آزمایشی" in status["label"]
+        data = client.get("/api/v1/sms/status").json()
+        assert data["enabled"] is False
+    finally:
+        get_settings.cache_clear()
+
+
+def test_fake_sms_send_succeeds_without_http(
+    client: TestClient,
+    fake_sms,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Real FakeSmsGateway path — assert Kavenegar HTTP adapter is never used."""
+    _ = fake_sms
+    from app.services.sms import kavenegar as kav_mod
+
+    def _boom(*_a, **_k):
+        raise AssertionError("fake SMS must not call Kavenegar")
+
+    monkeypatch.setattr(kav_mod.KavenegarGateway, "send_sms", _boom)
+
+    _login(client, "09120000001")
+    member_id = _seed_member_id("09121111001")
+    res = client.post(
+        "/api/v1/sms/send",
+        json={"template_id": "welcome", "member_id": member_id},
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["ok"] is True
+    assert body["provider"] == "fake"
+    assert body["message_id"] and str(body["message_id"]).startswith("fake-")
+
+    db = SessionLocal()
+    try:
+        audit = db.scalar(
+            select(AuditLog)
+            .where(AuditLog.action == "sms.send", AuditLog.entity_id == str(member_id))
+            .order_by(AuditLog.id.desc())
+            .limit(1)
+        )
+        assert audit is not None
+        assert audit.payload is not None
+        assert audit.payload.get("template_id") == "welcome"
+        assert audit.payload.get("ok") is True
+        assert audit.payload.get("provider") == "fake"
+    finally:
+        db.close()
+
+
+def test_fake_gateway_logs_body(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.services.sms import fake as fake_mod
+    from app.services.sms.fake import FakeSmsGateway
+
+    calls: list[tuple] = []
+
+    def _capture(msg, *args, **_kwargs):
+        calls.append((msg, args))
+
+    monkeypatch.setattr(fake_mod.logger, "info", _capture)
+    result = FakeSmsGateway().send_sms(
+        receptor="09121111001",
+        message="سلام علی — تست قالب",
+    )
+    assert result.ok is True
+    assert result.message_id and result.message_id.startswith("fake-")
+    assert calls, "expected logger.info"
+    msg, args = calls[0]
+    rendered = msg % args if args else msg
+    assert "FAKE SMS" in rendered
+    assert "09121111001" in rendered
+    assert "سلام علی" in rendered
