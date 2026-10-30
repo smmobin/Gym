@@ -1415,7 +1415,7 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .sms-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
 }
 .sms-card {
