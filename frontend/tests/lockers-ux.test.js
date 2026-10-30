@@ -54,7 +54,7 @@ describe('locker UX helpers (BUG-001)', () => {
     expect(msg).toContain('سه‌ماهه + کمد')
   })
 
-  it('marks memberships واجد / بدون کمد', () => {
+  it('marks memberships شامل کمد / بدون طرح کمد', () => {
     const html = membershipEligibilityHtml(
       [
         { id: 1, plan_id: 10, plan_name: 'ماهانه', status: 'active', start_date: '2026-01-01', end_date: '2026-02-01' },
@@ -62,8 +62,9 @@ describe('locker UX helpers (BUG-001)', () => {
       ],
       new Set([20]),
     )
-    expect(html).toContain('واجد کمد')
-    expect(html).toContain('بدون کمد')
+    expect(html).toContain('شامل کمد')
+    expect(html).toContain('بدون طرح کمد')
+    expect(html).not.toContain('واجد کمد')
     expect(html).toContain('سه‌ماهه + کمد')
   })
 })

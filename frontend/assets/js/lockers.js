@@ -46,8 +46,8 @@ export function membershipEligibilityHtml(memberships, lockerPlanIds) {
     .map((m) => {
       const ok = m.status === 'active' && lockerPlanIds.has(m.plan_id)
       const badge = ok
-        ? '<span class="badge ok">واجد کمد</span>'
-        : '<span class="badge warn">بدون کمد</span>'
+        ? '<span class="badge ok">شامل کمد</span>'
+        : '<span class="badge warn">بدون طرح کمد</span>'
       return `<div class="row-item"><div>
         <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
         <p>${m.status} · ${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)}</p>
