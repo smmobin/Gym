@@ -1,4 +1,4 @@
-/** SMS templates — live send when /sms/status enabled; otherwise placeholder. */
+/** SMS templates — card UI + quick/custom send when /sms/status enabled. */
 
 import { apiGet, apiPost, ApiError } from './api.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
@@ -6,12 +6,12 @@ import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.
 const FALLBACK_TEMPLATES = [
   {
     id: 'welcome',
-    title: 'خوش‌آمد',
+    title: 'پیام خوش‌آمدگویی',
     body: 'سلام {{name}}، به باشگاه آذر خوش آمدید. کد عضویت شما {{display_id}} است.',
   },
   {
     id: 'expiry',
-    title: 'انقضای نزدیک',
+    title: 'هشدار انقضای اشتراک',
     body: '{{name}} عزیز، اشتراک شما تا {{end_date}} فعال است. برای تمدید با منشی تماس بگیرید.',
   },
   {
@@ -21,12 +21,61 @@ const FALLBACK_TEMPLATES = [
   },
 ]
 
+const TEMPLATE_META = {
+  welcome: { icon: 'star', title: 'پیام خوش‌آمدگویی' },
+  expiry: { icon: 'clock', title: 'هشدار انقضای اشتراک' },
+  debt: { icon: 'card', title: 'یادآوری بدهی' },
+}
+
+/** @param {string} name */
+function iconSvg(name) {
+  if (name === 'clock') {
+    return `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2.5"/></svg>`
+  }
+  if (name === 'card') {
+    return `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>`
+  }
+  return `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3.5l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L4.8 8.7l5-.7L12 3.5z"/></svg>`
+}
+
+/** @param {string} text */
+export function smsCharStats(text) {
+  const len = [...String(text || '')].length
+  if (len === 0) return { len: 0, segments: 0, limit: 70 }
+  const hasUnicode = /[^\u0000-\u007F]/.test(text)
+  const limit = hasUnicode ? 70 : 160
+  return { len, segments: Math.ceil(len / limit), limit }
+}
+
+/** @param {number} n */
+function faNum(n) {
+  return Number(n || 0).toLocaleString('fa-IR')
+}
+
+/** @param {string} s */
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * Highlight {{placeholders}} inside escaped body text.
+ * @param {string} body
+ */
+function formatBodyHtml(body) {
+  const esc = escapeHtml(body)
+  return esc.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, '<span class="sms-ph">{{$1}}</span>')
+}
+
 /**
  * @param {HTMLElement} root
  */
 export function mountSmsTemplates(root) {
   root.innerHTML = `
-    <article class="panel">
+    <article class="panel sms-panel">
       <header class="panel-head">
         <h2>قالب پیامک</h2>
         <span class="tag" data-sms-tag>در حال بررسی…</span>
@@ -43,7 +92,7 @@ export function mountSmsTemplates(root) {
         })}
       </div>
       <p class="hint" data-sms-result hidden></p>
-      <div class="list" data-list></div>
+      <div class="sms-board" data-sms-board></div>
     </article>
   `
 
@@ -54,41 +103,130 @@ export function mountSmsTemplates(root) {
   const memberLabel = /** @type {HTMLElement} */ (root.querySelector('[data-sms-member-label]'))
   const memberPick = /** @type {HTMLElement} */ (root.querySelector('[data-sms-member-pick]'))
   const resultEl = /** @type {HTMLElement} */ (root.querySelector('[data-sms-result]'))
-  const list = /** @type {HTMLElement} */ (root.querySelector('[data-list]'))
+  const board = /** @type {HTMLElement} */ (root.querySelector('[data-sms-board]'))
 
   /** @type {{ id: number, display_id?: string, first_name?: string, last_name?: string, mobile?: string } | null} */
   let selected = null
   /** @type {boolean} */
   let enabled = false
+  /** @type {Array<{id: string, title: string, body: string}>} */
+  let templates = [...FALLBACK_TEMPLATES]
+  /** @type {Set<string>} */
+  const hiddenIds = new Set()
 
   function setResult(text, ok) {
     resultEl.hidden = !text
     resultEl.textContent = text || ''
     resultEl.classList.toggle('ok', !!ok)
-    resultEl.classList.toggle('err', text && !ok)
+    resultEl.classList.toggle('err', !!text && !ok)
   }
 
-  /**
-   * @param {Array<{id: string, title: string, body: string}>} templates
-   * @param {boolean} canSend
-   */
-  function renderList(templates, canSend) {
-    list.innerHTML = templates
-      .map(
-        (t) => `<div class="row-item"><div>
-      <h3>${t.title}</h3>
-      <p>${t.body}</p>
-    </div>
-    <button type="button" class="btn small" data-sms-send="${t.id}" ${
-          canSend ? '' : 'disabled'
-        } title="${canSend ? 'ارسال به عضو انتخاب‌شده' : 'هنوز آماده نیست'}">ارسال</button></div>`,
-      )
+  function paint() {
+    const visible = templates.filter((t) => !hiddenIds.has(t.id))
+    const cards = visible
+      .map((t) => {
+        const meta = TEMPLATE_META[t.id] || { icon: 'star', title: t.title }
+        const title = meta.title || t.title
+        return `<article class="sms-card" data-sms-card="${escapeHtml(t.id)}">
+          <header class="sms-card-head">
+            <h3>${escapeHtml(title)}</h3>
+            <span class="sms-card-icon" aria-hidden="true">${iconSvg(meta.icon)}</span>
+          </header>
+          <div class="sms-card-body">${formatBodyHtml(t.body)}</div>
+          <div class="sms-card-actions">
+            <button type="button" class="btn sms-send-btn" data-sms-send="${escapeHtml(t.id)}" ${
+              enabled ? '' : 'disabled'
+            } title="${enabled ? 'ارسال به عضو انتخاب‌شده' : 'هنوز آماده نیست'}">
+              <span>ارسال سریع</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h12M13 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="sms-icon-btn" data-sms-edit="${escapeHtml(t.id)}" title="ویرایش در پیام دلخواه" aria-label="ویرایش قالب ${escapeHtml(title)}">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            </button>
+            <button type="button" class="sms-icon-btn is-danger" data-sms-hide="${escapeHtml(t.id)}" title="پنهان کردن از این نما" aria-label="پنهان کردن قالب ${escapeHtml(title)}">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>
+            </button>
+          </div>
+        </article>`
+      })
       .join('')
 
-    list.querySelectorAll('[data-sms-send]').forEach((btn) => {
+    const stats = smsCharStats('')
+    board.innerHTML = `
+      <div class="sms-grid">
+        ${cards}
+        <article class="sms-card sms-card-custom" data-sms-custom>
+          <header class="sms-card-head">
+            <h3>ارسال پیامک دلخواه و متفرقه</h3>
+            <span class="sms-card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 5h16v11H8l-4 3V5z"/></svg>
+            </span>
+          </header>
+          <label class="sms-custom-label">
+            <span class="visually-hidden">متن پیامک دلخواه</span>
+            <textarea class="sms-custom-input" data-sms-custom-text rows="5" placeholder="متن پیامک دلخواه خود را در این بخش بنویسید…" ${
+              enabled ? '' : 'disabled'
+            }></textarea>
+          </label>
+          <p class="sms-char-count" data-sms-char-count>تعداد کاراکتر: ${faNum(stats.len)} (${faNum(stats.segments)} پیامک)</p>
+          <div class="sms-card-actions sms-custom-actions">
+            <button type="button" class="btn sms-send-btn" data-sms-custom-send ${enabled ? '' : 'disabled'}>
+              <span>ارسال پیام دلخواه</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H7M11 6l-6 6 6 6"/></svg>
+            </button>
+            <button type="button" class="sms-icon-btn is-danger" data-sms-custom-clear title="پاک کردن متن" aria-label="پاک کردن متن پیام دلخواه">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>
+            </button>
+          </div>
+        </article>
+      </div>
+    `
+
+    const customText = /** @type {HTMLTextAreaElement | null} */ (board.querySelector('[data-sms-custom-text]'))
+    const charCount = /** @type {HTMLElement | null} */ (board.querySelector('[data-sms-char-count]'))
+
+    const syncCount = () => {
+      if (!charCount || !customText) return
+      const s = smsCharStats(customText.value)
+      charCount.textContent = `تعداد کاراکتر: ${faNum(s.len)} (${faNum(s.segments)} پیامک)`
+    }
+    customText?.addEventListener('input', syncCount)
+
+    board.querySelectorAll('[data-sms-send]').forEach((btn) => {
       btn.addEventListener('click', () => {
         void sendTemplate(/** @type {HTMLButtonElement} */ (btn).getAttribute('data-sms-send') || '')
       })
+    })
+    board.querySelectorAll('[data-sms-edit]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = /** @type {HTMLButtonElement} */ (btn).getAttribute('data-sms-edit') || ''
+        const t = templates.find((x) => x.id === id)
+        if (!t || !customText) return
+        customText.value = t.body
+        customText.focus()
+        syncCount()
+        customText.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setResult('متن قالب به بخش پیام دلخواه منتقل شد؛ در صورت نیاز ویرایش و ارسال کنید.', true)
+      })
+    })
+    board.querySelectorAll('[data-sms-hide]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = /** @type {HTMLButtonElement} */ (btn).getAttribute('data-sms-hide') || ''
+        if (!id) return
+        if (!window.confirm('این قالب فقط از نمای فعلی پنهان می‌شود (قالب سیستمی روی سرور می‌ماند). ادامه؟')) {
+          return
+        }
+        hiddenIds.add(id)
+        paint()
+      })
+    })
+    board.querySelector('[data-sms-custom-clear]')?.addEventListener('click', () => {
+      if (!customText) return
+      customText.value = ''
+      syncCount()
+    })
+    board.querySelector('[data-sms-custom-send]')?.addEventListener('click', () => {
+      void sendCustom(customText?.value || '')
     })
   }
 
@@ -109,8 +247,34 @@ export function mountSmsTemplates(root) {
       })
       setResult(res.detail || `پیامک برای ${res.display_id} ارسال شد.`, true)
     } catch (err) {
-      const msg =
-        err instanceof ApiError ? err.message : 'ارسال پیامک ناموفق بود.'
+      const msg = err instanceof ApiError ? err.message : 'ارسال پیامک ناموفق بود.'
+      setResult(msg, false)
+    }
+  }
+
+  /**
+   * @param {string} message
+   */
+  async function sendCustom(message) {
+    if (!enabled) return
+    if (!selected?.id) {
+      setResult('اول یک عضو را از جستجو انتخاب کنید.', false)
+      return
+    }
+    const text = String(message || '').trim()
+    if (!text) {
+      setResult('متن پیام دلخواه را بنویسید.', false)
+      return
+    }
+    setResult('در حال ارسال…', true)
+    try {
+      const res = await apiPost('/api/v1/sms/send-custom', {
+        member_id: selected.id,
+        message: text,
+      })
+      setResult(res.detail || `پیامک برای ${res.display_id} ارسال شد.`, true)
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'ارسال پیامک ناموفق بود.'
       setResult(msg, false)
     }
   }
@@ -128,14 +292,15 @@ export function mountSmsTemplates(root) {
 
     if (!enabled) {
       hint.textContent =
-        'ارسال واقعی پیامک در این نسخه فعال نیست. دکمهٔ ارسال غیرفعال است.'
+        'ارسال واقعی پیامک در این نسخه فعال نیست. دکمه‌های ارسال غیرفعال‌اند.'
       picker.hidden = true
-      renderList(FALLBACK_TEMPLATES, false)
+      templates = [...FALLBACK_TEMPLATES]
+      paint()
       return
     }
 
     hint.textContent =
-      'عضو را جستجو و انتخاب کنید، سپس روی ارسال بزنید. موبایل از پروندهٔ عضو خوانده می‌شود.'
+      'عضو را جستجو و انتخاب کنید، سپس «ارسال سریع» یا پیام دلخواه را بزنید. موبایل از پروندهٔ عضو خوانده می‌شود.'
     picker.hidden = false
 
     bindMemberSearch(memberPick, memberInput, (member) => {
@@ -146,16 +311,19 @@ export function mountSmsTemplates(root) {
       setResult('', true)
     })
 
-    let templates = FALLBACK_TEMPLATES
+    templates = [...FALLBACK_TEMPLATES]
     try {
       const data = await apiGet('/api/v1/sms/templates')
       if (Array.isArray(data.items) && data.items.length) {
-        templates = data.items
+        templates = data.items.map((t) => ({
+          ...t,
+          title: (TEMPLATE_META[t.id] && TEMPLATE_META[t.id].title) || t.title,
+        }))
       }
     } catch {
       // keep fallback
     }
-    renderList(templates, true)
+    paint()
   }
 
   void boot()

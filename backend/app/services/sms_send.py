@@ -88,6 +88,92 @@ def _build_variables(db: Session, member: Member) -> dict[str, str]:
     }
 
 
+def _resolve_member_mobile(db: Session, member_id: int) -> tuple[Member, str]:
+    member = db.get(Member, member_id)
+    if member is None:
+        raise SmsSendError(404, "عضو یافت نشد.")
+    mobile = (member.mobile or "").strip()
+    if len(mobile) < 10:
+        raise SmsSendError(422, "موبایل عضو برای ارسال پیامک معتبر نیست.")
+    return member, mobile
+
+
+def _deliver_to_member(
+    db: Session,
+    *,
+    settings: Settings,
+    actor: User,
+    member: Member,
+    mobile: str,
+    text: str,
+    template_id: str,
+    gateway: SmsGateway | None = None,
+) -> SendOutcome:
+    if not settings.sms_enabled:
+        raise SmsSendError(403, "ارسال پیامک هنوز آماده نیست.")
+
+    body = (text or "").strip()
+    if not body:
+        raise SmsSendError(422, "متن پیامک خالی است.")
+    if len(body) > 700:
+        raise SmsSendError(422, "متن پیامک بیش از حد طولانی است.")
+
+    provider = (settings.sms_provider or "").strip().lower()
+    status = public_sms_status(settings)
+
+    try:
+        gw = gateway or get_sms_gateway(settings)
+        result: SmsSendResult = gw.send_sms(
+            receptor=mobile,
+            message=body,
+            sender=(settings.sms_sender or "").strip() or None,
+        )
+    except SmsError as err:
+        write_audit(
+            db,
+            actor_user_id=actor.id,
+            action="sms.send_failed",
+            entity_type="member",
+            entity_id=member.id,
+            summary=f"شکست ارسال پیامک قالب {template_id} به {member.display_id}",
+            payload={
+                "template_id": template_id,
+                "provider": provider,
+                "ok": False,
+                "code": err.code,
+                "status_code": err.status_code,
+            },
+        )
+        raise SmsSendError(err.status_code, err.detail) from err
+
+    write_audit(
+        db,
+        actor_user_id=actor.id,
+        action="sms.send",
+        entity_type="member",
+        entity_id=member.id,
+        summary=f"ارسال پیامک قالب {template_id} به {member.display_id}",
+        payload={
+            "template_id": template_id,
+            "provider": provider,
+            "ok": True,
+            "message_id": result.message_id,
+            # last 4 digits only — full mobile already on member row
+            "receptor_suffix": mobile[-4:],
+        },
+    )
+
+    return SendOutcome(
+        ok=True,
+        template_id=template_id,
+        member_id=member.id,
+        display_id=member.display_id,
+        provider=status.get("provider") or provider,
+        message_id=result.message_id,
+        detail="پیامک ارسال شد.",
+    )
+
+
 def send_template_to_member(
     db: Session,
     *,
@@ -108,71 +194,45 @@ def send_template_to_member(
     if template is None:
         raise SmsSendError(404, "قالب پیامک یافت نشد.")
 
-    member = db.get(Member, member_id)
-    if member is None:
-        raise SmsSendError(404, "عضو یافت نشد.")
-
-    mobile = (member.mobile or "").strip()
-    if len(mobile) < 10:
-        raise SmsSendError(422, "موبایل عضو برای ارسال پیامک معتبر نیست.")
-
+    member, mobile = _resolve_member_mobile(db, member_id)
     variables = _build_variables(db, member)
     text = _render(template.body, variables)
     # Drop any leftover unknown placeholders rather than leaking braces
     for key in ("name", "display_id", "end_date", "debt"):
         text = text.replace("{{" + key + "}}", "—")
 
-    provider = (settings.sms_provider or "").strip().lower()
-    status = public_sms_status(settings)
-
-    try:
-        gw = gateway or get_sms_gateway(settings)
-        result: SmsSendResult = gw.send_sms(
-            receptor=mobile,
-            message=text,
-            sender=(settings.sms_sender or "").strip() or None,
-        )
-    except SmsError as err:
-        write_audit(
-            db,
-            actor_user_id=actor.id,
-            action="sms.send_failed",
-            entity_type="member",
-            entity_id=member.id,
-            summary=f"شکست ارسال پیامک قالب {template.id} به {member.display_id}",
-            payload={
-                "template_id": template.id,
-                "provider": provider,
-                "ok": False,
-                "code": err.code,
-                "status_code": err.status_code,
-            },
-        )
-        raise SmsSendError(err.status_code, err.detail) from err
-
-    write_audit(
+    return _deliver_to_member(
         db,
-        actor_user_id=actor.id,
-        action="sms.send",
-        entity_type="member",
-        entity_id=member.id,
-        summary=f"ارسال پیامک قالب {template.id} به {member.display_id}",
-        payload={
-            "template_id": template.id,
-            "provider": provider,
-            "ok": True,
-            "message_id": result.message_id,
-            # last 4 digits only — full mobile already on member row
-            "receptor_suffix": mobile[-4:],
-        },
+        settings=settings,
+        actor=actor,
+        member=member,
+        mobile=mobile,
+        text=text,
+        template_id=template.id,
+        gateway=gateway,
     )
 
-    return SendOutcome(
-        ok=True,
-        template_id=template.id,
-        member_id=member.id,
-        display_id=member.display_id,
-        provider=status.get("provider") or provider,
-        message_id=result.message_id,
-        detail="پیامک ارسال شد.",
+
+def send_custom_to_member(
+    db: Session,
+    *,
+    settings: Settings,
+    actor: User,
+    member_id: int,
+    message: str,
+    gateway: SmsGateway | None = None,
+) -> SendOutcome:
+    """Free-text body; receptor still only from member record."""
+    if not settings.sms_enabled:
+        raise SmsSendError(403, "ارسال پیامک هنوز آماده نیست.")
+    member, mobile = _resolve_member_mobile(db, member_id)
+    return _deliver_to_member(
+        db,
+        settings=settings,
+        actor=actor,
+        member=member,
+        mobile=mobile,
+        text=message,
+        template_id="custom",
+        gateway=gateway,
     )

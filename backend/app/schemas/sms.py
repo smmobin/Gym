@@ -29,6 +29,16 @@ class SmsSendRequest(BaseModel):
     member_id: int = Field(gt=0)
 
 
+class SmsCustomSendRequest(BaseModel):
+    """Free-text SMS to a member; phone always from member row on server."""
+
+    member_id: int = Field(gt=0)
+    message: str = Field(min_length=1, max_length=700)
+
+    def cleaned_message(self) -> str:
+        return (self.message or "").strip()
+
+
 class SmsSendResponse(BaseModel):
     ok: bool
     template_id: str

@@ -321,6 +321,24 @@ def test_fake_sms_send_succeeds_without_http(
         db.close()
 
 
+def test_fake_custom_send(
+    client: TestClient,
+    fake_sms,
+) -> None:
+    _ = fake_sms
+    _login(client, "09120000001")
+    member_id = _seed_member_id("09121111001")
+    res = client.post(
+        "/api/v1/sms/send-custom",
+        json={"member_id": member_id, "message": "سلام تست دلخواه"},
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["ok"] is True
+    assert body["template_id"] == "custom"
+    assert body["provider"] == "fake"
+
+
 def test_fake_gateway_logs_body(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.services.sms import fake as fake_mod
     from app.services.sms.fake import FakeSmsGateway

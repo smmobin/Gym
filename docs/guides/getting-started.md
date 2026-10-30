@@ -324,6 +324,7 @@ API:
 - `GET /api/v1/sms/status`
 - `GET /api/v1/sms/templates` — desk
 - `POST /api/v1/sms/send` — `{ template_id, member_id }` (مدیر/منشی؛ مربی ۴۰۳)
+- `POST /api/v1/sms/send-custom` — `{ member_id, message }` پیام آزاد؛ موبایل فقط از پروندهٔ عضو
 
 OTP ورود مربی/ورزشکار در `/login/` فعال است (جزئیات: بخش «ورود یکپارچه»). فراموشی رمز مدیر/منشی با پیامک در v1 نیست.
 
