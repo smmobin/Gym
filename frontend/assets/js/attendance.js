@@ -17,11 +17,12 @@ export function mountAttendance(root, user) {
         <p class="hint" data-lock></p>
         <label>نوع ورود
           <select data-type>
-            <option value="gym">سالن</option>
-            <option value="class">کلاس</option>
-            <option value="pt">جلسه مربی</option>
+            <option value="gym">سالن — ورود معمولی به باشگاه / تمرین آزاد</option>
+            <option value="class">کلاس — حضور مربوط به کلاس گروهی</option>
+            <option value="pt">جلسه مربی — جلسه خصوصی با مربی (مصرف جدا از سالن)</option>
           </select>
         </label>
+        <p class="hint">نوع ورود مشخص می‌کند این حضور از چه جنسی ثبت شود؛ روی مصرف طرح جلسه‌ای هم اثر دارد.</p>
         <div class="inline-actions">
           <button type="button" class="btn" data-checkin>ثبت ورود</button>
           <button type="button" class="btn ghost" data-second hidden>تأیید ورود دوم امروز</button>
