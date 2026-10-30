@@ -10,6 +10,7 @@ import {
 } from '../format.js'
 import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-input.js'
 import { startSessionActivityGuard } from '../session-activity.js'
+import { applyNavIcons } from '../nav-icons.js'
 import { initThemeToggle } from '../theme.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
 import { athleteMembershipCardsHtml } from '../athlete-memberships.js'
@@ -99,6 +100,7 @@ async function main() {
   if (!member) return
 
   initThemeToggle(document)
+  applyNavIcons(document)
   bindSidebarClose()
   bindHashNav('dash')
 

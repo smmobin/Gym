@@ -1778,16 +1778,37 @@ label > .date-picker { width: 100%; }
   font-size: 0.72rem;
 }
 .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   text-decoration: none;
   color: color-mix(in srgb, var(--text) 80%, var(--muted));
-  padding: 0.7rem 0.85rem;
+  padding: 0.65rem 0.8rem;
   border-radius: 10px;
+  min-width: 0;
+}
+.nav-item-icon {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  display: block;
+  opacity: 0.92;
+}
+.nav-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .nav-item:hover { background: var(--nav-hover-bg); color: var(--nav-item-hover); }
 .nav-item.active {
   background: var(--accent-dim);
   color: var(--accent);
   font-weight: 600;
+}
+.nav-item.active .nav-item-icon,
+.nav-item:hover .nav-item-icon {
+  opacity: 1;
 }
 .sidebar-foot {
   display: grid;

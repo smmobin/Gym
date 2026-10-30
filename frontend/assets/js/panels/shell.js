@@ -1,6 +1,7 @@
 import { staffLogout, roleLabel } from '../auth-staff.js'
 import { mountNotificationBell } from '../notifications.js'
 import { mountTodayDate } from '../format.js'
+import { applyNavIcons } from '../nav-icons.js'
 import { startSessionActivityGuard } from '../session-activity.js'
 import { initThemeToggle } from '../theme.js'
 import { bindHashNav, bindSidebarClose, showApiDown } from '../ui.js'
@@ -15,6 +16,7 @@ import { apiGet } from '../api.js'
  */
 export async function initStaffShell(opts) {
   initThemeToggle(document)
+  applyNavIcons(document)
   bindSidebarClose()
   bindHashNav(opts.defaultHash || 'dash')
 

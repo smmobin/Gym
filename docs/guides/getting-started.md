@@ -422,11 +422,11 @@ API: `POST /api/v1/guests` — trainer → ۴۰۳
 
 ## تنظیمات باشگاه، اعلان، پیامک
 
-### تنظیمات (`/settings`)
+### تنظیمات (`/manager/#settings`)
 
 1. لاگین مدیر → http://127.0.0.1:5173/manager/#settings
 2. نام / تلفن / نشانی / ساعت پایان روز / روز هشدار انقضا / سقف freeze / یادداشت ساعت کاری و قوانین تمدید را ویرایش کن
-3. UI تنظیمات **فقط پنل مدیر** است؛ پنل منشی لینک/بخش تنظیمات ندارد. اگر منشی `PATCH` بزند → ۴۰۳؛ `GET /gym-settings` برای کارکنان OK است (منطق سرور مثل حضور)
+3. UI تنظیمات **فقط پنل مدیر** است — منشی نه لینک دارد، نه `#mount-settings`، نه مشاهدهٔ صفحه. اگر با URL قدیمی `/receptionist/#settings` بیاید به داشبورد برمی‌گردد. اگر منشی `PATCH` بزند → ۴۰۳؛ `GET /gym-settings` برای کارکنان OK است (منطق سرور مثل حضور)
 4. حضور از قبل `day_end_time` را از `gym_settings` می‌خواند (hardcode جدا نیست)
 
 API: `GET /api/v1/gym-settings` (staff)، `PATCH /api/v1/gym-settings` (manager) — تغییر حساس → `audit_logs`

@@ -7,7 +7,6 @@ import { mountGuests } from '../guests.js'
 import { mountLockers } from '../lockers.js'
 import { mountMembers } from '../members.js'
 import { mountPlans } from '../plans.js'
-import { mountSettings } from '../settings.js'
 import { mountSmsTemplates } from '../sms-templates.js'
 import { mountStaff } from '../staff.js'
 import { mountTrainers } from '../trainers.js'
@@ -36,7 +35,6 @@ async function main() {
     guests: () => mountGuests(el('mount-guests'), user),
     trial: () => mountTrialLeads(el('mount-trial'), user),
     sms: () => mountSmsTemplates(el('mount-sms')),
-    settings: () => mountSettings(el('mount-settings'), user),
   }
 
   /** @type {Set<string>} */

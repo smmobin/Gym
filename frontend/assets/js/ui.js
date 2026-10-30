@@ -329,12 +329,21 @@ export function bindSidebarClose() {
 
 /**
  * Hash-based section navigation for panel pages.
+ * Unknown / removed sections (e.g. receptionist `#settings`) fall back to defaultHash.
  * @param {string} defaultHash
  */
 export function bindHashNav(defaultHash = 'dash') {
   const items = [...document.querySelectorAll('.sidebar .nav-item[href^="#"]')]
+  function resolveHash() {
+    const raw = (location.hash || `#${defaultHash}`).slice(1) || defaultHash
+    if (document.querySelector(`[data-section="${raw}"]`)) return raw
+    return defaultHash
+  }
   function activate() {
-    const hash = (location.hash || `#${defaultHash}`).slice(1)
+    const hash = resolveHash()
+    if ((location.hash || '').slice(1) !== hash) {
+      history.replaceState(null, '', `#${hash}`)
+    }
     items.forEach((a) => {
       const href = a.getAttribute('href') || ''
       a.classList.toggle('active', href === `#${hash}`)
