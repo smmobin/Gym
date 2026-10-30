@@ -23,6 +23,7 @@ from app.models.locker import Locker, LockerAssignment
 from app.models.login_otp import LoginOtp
 from app.models.member import Member
 from app.models.member_file_lock import MemberFileLock
+from app.models.member_file_lock_interest import MemberFileLockInterest
 from app.models.membership import Membership, MembershipPlan
 from app.models.notification import StaffNotification, StaffNotificationRead
 from app.models.payment import Payment
@@ -50,6 +51,7 @@ __all__ = [
     "LoginOtp",
     "Member",
     "MemberFileLock",
+    "MemberFileLockInterest",
     "MemberStatus",
     "Membership",
     "MembershipPlan",

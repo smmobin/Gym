@@ -56,6 +56,7 @@ def test_expected_tables_exist_after_migration() -> None:
         "expenses",
         "staff_sessions",
         "member_file_locks",
+        "member_file_lock_interests",
         "staff_notifications",
         "staff_notification_reads",
         "athlete_sessions",
@@ -80,6 +81,7 @@ def test_alembic_current_revision() -> None:
         "e5f6a7b8c9d0",
         "f6a7b8c9d0e1",
         "g7a8b9c0d1e2",
+        "h8b9c0d1e2f3",
     }
 
 

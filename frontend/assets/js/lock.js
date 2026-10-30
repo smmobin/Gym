@@ -40,7 +40,8 @@ export function lockErrorMessage(err, fallback) {
 }
 
 /**
- * Soft file lock for a member — acquire / touch / release + live poll while selected.
+ * Soft file lock — acquire / touch / release + poll while selected.
+ * Server hands unlocked files to the *last* waiting selector (not a race).
  * @param {(status: object | null, error: string | null) => void} onChange
  * @param {{ pollMs?: number, touchMs?: number }} [opts]
  */
@@ -48,17 +49,10 @@ export function createMemberLock(onChange, opts = {}) {
   const pollMs = opts.pollMs ?? MEMBER_LOCK_POLL_MS
   const touchMs = opts.touchMs ?? MEMBER_LOCK_TOUCH_MS
 
-  /** @type {number | null} member still open in the UI */
+  /** @type {number | null} */
   let watchedId = null
-  /** @type {number | null} lock successfully held by this client */
+  /** @type {number | null} */
   let heldId = null
-  /**
-   * Brief window after unlock so another desk can grab the file before we
-   * auto-reacquire for the same selection (no extra «انتخاب» click).
-   */
-  let suppressAcquire = false
-  /** @type {ReturnType<typeof setTimeout> | null} */
-  let reacquireTimer = null
   /** @type {ReturnType<typeof setInterval> | null} */
   let pollTimer = null
   /** @type {ReturnType<typeof setInterval> | null} */
@@ -76,13 +70,6 @@ export function createMemberLock(onChange, opts = {}) {
     if (touchTimer) {
       clearInterval(touchTimer)
       touchTimer = null
-    }
-  }
-
-  function clearReacquireTimer() {
-    if (reacquireTimer) {
-      clearTimeout(reacquireTimer)
-      reacquireTimer = null
     }
   }
 
@@ -125,7 +112,7 @@ export function createMemberLock(onChange, opts = {}) {
    * @param {number} id
    */
   async function tryAcquire(id) {
-    if (suppressAcquire || busy) return
+    if (busy) return
     busy = true
     try {
       const data = await apiPost(`/api/v1/members/${id}/lock`)
@@ -172,8 +159,6 @@ export function createMemberLock(onChange, opts = {}) {
 
       if (status.held_by_me) {
         heldId = id
-        suppressAcquire = false
-        clearReacquireTimer()
         onChange(status, null)
         ensureTouch()
         return
@@ -183,74 +168,72 @@ export function createMemberLock(onChange, opts = {}) {
       stopTouch()
 
       if (status.locked) {
-        // Someone else took it during our unlock grace — cancel auto-reacquire.
-        clearReacquireTimer()
-        suppressAcquire = false
         onChange(status, formatMemberLockConflict(status) || 'پرونده قفل است.')
         return
       }
 
-      if (suppressAcquire) {
-        onChange(status, 'قفل آزاد شد — در حال آماده‌سازی ویرایش…')
-        return
-      }
       onChange(status, 'در حال گرفتن قفل…')
       await tryAcquire(id)
     } catch {
-      /* transient network — next poll retries */
+      /* next poll retries */
     }
   }
 
   async function release() {
     const id = heldId ?? watchedId
     stopTouch()
-    clearReacquireTimer()
-    suppressAcquire = true
     heldId = null
     if (id == null) {
       onChange(null, null)
       return
     }
     try {
-      await apiPost(`/api/v1/members/${id}/unlock`)
-    } catch {
-      /* ignore */
-    }
-    if (watchedId == null) watchedId = id
-    if (watchedId !== id) return
-
-    try {
-      const status = await apiGet(`/api/v1/members/${id}/lock`)
+      const data = await apiPost(`/api/v1/members/${id}/unlock`)
+      if (watchedId == null) watchedId = id
       if (watchedId !== id) return
-      onChange(status, 'قفل آزاد شد — در حال آماده‌سازی ویرایش…')
-      startPoll()
-    } catch {
-      if (watchedId === id) {
-        onChange(
-          { locked: false, member_id: id, held_by_me: false },
-          'قفل آزاد شد — در حال آماده‌سازی ویرایش…',
-        )
+      if (data.held_by_me) {
+        heldId = id
+        onChange(data, null)
+        ensureTouch()
         startPoll()
+        return
+      }
+      if (data.locked) {
+        onChange(data, formatMemberLockConflict(data) || 'پرونده قفل است.')
+        startPoll()
+        return
+      }
+      onChange(data, 'قفل آزاد شد.')
+      startPoll()
+      await tryAcquire(id)
+    } catch {
+      try {
+        const status = await apiGet(`/api/v1/members/${id}/lock`)
+        if (watchedId === id) {
+          heldId = status.held_by_me ? id : null
+          onChange(
+            status,
+            status.held_by_me
+              ? null
+              : status.locked
+                ? formatMemberLockConflict(status)
+                : 'قفل آزاد شد.',
+          )
+          if (heldId) ensureTouch()
+          startPoll()
+          if (!status.locked && !status.held_by_me) await tryAcquire(id)
+        }
+      } catch {
+        onChange(null, null)
       }
     }
-
-    // Give other desks one poll window, then auto-reacquire without another «انتخاب».
-    const graceMs = Math.max(pollMs + 200, 1200)
-    reacquireTimer = setTimeout(() => {
-      reacquireTimer = null
-      if (watchedId !== id) return
-      suppressAcquire = false
-      void tryAcquire(id)
-    }, graceMs)
   }
 
   /**
    * @param {number | null} id
    */
   async function setMember(id) {
-    if (id != null && watchedId === id && heldId === id && !suppressAcquire) return
-
-    clearReacquireTimer()
+    if (id != null && watchedId === id && heldId === id) return
 
     if (heldId != null && heldId !== id) {
       const prev = heldId
@@ -264,7 +247,6 @@ export function createMemberLock(onChange, opts = {}) {
     }
 
     watchedId = id
-    suppressAcquire = false
     stopPoll()
 
     if (id == null) {

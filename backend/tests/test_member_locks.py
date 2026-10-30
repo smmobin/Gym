@@ -13,7 +13,7 @@ from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
 from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
-from app.models import Member, MemberFileLock, User
+from app.models import Member, MemberFileLock, MemberFileLockInterest, User
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -67,6 +67,8 @@ def _clear_locks() -> None:
     db = SessionLocal()
     try:
         for row in db.scalars(select(MemberFileLock)).all():
+            db.delete(row)
+        for row in db.scalars(select(MemberFileLockInterest)).all():
             db.delete(row)
         db.commit()
     finally:
@@ -166,16 +168,39 @@ def test_unlock_by_holder_and_manager_force(client: TestClient) -> None:
 
     assert desk.post(f"/api/v1/members/{member.id}/lock").status_code == 200
     assert desk.post(f"/api/v1/members/{member.id}/unlock").status_code == 200
+    # No other waiter → stays unlocked (holder was also last interest).
     assert desk.get(f"/api/v1/members/{member.id}/lock").json()["locked"] is False
 
     assert desk.post(f"/api/v1/members/{member.id}/lock").status_code == 200
-    # receptionist cannot force-unlock another's lock
-    other = TestClient(app)
-    _login(other, "09120000002")
-    # desk holds; manager force unlocks
+    # desk holds; manager force unlocks with no other waiter → unlocked
     forced = manager.post(f"/api/v1/members/{member.id}/unlock")
     assert forced.status_code == 200
     assert forced.json()["locked"] is False
+
+
+def test_unlock_hands_off_to_last_waiting_selector(client: TestClient) -> None:
+    """Last desk that got 409 while selecting becomes holder after unlock."""
+    member = _member("M-1002")
+    manager = TestClient(app)
+    desk = TestClient(app)
+    _login(manager, "09120000001")
+    _login(desk, "09120000002")
+
+    assert manager.post(f"/api/v1/members/{member.id}/lock").status_code == 200
+    conflict = desk.post(f"/api/v1/members/{member.id}/lock")
+    assert conflict.status_code == 409
+
+    unlocked = manager.post(f"/api/v1/members/{member.id}/unlock")
+    assert unlocked.status_code == 200
+    body = unlocked.json()
+    assert body["locked"] is True
+    desk_user = _user_by_mobile("09120000002")
+    assert body["locked_by"] == desk_user.id
+    assert body["held_by_me"] is False  # manager unlocked; desk holds now
+
+    desk_status = desk.get(f"/api/v1/members/{member.id}/lock")
+    assert desk_status.status_code == 200
+    assert desk_status.json()["held_by_me"] is True
 
 
 def test_payment_blocked_when_other_holds_lock(client: TestClient) -> None:

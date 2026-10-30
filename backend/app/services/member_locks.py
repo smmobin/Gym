@@ -21,6 +21,7 @@ from app.core.config import Settings, get_settings
 from app.models.enums import StaffRole
 from app.models.member import Member
 from app.models.member_file_lock import MemberFileLock
+from app.models.member_file_lock_interest import MemberFileLockInterest
 from app.models.user import User
 from app.services.members import trainer_can_view_member
 
@@ -118,6 +119,47 @@ def _load_lock(db: Session, member_id: int) -> MemberFileLock | None:
     return db.get(MemberFileLock, member_id)
 
 
+def _record_interest(
+    db: Session,
+    *,
+    user: User,
+    member_id: int,
+    now: datetime,
+) -> None:
+    """Mark this user as the latest selector for the member file (waiting tip)."""
+    row = db.get(MemberFileLockInterest, member_id)
+    if row is None:
+        db.add(
+            MemberFileLockInterest(
+                member_id=member_id,
+                user_id=user.id,
+                interested_at=now,
+            )
+        )
+    else:
+        row.user_id = user.id
+        row.interested_at = now
+    db.flush()
+
+
+def _grant_lock_to_user(
+    db: Session,
+    *,
+    member_id: int,
+    user_id: int,
+    now: datetime,
+) -> MemberFileLock:
+    lock = MemberFileLock(
+        member_id=member_id,
+        locked_by_user_id=user_id,
+        acquired_at=now,
+        last_seen_at=now,
+    )
+    db.add(lock)
+    db.flush()
+    return lock
+
+
 def _snapshot(
     member_id: int,
     lock: MemberFileLock | None,
@@ -184,6 +226,7 @@ def acquire_lock(
 
     if lock is not None:
         if lock.locked_by_user_id == user.id:
+            # Holder refresh must not overwrite waiting tip (last other selector).
             lock.last_seen_at = now
             db.flush()
             return _snapshot(member_id, lock, user, current_user=user, settings=settings)
@@ -193,16 +236,14 @@ def acquire_lock(
             db.delete(lock)
             db.flush()
         else:
+            # Waiting selector — become the handoff target on unlock.
+            # Commit before 409 so API rollback does not wipe the tip.
+            _record_interest(db, user=user, member_id=member_id, now=now)
+            db.commit()
             raise MemberLockError(409, _conflict_detail(lock, holder, settings=settings))
 
-    lock = MemberFileLock(
-        member_id=member_id,
-        locked_by_user_id=user.id,
-        acquired_at=now,
-        last_seen_at=now,
-    )
-    db.add(lock)
-    db.flush()
+    _record_interest(db, user=user, member_id=member_id, now=now)
+    lock = _grant_lock_to_user(db, member_id=member_id, user_id=user.id, now=now)
     return _snapshot(member_id, lock, user, current_user=user, settings=settings)
 
 
@@ -256,8 +297,26 @@ def unlock(
             "فقط دارندهٔ قفل یا مدیر می‌تواند قفل را آزاد کند.",
         )
 
+    previous_holder_id = lock.locked_by_user_id
     db.delete(lock)
     db.flush()
+
+    # Hand to the latest selector who is not the holder we just cleared.
+    interest = db.get(MemberFileLockInterest, member_id)
+    if interest is not None and interest.user_id != previous_holder_id:
+        next_holder = db.get(User, interest.user_id)
+        if next_holder is not None:
+            new_lock = _grant_lock_to_user(
+                db, member_id=member_id, user_id=next_holder.id, now=now
+            )
+            return _snapshot(
+                member_id,
+                new_lock,
+                next_holder,
+                current_user=user,
+                settings=settings,
+            )
+
     return _snapshot(member_id, None, None, current_user=user, settings=settings)
 
 
