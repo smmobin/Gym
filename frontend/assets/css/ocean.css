@@ -1612,14 +1612,6 @@ input.date-picker-native[type="datetime-local"] {
   flex-wrap: wrap;
 }
 .date-picker-actions-spacer { flex: 1 1 auto; }
-.date-picker-actions-hint {
-  flex: 1 1 8rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.35;
-  text-align: start;
-}
 .date-picker-actions .btn { min-width: 4.25rem; }
 .date-picker-error {
   margin: 0.35rem 0 0;

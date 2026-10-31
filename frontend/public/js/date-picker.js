@@ -351,12 +351,6 @@
     todayBtn.className = "btn ghost small";
     todayBtn.textContent = "امروز";
     actions.appendChild(todayBtn);
-    var hint = document.createElement("span");
-    hint.className = "date-picker-actions-hint";
-    hint.textContent = withTime
-      ? "روز = اعمال؛ ساعت را تنظیم کنید؛ بیرون بزنید تا بسته شود"
-      : "روز را بزنید تا انتخاب شود";
-    actions.appendChild(hint);
 
     var errEl = document.createElement("p");
     errEl.className = "date-picker-error";
