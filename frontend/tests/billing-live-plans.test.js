@@ -60,7 +60,7 @@ describe('mountBilling live plan labels', () => {
     })
   })
 
-  it('requires عضویت مرتبط and shows it on payment rows', async () => {
+  it('offers پرداخت آزاد and shows membership destination on payment rows', async () => {
     vi.useFakeTimers()
     const fetchMock = vi.fn(async (url) => {
       const u = String(url)
@@ -150,8 +150,7 @@ describe('mountBilling live plan labels', () => {
     await vi.advanceTimersByTimeAsync(0)
 
     expect(root.querySelector('[data-pay-m]')?.hasAttribute('required')).toBe(true)
-    expect(root.textContent).toContain('عضویت مرتبط *')
-    expect(root.textContent).not.toContain('عضویت مرتبط (اختیاری)')
+    expect(root.textContent).toContain('مقصد پرداخت *')
 
     const q = /** @type {HTMLInputElement} */ (root.querySelector('[data-q]'))
     q.value = 'تست'
@@ -167,7 +166,11 @@ describe('mountBilling live plan labels', () => {
     await vi.waitFor(() => {
       expect(root.querySelector('[data-payments]')?.textContent).toContain('R-10009')
     })
-    expect(root.querySelector('[data-payments]')?.textContent).toContain('عضویت مرتبط: #6533')
+    const paySel = /** @type {HTMLSelectElement} */ (root.querySelector('[data-pay-m]'))
+    expect([...paySel.options].some((o) => o.value === 'free' && o.textContent?.includes('پرداخت آزاد'))).toBe(
+      true,
+    )
+    expect(root.querySelector('[data-payments]')?.textContent).toContain('مقصد: #6533')
     expect(root.querySelector('[data-payments]')?.textContent).toContain('۸ جلسه کلاس گروهی')
     expect(root.querySelector('[data-payments]')?.textContent).toContain('پرداخت‌شده')
   })

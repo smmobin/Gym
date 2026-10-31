@@ -433,7 +433,7 @@ def create_payment(
     member_id: int,
     amount_toman: int,
     method: str,
-    membership_id: int,
+    membership_id: int | None = None,
     status: str = PaymentStatus.PAID.value,
     title: str | None = None,
     note: str | None = None,
@@ -447,9 +447,10 @@ def create_payment(
         raise BillingError(422, "وضعیت پرداخت نامعتبر است.")
 
     member = load_member(db, member_id)
-    membership = db.get(Membership, membership_id)
-    if membership is None or membership.member_id != member.id:
-        raise BillingError(404, "عضویت مرتبط یافت نشد.")
+    if membership_id is not None:
+        membership = db.get(Membership, membership_id)
+        if membership is None or membership.member_id != member.id:
+            raise BillingError(404, "عضویت مرتبط یافت نشد.")
 
     now = datetime.now(tz=timezone.utc)
     receipt = next_receipt_number(db)

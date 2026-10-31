@@ -60,7 +60,7 @@ export function mountBilling(root, user) {
               <option value="online" data-online-option>آنلاین (بدون درگاه)</option>
             </select>
           </label>
-          <label>عضویت مرتبط *<select data-pay-m required><option value="">انتخاب عضویت…</option></select></label>
+          <label>مقصد پرداخت *<select data-pay-m required><option value="">انتخاب کنید…</option></select></label>
           <button class="btn" type="submit" data-need-lock>ثبت پرداخت</button>
         </form>
         <p class="hint" data-online-hint>روش آنلاین فقط ثبت می‌شود؛ درگاه واقعی وصل نیست.</p>
@@ -180,25 +180,31 @@ export function mountBilling(root, user) {
     // Freeze: only open memberships. Pay link: also pending (often future-start / awaiting window).
     fill(root.querySelector('[data-freeze-m]'), ['active', 'frozen'])
     const paySel = /** @type {HTMLSelectElement | null} */ (root.querySelector('[data-pay-m]'))
-    fill(paySel, ['active', 'frozen', 'pending'])
     if (paySel) {
-      // Keep required empty placeholder first.
-      if (!paySel.querySelector('option[value=""]')) {
-        paySel.insertAdjacentHTML('afterbegin', '<option value="">انتخاب عضویت…</option>')
-      } else {
-        paySel.querySelector('option[value=""]').textContent = 'انتخاب عضویت…'
-      }
+      const cur = paySel.value
+      const payAllowed = new Set(['active', 'frozen', 'pending'])
+      paySel.innerHTML =
+        '<option value="">انتخاب کنید…</option>' +
+        '<option value="free">پرداخت آزاد (بدون عضویت)</option>' +
+        memberships
+          .filter((m) => payAllowed.has(m.status))
+          .map(
+            (m) =>
+              `<option value="${m.id}">#${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}</option>`,
+          )
+          .join('')
+      if ([...paySel.options].some((o) => o.value === cur)) paySel.value = cur
       globalThis.GymCustomSelect?.sync?.(paySel)
     }
 
     /** @param {any} p */
     function paymentMembershipLine(p) {
-      if (!p.membership_id) return 'عضویت مرتبط: —'
+      if (!p.membership_id) return 'مقصد: پرداخت آزاد'
       const m = memberships.find((x) => x.id === p.membership_id)
       if (m) {
-        return `عضویت مرتبط: #${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}`
+        return `مقصد: #${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}`
       }
-      return `عضویت مرتبط: #${p.membership_id}`
+      return `مقصد: عضویت #${p.membership_id}`
     }
 
     const payments = pay.items || []
@@ -325,32 +331,34 @@ export function mountBilling(root, user) {
     e.preventDefault()
     if (!selected || !lockHeld) return
     const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
-    const membershipId = /** @type {HTMLSelectElement} */ (root.querySelector('[data-pay-m]')).value
-    if (!membershipId) {
-      setStatus(status, 'عضویت مرتبط اجباری است.', 'error')
+    const membershipChoice = /** @type {HTMLSelectElement} */ (root.querySelector('[data-pay-m]')).value
+    if (!membershipChoice) {
+      setStatus(status, 'مقصد پرداخت را انتخاب کنید (عضویت یا پرداخت آزاد).', 'error')
       return
     }
+    const isFree = membershipChoice === 'free'
     const body = {
       member_id: selected.id,
       amount_toman: moneyFromForm(fd, 'amount'),
       method: String(fd.get('method')),
       status: 'paid',
-      membership_id: Number(membershipId),
     }
+    if (!isFree) body.membership_id = Number(membershipChoice)
     try {
       const data = await apiPost('/api/v1/payments', body)
       setStatus(status, `پرداخت ${data.payment.receipt_number}. بدهی: ${formatToman(data.debt_toman)}`, 'ok')
       const receipt = root.querySelector('[data-receipt]')
       if (receipt) {
         receipt.hidden = false
-        const m = memberships.find((x) => x.id === Number(membershipId))
-        const mLine = m
-          ? `#${m.id} · ${m.plan_name || m.plan_id}`
-          : `#${membershipId}`
+        let mLine = 'پرداخت آزاد'
+        if (!isFree) {
+          const m = memberships.find((x) => x.id === Number(membershipChoice))
+          mLine = m ? `#${m.id} · ${m.plan_name || m.plan_id}` : `#${membershipChoice}`
+        }
         receipt.innerHTML = `<h3>رسید ${data.payment.receipt_number}</h3>
           <p>مبلغ: ${formatToman(data.payment.amount_toman)}</p>
           <p>روش: ${PAYMENT_METHOD_LABEL[data.payment.method] || data.payment.method}</p>
-          <p>عضویت مرتبط: ${mLine}</p>
+          <p>مقصد: ${mLine}</p>
           <button type="button" class="btn small" onclick="window.print()">چاپ</button>`
       }
       await loadMember(selected.id)

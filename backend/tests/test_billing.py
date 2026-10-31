@@ -248,15 +248,16 @@ def test_refund_keeps_amount_and_writes_audit(client: TestClient) -> None:
         db.close()
 
 
-def test_desk_payment_requires_membership(client: TestClient) -> None:
+def test_desk_free_payment_without_membership(client: TestClient) -> None:
     wipe_and_seed()
     _login(client)
     elham = _member("M-1008")
-    missing = client.post(
+    free = client.post(
         "/api/v1/payments",
         json={"member_id": elham.id, "amount_toman": 10_000, "method": "pos"},
     )
-    assert missing.status_code == 422
+    assert free.status_code == 201
+    assert free.json()["payment"]["membership_id"] is None
 
 
 def test_receipt_numbers_unique(client: TestClient) -> None:
