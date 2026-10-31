@@ -36,12 +36,23 @@ def sum_agreed_toman(memberships: Iterable[Membership]) -> int:
 
 
 def sum_paid_toman(payments: Iterable[Payment], *, membership_ids: set[int] | None = None) -> int:
+    """
+    Sum paid amounts that reduce member debt.
+
+    When ``membership_ids`` is set (open memberships):
+    - payments linked to those memberships count;
+    - desk «پرداخت آزاد» (membership_id is None) also counts toward the same member debt;
+    - payments linked only to cancelled/other memberships do not.
+    """
     total = 0
     for payment in payments:
         if payment.status != PaymentStatus.PAID.value:
             continue
         if membership_ids is not None:
-            if payment.membership_id is None or payment.membership_id not in membership_ids:
+            if payment.membership_id is None:
+                total += payment.amount_toman
+                continue
+            if payment.membership_id not in membership_ids:
                 continue
         total += payment.amount_toman
     return total

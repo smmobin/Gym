@@ -251,13 +251,23 @@ def test_refund_keeps_amount_and_writes_audit(client: TestClient) -> None:
 def test_desk_free_payment_without_membership(client: TestClient) -> None:
     wipe_and_seed()
     _login(client)
-    elham = _member("M-1008")
+    # حسین: بدهی ۱٬۵۰۰٬۰۰۰ بدون پرداخت قبلی روی همان تعهد
+    hosein = _member("M-1005")
+    before = client.get(f"/api/v1/members/{hosein.id}/memberships")
+    assert before.status_code == 200
+    debt_before = before.json()["debt_toman"]
+    assert debt_before == 1_500_000
+
     free = client.post(
         "/api/v1/payments",
-        json={"member_id": elham.id, "amount_toman": 10_000, "method": "pos"},
+        json={"member_id": hosein.id, "amount_toman": 200_000, "method": "pos"},
     )
     assert free.status_code == 201
     assert free.json()["payment"]["membership_id"] is None
+    assert free.json()["debt_toman"] == debt_before - 200_000
+
+    after = client.get(f"/api/v1/members/{hosein.id}/memberships")
+    assert after.json()["debt_toman"] == debt_before - 200_000
 
 
 def test_receipt_numbers_unique(client: TestClient) -> None:
