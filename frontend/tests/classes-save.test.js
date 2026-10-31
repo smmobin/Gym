@@ -172,6 +172,21 @@ describe('class save anti-duplicate (BUG-007)', () => {
     })
   })
 
+  it('puts member search + رزرو above the class table', async () => {
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountClasses(root, { role: 'receptionist' })
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-book-bar]')).toBeTruthy()
+    })
+    const bar = root.querySelector('[data-book-bar]')
+    const table = root.querySelector('.table-wrap')
+    expect(bar).toBeTruthy()
+    expect(table).toBeTruthy()
+    expect(bar?.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(root.querySelector('[data-bookings]')?.closest('.panel')?.contains(bar)).toBe(false)
+  })
+
   it('renders deactivate for active classes with zero bookings', async () => {
     vi.mocked(apiGet).mockResolvedValue({
       items: [

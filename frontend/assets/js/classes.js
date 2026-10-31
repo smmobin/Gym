@@ -13,6 +13,20 @@ export function mountClasses(root, user) {
     <article class="panel">
       <header class="panel-head"><h2>کلاس‌های گروهی</h2></header>
       <div class="status-msg" data-status hidden></div>
+      ${
+        canWrite
+          ? `<div class="class-book-bar" data-book-bar>
+              ${personSelectRowHtml({
+                label: 'جستجوی عضو',
+                inputAttr: 'data-mq',
+                pickAttr: 'data-mpick',
+                chipAttr: 'data-member-sel',
+                emptyText: 'عضوی انتخاب نشده',
+              })}
+              <button type="button" class="btn" data-book>رزرو</button>
+            </div>`
+          : ''
+      }
       <div class="table-wrap"><table class="responsive-table">
         <thead><tr><th>عنوان</th><th>زمان</th><th>ظرفیت</th><th>جنسیت</th><th></th></tr></thead>
         <tbody data-tbody></tbody>
@@ -24,18 +38,6 @@ export function mountClasses(root, user) {
         <header class="panel-head"><h2>رزروهای کلاس انتخاب‌شده</h2></header>
         <p class="hint" data-sel>کلاسی انتخاب نشده</p>
         <div class="list" data-bookings></div>
-        ${
-          canWrite
-            ? `${personSelectRowHtml({
-                label: 'جستجوی عضو',
-                inputAttr: 'data-mq',
-                pickAttr: 'data-mpick',
-                chipAttr: 'data-member-sel',
-                emptyText: 'عضوی انتخاب نشده',
-              })}
-               <button type="button" class="btn" data-book style="margin-top:0.75rem">رزرو</button>`
-            : ''
-        }
       </article>
       ${
         canWrite
