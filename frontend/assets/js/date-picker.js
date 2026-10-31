@@ -221,6 +221,9 @@
       minute: parsed.minute || 0,
       viewJy: 0,
       viewJm: 0,
+      /** @type {'days'|'months'|'years'} */
+      navMode: "days",
+      yearPageStart: 0,
     };
     var j0 = gregorianToJalali(state.y, state.m, state.d);
     state.viewJy = j0[0];
@@ -278,6 +281,16 @@
     prevBtn.textContent = "‹";
     var title = document.createElement("div");
     title.className = "date-picker-nav-title";
+    var monthBtn = document.createElement("button");
+    monthBtn.type = "button";
+    monthBtn.className = "date-picker-nav-part date-picker-nav-month";
+    monthBtn.setAttribute("aria-label", "انتخاب ماه");
+    var yearBtn = document.createElement("button");
+    yearBtn.type = "button";
+    yearBtn.className = "date-picker-nav-part date-picker-nav-year";
+    yearBtn.setAttribute("aria-label", "انتخاب سال");
+    title.appendChild(monthBtn);
+    title.appendChild(yearBtn);
     var nextBtn = document.createElement("button");
     nextBtn.type = "button";
     nextBtn.className = "date-picker-nav-btn";
@@ -297,6 +310,18 @@
 
     var grid = document.createElement("div");
     grid.className = "date-picker-grid";
+
+    var monthPanel = document.createElement("div");
+    monthPanel.className = "date-picker-months";
+    monthPanel.hidden = true;
+    monthPanel.setAttribute("role", "listbox");
+    monthPanel.setAttribute("aria-label", "ماه");
+
+    var yearPanel = document.createElement("div");
+    yearPanel.className = "date-picker-years";
+    yearPanel.hidden = true;
+    yearPanel.setAttribute("role", "listbox");
+    yearPanel.setAttribute("aria-label", "سال");
 
     var timeBlock = null;
     var hourValueEl = null;
@@ -361,6 +386,8 @@
     pop.appendChild(nav);
     pop.appendChild(week);
     pop.appendChild(grid);
+    pop.appendChild(monthPanel);
+    pop.appendChild(yearPanel);
     if (timeBlock) pop.appendChild(timeBlock);
     pop.appendChild(errEl);
     pop.appendChild(actions);
@@ -388,6 +415,31 @@
     root.appendChild(trigger);
     root.appendChild(pop);
 
+    function syncNavChrome() {
+      monthBtn.textContent = MONTHS[state.viewJm - 1];
+      yearBtn.textContent = toFaDigits(String(state.viewJy));
+      monthBtn.classList.toggle("is-active", state.navMode === "months");
+      yearBtn.classList.toggle("is-active", state.navMode === "years");
+      monthBtn.hidden = state.navMode === "years";
+      if (state.navMode === "years") {
+        var endY = state.yearPageStart + 11;
+        yearBtn.textContent =
+          toFaDigits(String(state.yearPageStart)) + "–" + toFaDigits(String(endY));
+      }
+      prevBtn.setAttribute(
+        "aria-label",
+        state.navMode === "years" ? "بازهٔ سال قبل" : state.navMode === "months" ? "سال قبل" : "ماه قبل",
+      );
+      nextBtn.setAttribute(
+        "aria-label",
+        state.navMode === "years" ? "بازهٔ سال بعد" : state.navMode === "months" ? "سال بعد" : "ماه بعد",
+      );
+      week.hidden = state.navMode !== "days";
+      grid.hidden = state.navMode !== "days";
+      monthPanel.hidden = state.navMode !== "months";
+      yearPanel.hidden = state.navMode !== "years";
+    }
+
     function syncDisplay() {
       if (withTime) {
         valueEl.textContent = displayJalaliDateTime(state.y, state.m, state.d, state.hour, state.minute);
@@ -396,9 +448,29 @@
         valueEl.textContent = displayJalali(state.y, state.m, state.d);
         heroValue.textContent = displayJalali(state.y, state.m, state.d);
       }
-      title.textContent = toFaDigits(MONTHS[state.viewJm - 1] + " " + state.viewJy);
+      syncNavChrome();
       if (hourValueEl) hourValueEl.textContent = toFaDigits(pad2(state.hour));
       if (minuteValueEl) minuteValueEl.textContent = toFaDigits(pad2(state.minute));
+    }
+
+    function ensureYearPageContains(jy) {
+      if (
+        state.yearPageStart > 0 &&
+        jy >= state.yearPageStart &&
+        jy < state.yearPageStart + 12
+      ) {
+        return;
+      }
+      state.yearPageStart = Math.max(1, jy - 5);
+    }
+
+    function setNavMode(mode) {
+      state.navMode = mode;
+      if (mode === "years") ensureYearPageContains(state.viewJy);
+      syncNavChrome();
+      if (mode === "days") renderGrid();
+      else if (mode === "months") renderMonths();
+      else renderYears();
     }
 
     function renderGrid() {
@@ -429,6 +501,39 @@
           btn.classList.add("is-today");
         }
         grid.appendChild(btn);
+      }
+    }
+
+    function renderMonths() {
+      monthPanel.innerHTML = "";
+      var selectedJ = gregorianToJalali(state.y, state.m, state.d);
+      for (var m = 1; m <= 12; m += 1) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "date-picker-month";
+        btn.textContent = MONTHS[m - 1];
+        btn.dataset.month = String(m);
+        btn.setAttribute("role", "option");
+        if (m === state.viewJm) btn.classList.add("is-view");
+        if (selectedJ[0] === state.viewJy && selectedJ[1] === m) btn.classList.add("is-selected");
+        monthPanel.appendChild(btn);
+      }
+    }
+
+    function renderYears() {
+      yearPanel.innerHTML = "";
+      var selectedJ = gregorianToJalali(state.y, state.m, state.d);
+      for (var i = 0; i < 12; i += 1) {
+        var y = state.yearPageStart + i;
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "date-picker-year";
+        btn.textContent = toFaDigits(String(y));
+        btn.dataset.year = String(y);
+        btn.setAttribute("role", "option");
+        if (y === state.viewJy) btn.classList.add("is-view");
+        if (selectedJ[0] === y) btn.classList.add("is-selected");
+        yearPanel.appendChild(btn);
       }
     }
 
@@ -513,6 +618,7 @@
     function open() {
       closeOtherOverlays(root);
       clearCommitError();
+      state.navMode = "days";
       pullFromInput();
       root.classList.add("is-open");
       trigger.setAttribute("aria-expanded", "true");
@@ -550,6 +656,19 @@
     prevBtn.addEventListener("click", function (event) {
       event.preventDefault();
       event.stopPropagation();
+      if (state.navMode === "years") {
+        state.yearPageStart = Math.max(1, state.yearPageStart - 12);
+        syncDisplay();
+        renderYears();
+        return;
+      }
+      if (state.navMode === "months") {
+        state.viewJy -= 1;
+        if (state.viewJy < 1) state.viewJy = 1;
+        syncDisplay();
+        renderMonths();
+        return;
+      }
       state.viewJm -= 1;
       if (state.viewJm < 1) {
         state.viewJm = 12;
@@ -562,6 +681,18 @@
     nextBtn.addEventListener("click", function (event) {
       event.preventDefault();
       event.stopPropagation();
+      if (state.navMode === "years") {
+        state.yearPageStart += 12;
+        syncDisplay();
+        renderYears();
+        return;
+      }
+      if (state.navMode === "months") {
+        state.viewJy += 1;
+        syncDisplay();
+        renderMonths();
+        return;
+      }
       state.viewJm += 1;
       if (state.viewJm > 12) {
         state.viewJm = 1;
@@ -569,6 +700,36 @@
       }
       syncDisplay();
       renderGrid();
+    });
+
+    monthBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      setNavMode(state.navMode === "months" ? "days" : "months");
+    });
+
+    yearBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      setNavMode(state.navMode === "years" ? "days" : "years");
+    });
+
+    monthPanel.addEventListener("click", function (event) {
+      var btn = event.target.closest(".date-picker-month");
+      if (!btn || !monthPanel.contains(btn)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      state.viewJm = Number(btn.dataset.month);
+      setNavMode("days");
+    });
+
+    yearPanel.addEventListener("click", function (event) {
+      var btn = event.target.closest(".date-picker-year");
+      if (!btn || !yearPanel.contains(btn)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      state.viewJy = Number(btn.dataset.year);
+      setNavMode("months");
     });
 
     grid.addEventListener("click", function (event) {

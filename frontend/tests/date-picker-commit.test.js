@@ -80,6 +80,43 @@ describe('GymDatePicker FormData commit', () => {
     expect(picker?.classList.contains('is-open')).toBe(false)
   })
 
+  it('opens month and year lists from the nav title', () => {
+    document.body.innerHTML = `
+      <form id="f">
+        <input type="date" name="expense_date" value="2026-10-23" />
+      </form>
+    `
+    window.GymDatePicker.refresh(document)
+    const picker = document.querySelector('[data-date-picker]')
+    expect(picker).toBeTruthy()
+    picker?.querySelector('.date-picker-trigger')?.click()
+
+    const monthBtn = picker?.querySelector('.date-picker-nav-month')
+    const yearBtn = picker?.querySelector('.date-picker-nav-year')
+    expect(monthBtn?.textContent).toContain('آبان')
+    expect(yearBtn?.textContent).toMatch(/۱۴۰۵/)
+
+    monthBtn?.click()
+    expect(picker?.querySelector('.date-picker-months')?.hidden).toBe(false)
+    expect(picker?.querySelector('.date-picker-grid')?.hidden).toBe(true)
+    const farvardin = [...(picker?.querySelectorAll('.date-picker-month') || [])].find(
+      (btn) => btn.dataset.month === '1',
+    )
+    farvardin?.click()
+    expect(picker?.querySelector('.date-picker-grid')?.hidden).toBe(false)
+    expect(picker?.querySelector('.date-picker-nav-month')?.textContent).toBe('فروردین')
+
+    yearBtn?.click()
+    expect(picker?.querySelector('.date-picker-years')?.hidden).toBe(false)
+    const y1404 = [...(picker?.querySelectorAll('.date-picker-year') || [])].find(
+      (btn) => btn.dataset.year === '1404',
+    )
+    expect(y1404).toBeTruthy()
+    y1404?.click()
+    expect(picker?.querySelector('.date-picker-months')?.hidden).toBe(false)
+    expect(picker?.querySelector('.date-picker-nav-year')?.textContent).toMatch(/۱۴۰۴/)
+  })
+
   it('blocks day apply when ends_at is not after starts_at (data-min-datetime-from)', () => {
     document.body.innerHTML = `
       <form id="f">

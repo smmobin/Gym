@@ -1493,9 +1493,79 @@ input.date-picker-native[type="datetime-local"] {
   gap: 0.35rem;
 }
 .date-picker-nav-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem 0.35rem;
   text-align: center;
   font-weight: 700;
   font-size: 0.95rem;
+}
+.date-picker-nav-part {
+  margin: 0;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.date-picker-nav-part:hover {
+  background: var(--accent-dim);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  color: var(--accent);
+}
+.date-picker-nav-part.is-active {
+  background: var(--accent-dim);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  color: var(--accent);
+}
+.date-picker-months,
+.date-picker-years {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  min-height: 11.5rem;
+}
+.date-picker-months[hidden],
+.date-picker-years[hidden] {
+  display: none !important;
+}
+.date-picker-month,
+.date-picker-year {
+  min-height: 2.55rem;
+  padding: 0.35rem 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+.date-picker-month:hover,
+.date-picker-year:hover {
+  background: var(--accent-dim);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  color: var(--accent);
+}
+.date-picker-month.is-view,
+.date-picker-year.is-view {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, var(--line));
+  color: var(--accent);
+}
+.date-picker-month.is-selected,
+.date-picker-year.is-selected {
+  color: var(--accent-ink);
+  font-weight: 750;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-2) 80%, var(--accent)));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 28%, transparent);
+  transform: scale(1.02);
 }
 .date-picker-nav-btn {
   width: 2.2rem;
