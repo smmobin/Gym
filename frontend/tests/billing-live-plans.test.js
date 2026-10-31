@@ -60,6 +60,118 @@ describe('mountBilling live plan labels', () => {
     })
   })
 
+  it('requires عضویت مرتبط and shows it on payment rows', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn(async (url) => {
+      const u = String(url)
+      if (u.includes('/membership-plans')) {
+        return { ok: true, status: 200, json: async () => ({ items: [], total: 0 }) }
+      }
+      if (u.includes('/payments/gateway')) {
+        return { ok: true, status: 200, json: async () => ({ enabled: false, label: '—' }) }
+      }
+      if (u.includes('/members?') || (u.includes('/members') && !u.includes('/memberships') && !u.includes('/payments') && !u.includes('/lock'))) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: [
+              {
+                id: 7,
+                display_id: 'M-1007',
+                first_name: 'تست',
+                last_name: 'بدهی',
+                mobile: '09121111007',
+                status: 'pending',
+              },
+            ],
+            total: 1,
+          }),
+        }
+      }
+      if (u.includes('/members/7/memberships')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: [
+              { id: 6533, plan_id: 1, plan_name: '۸ جلسه کلاس گروهی', status: 'pending' },
+              { id: 100, plan_id: 2, plan_name: 'ماهانه', status: 'active' },
+            ],
+            debt_toman: 250000,
+            freeze_days_used: 0,
+            freeze_days_remaining: 14,
+          }),
+        }
+      }
+      if (u.includes('/members/7/payments')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: [
+              {
+                id: 9,
+                receipt_number: 'R-10009',
+                amount_toman: 1_200_000,
+                method: 'cash',
+                status: 'paid',
+                membership_id: 6533,
+              },
+            ],
+            total: 1,
+            debt_toman: 250000,
+          }),
+        }
+      }
+      if (u.includes('/lock')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            held_by_me: true,
+            holder_name: 'مدیر',
+            locked_by_name: 'مدیر',
+            expires_at: null,
+          }),
+        }
+      }
+      return { ok: true, status: 200, json: async () => ({ items: [], total: 0 }) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const section = document.createElement('div')
+    section.setAttribute('data-section', 'billing')
+    const root = document.createElement('div')
+    section.appendChild(root)
+    document.body.appendChild(section)
+
+    mountBilling(root, { role: 'manager', id: 1 })
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(root.querySelector('[data-pay-m]')?.hasAttribute('required')).toBe(true)
+    expect(root.textContent).toContain('عضویت مرتبط *')
+    expect(root.textContent).not.toContain('عضویت مرتبط (اختیاری)')
+
+    const q = /** @type {HTMLInputElement} */ (root.querySelector('[data-q]'))
+    q.value = 'تست'
+    q.dispatchEvent(new Event('input', { bubbles: true }))
+    await vi.advanceTimersByTimeAsync(400)
+    await vi.waitFor(() => {
+      expect(root.querySelector('.member-pick-item')).toBeTruthy()
+    })
+    const pickBtn = /** @type {HTMLButtonElement} */ (root.querySelector('.member-pick-item'))
+    pickBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
+    pickBtn.click()
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-payments]')?.textContent).toContain('R-10009')
+    })
+    expect(root.querySelector('[data-payments]')?.textContent).toContain('عضویت مرتبط: #6533')
+    expect(root.querySelector('[data-payments]')?.textContent).toContain('۸ جلسه کلاس گروهی')
+    expect(root.querySelector('[data-payments]')?.textContent).toContain('پرداخت‌شده')
+  })
+
   it('lists pending memberships in پرداخت «عضویت مرتبط» but not in توقف', async () => {
     vi.useFakeTimers()
     const fetchMock = vi.fn(async (url) => {

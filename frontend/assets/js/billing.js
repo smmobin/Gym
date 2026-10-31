@@ -6,6 +6,7 @@ import {
   membershipStatusLabelFa,
   onlineMethodLabel,
   PAYMENT_METHOD_LABEL,
+  paymentStatusLabelFa,
 } from './format.js'
 import { LIVE } from './live-data.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
@@ -59,7 +60,7 @@ export function mountBilling(root, user) {
               <option value="online" data-online-option>آنلاین (بدون درگاه)</option>
             </select>
           </label>
-          <label>عضویت مرتبط (اختیاری)<select data-pay-m><option value="">—</option></select></label>
+          <label>عضویت مرتبط *<select data-pay-m required><option value="">انتخاب عضویت…</option></select></label>
           <button class="btn" type="submit" data-need-lock>ثبت پرداخت</button>
         </form>
         <p class="hint" data-online-hint>روش آنلاین فقط ثبت می‌شود؛ درگاه واقعی وصل نیست.</p>
@@ -178,14 +179,36 @@ export function mountBilling(root, user) {
     }
     // Freeze: only open memberships. Pay link: also pending (often future-start / awaiting window).
     fill(root.querySelector('[data-freeze-m]'), ['active', 'frozen'])
-    fill(root.querySelector('[data-pay-m]'), ['active', 'frozen', 'pending'])
+    const paySel = /** @type {HTMLSelectElement | null} */ (root.querySelector('[data-pay-m]'))
+    fill(paySel, ['active', 'frozen', 'pending'])
+    if (paySel) {
+      // Keep required empty placeholder first.
+      if (!paySel.querySelector('option[value=""]')) {
+        paySel.insertAdjacentHTML('afterbegin', '<option value="">انتخاب عضویت…</option>')
+      } else {
+        paySel.querySelector('option[value=""]').textContent = 'انتخاب عضویت…'
+      }
+      globalThis.GymCustomSelect?.sync?.(paySel)
+    }
+
+    /** @param {any} p */
+    function paymentMembershipLine(p) {
+      if (!p.membership_id) return 'عضویت مرتبط: —'
+      const m = memberships.find((x) => x.id === p.membership_id)
+      if (m) {
+        return `عضویت مرتبط: #${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}`
+      }
+      return `عضویت مرتبط: #${p.membership_id}`
+    }
+
     const payments = pay.items || []
     root.querySelector('[data-payments]').innerHTML = payments.length
       ? payments
           .map(
             (p) => `<div class="row-item"><div>
           <h3>${p.receipt_number}</h3>
-          <p>${formatToman(p.amount_toman)} · ${PAYMENT_METHOD_LABEL[p.method] || p.method} · ${p.status}</p></div>
+          <p>${formatToman(p.amount_toman)} · ${PAYMENT_METHOD_LABEL[p.method] || p.method} · ${paymentStatusLabelFa(p.status)}</p>
+          <p class="hint">${paymentMembershipLine(p)}</p></div>
           ${p.status === 'paid' ? `<button type="button" class="btn small ghost" data-refund="${p.id}">برگشت</button>` : '<em>—</em>'}
         </div>`,
           )
@@ -303,22 +326,31 @@ export function mountBilling(root, user) {
     if (!selected || !lockHeld) return
     const fd = new FormData(/** @type {HTMLFormElement} */ (e.target))
     const membershipId = /** @type {HTMLSelectElement} */ (root.querySelector('[data-pay-m]')).value
+    if (!membershipId) {
+      setStatus(status, 'عضویت مرتبط اجباری است.', 'error')
+      return
+    }
     const body = {
       member_id: selected.id,
       amount_toman: moneyFromForm(fd, 'amount'),
       method: String(fd.get('method')),
       status: 'paid',
+      membership_id: Number(membershipId),
     }
-    if (membershipId) body.membership_id = Number(membershipId)
     try {
       const data = await apiPost('/api/v1/payments', body)
       setStatus(status, `پرداخت ${data.payment.receipt_number}. بدهی: ${formatToman(data.debt_toman)}`, 'ok')
       const receipt = root.querySelector('[data-receipt]')
       if (receipt) {
         receipt.hidden = false
+        const m = memberships.find((x) => x.id === Number(membershipId))
+        const mLine = m
+          ? `#${m.id} · ${m.plan_name || m.plan_id}`
+          : `#${membershipId}`
         receipt.innerHTML = `<h3>رسید ${data.payment.receipt_number}</h3>
           <p>مبلغ: ${formatToman(data.payment.amount_toman)}</p>
           <p>روش: ${PAYMENT_METHOD_LABEL[data.payment.method] || data.payment.method}</p>
+          <p>عضویت مرتبط: ${mLine}</p>
           <button type="button" class="btn small" onclick="window.print()">چاپ</button>`
       }
       await loadMember(selected.id)

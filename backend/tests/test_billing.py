@@ -97,7 +97,7 @@ def test_plans_and_finance_unauthorized(client: TestClient) -> None:
     assert (
         client.post(
             "/api/v1/payments",
-            json={"member_id": 1, "amount_toman": 1000, "method": "cash"},
+            json={"member_id": 1, "amount_toman": 1000, "method": "cash", "membership_id": 1},
         ).status_code
         == 401
     )
@@ -111,7 +111,7 @@ def test_trainer_forbidden_on_finance(client: TestClient) -> None:
     assert (
         client.post(
             "/api/v1/payments",
-            json={"member_id": ali.id, "amount_toman": 1000, "method": "cash"},
+            json={"member_id": ali.id, "amount_toman": 1000, "method": "cash", "membership_id": 1},
         ).status_code
         == 403
     )
@@ -248,17 +248,39 @@ def test_refund_keeps_amount_and_writes_audit(client: TestClient) -> None:
         db.close()
 
 
+def test_desk_payment_requires_membership(client: TestClient) -> None:
+    wipe_and_seed()
+    _login(client)
+    elham = _member("M-1008")
+    missing = client.post(
+        "/api/v1/payments",
+        json={"member_id": elham.id, "amount_toman": 10_000, "method": "pos"},
+    )
+    assert missing.status_code == 422
+
+
 def test_receipt_numbers_unique(client: TestClient) -> None:
     wipe_and_seed()
     _login(client)
     elham = _member("M-1008")
+    mid = client.get(f"/api/v1/members/{elham.id}/memberships").json()["items"][0]["id"]
     r1 = client.post(
         "/api/v1/payments",
-        json={"member_id": elham.id, "amount_toman": 10_000, "method": "pos"},
+        json={
+            "member_id": elham.id,
+            "membership_id": mid,
+            "amount_toman": 10_000,
+            "method": "pos",
+        },
     )
     r2 = client.post(
         "/api/v1/payments",
-        json={"member_id": elham.id, "amount_toman": 20_000, "method": "transfer"},
+        json={
+            "member_id": elham.id,
+            "membership_id": mid,
+            "amount_toman": 20_000,
+            "method": "transfer",
+        },
     )
     assert r1.status_code == 201 and r2.status_code == 201
     a = r1.json()["payment"]["receipt_number"]
@@ -271,10 +293,12 @@ def test_online_method_without_gateway(client: TestClient) -> None:
     wipe_and_seed()
     _login(client)
     elham = _member("M-1008")
+    mid = client.get(f"/api/v1/members/{elham.id}/memberships").json()["items"][0]["id"]
     response = client.post(
         "/api/v1/payments",
         json={
             "member_id": elham.id,
+            "membership_id": mid,
             "amount_toman": 50_000,
             "method": "online",
             "status": "paid",

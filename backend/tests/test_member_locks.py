@@ -211,9 +211,16 @@ def test_payment_blocked_when_other_holds_lock(client: TestClient) -> None:
     _login(desk, "09120000002")
 
     assert manager.post(f"/api/v1/members/{member.id}/lock").status_code == 200
+    mid = manager.get(f"/api/v1/members/{member.id}/memberships").json()["items"][0]["id"]
     blocked = desk.post(
         "/api/v1/payments",
-        json={"member_id": member.id, "amount_toman": 10_000, "method": "cash", "status": "paid"},
+        json={
+            "member_id": member.id,
+            "membership_id": mid,
+            "amount_toman": 10_000,
+            "method": "cash",
+            "status": "paid",
+        },
     )
     assert blocked.status_code == 409
     assert blocked.json()["detail"]["code"] == "member_file_locked"
@@ -270,8 +277,15 @@ def test_holder_can_pay_while_holding_lock(client: TestClient) -> None:
     member = _member("M-1002")
     _login(client, "09120000001")
     assert client.post(f"/api/v1/members/{member.id}/lock").status_code == 200
+    mid = client.get(f"/api/v1/members/{member.id}/memberships").json()["items"][0]["id"]
     paid = client.post(
         "/api/v1/payments",
-        json={"member_id": member.id, "amount_toman": 5_000, "method": "cash", "status": "paid"},
+        json={
+            "member_id": member.id,
+            "membership_id": mid,
+            "amount_toman": 5_000,
+            "method": "cash",
+            "status": "paid",
+        },
     )
     assert paid.status_code == 201

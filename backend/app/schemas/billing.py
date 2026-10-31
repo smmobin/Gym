@@ -222,7 +222,7 @@ class CreatePaymentRequest(BaseModel):
     member_id: int
     amount_toman: int = Field(ge=0)
     method: str
-    membership_id: Optional[int] = None
+    membership_id: int = Field(..., description="Desk payments must link to a membership.")
     status: str = "paid"
     title: Optional[str] = Field(default=None, max_length=200)
     note: Optional[str] = Field(default=None, max_length=5000)
