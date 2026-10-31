@@ -1613,6 +1613,16 @@ input.date-picker-native[type="datetime-local"] {
 }
 .date-picker-actions-spacer { flex: 1 1 auto; }
 .date-picker-actions .btn { min-width: 4.25rem; }
+.date-picker-error {
+  margin: 0.35rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--danger, #f07178) 18%, transparent);
+  color: var(--danger, #f07178);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.date-picker-error[hidden] { display: none !important; }
 label > .date-picker { width: 100%; }
 .form-grid .date-picker-trigger { padding: 0.7rem 0.8rem; }
 .panel:has(.date-picker.is-open) { overflow: visible; }

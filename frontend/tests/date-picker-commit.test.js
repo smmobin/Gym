@@ -85,4 +85,38 @@ describe('GymDatePicker FormData commit', () => {
     expect(picker?.classList.contains('is-open')).toBe(false)
     expect(input.value).toMatch(/^2026-11-11T\d{2}:\d{2}$/)
   })
+
+  it('blocks confirm when ends_at is not after starts_at (data-min-datetime-from)', () => {
+    document.body.innerHTML = `
+      <form id="f">
+        <input type="datetime-local" name="starts_at" value="2030-06-02T10:00" />
+        <input type="datetime-local" name="ends_at" data-min-datetime-from="starts_at" />
+      </form>
+    `
+    window.GymDatePicker.refresh(document)
+    const ends = /** @type {HTMLInputElement} */ (document.querySelector('[name=ends_at]'))
+    const picker = ends.closest('[data-date-picker]')
+    expect(picker).toBeTruthy()
+
+    picker?.querySelector('.date-picker-trigger')?.click()
+    expect(picker?.classList.contains('is-open')).toBe(true)
+
+    // Pick day 1 of current view month with default time — force pending before start via value override path:
+    // set state by committing a too-early day: use todayParts month; instead click تأیید after
+    // manually setting hidden value won't affect pending state. Pick an early day then confirm.
+    const day1 = [...(picker?.querySelectorAll('.date-picker-day:not(.is-blank)') || [])].find(
+      (btn) => btn.dataset.day === '1',
+    )
+    expect(day1).toBeTruthy()
+    day1?.click()
+
+    const ok = picker?.querySelector('.date-picker-actions .btn:not(.ghost)')
+    ok?.click()
+
+    // Still open with error; ends_at not committed.
+    expect(picker?.classList.contains('is-open')).toBe(true)
+    expect(picker?.querySelector('.date-picker-error')?.hidden).toBe(false)
+    expect(picker?.querySelector('.date-picker-error')?.textContent).toContain('پایان')
+    expect(ends.value).toBe('')
+  })
 })

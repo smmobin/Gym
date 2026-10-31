@@ -365,11 +365,17 @@
     actions.appendChild(cancelBtn);
     actions.appendChild(okBtn);
 
+    var errEl = document.createElement("p");
+    errEl.className = "date-picker-error";
+    errEl.hidden = true;
+    errEl.setAttribute("role", "alert");
+
     pop.appendChild(hero);
     pop.appendChild(nav);
     pop.appendChild(week);
     pop.appendChild(grid);
     if (timeBlock) pop.appendChild(timeBlock);
+    pop.appendChild(errEl);
     pop.appendChild(actions);
 
     input.classList.add("date-picker-native");
@@ -439,10 +445,63 @@
       }
     }
 
-    function applyToInput() {
-      var next = withTime
+    function pendingValue() {
+      return withTime
         ? formatDateTimeLocal(state.y, state.m, state.d, state.hour, state.minute)
         : formatIsoDate(state.y, state.m, state.d);
+    }
+
+    function clearCommitError() {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+
+    function showCommitError(message) {
+      errEl.textContent = message;
+      errEl.hidden = false;
+    }
+
+    /**
+     * Optional cross-field rules via data attributes on the native input:
+     * - data-min-datetime-from="starts_at" → pending value must be after that field
+     * - data-max-datetime-from="ends_at" → pending value must be before that field
+     */
+    function validateBeforeCommit() {
+      clearCommitError();
+      var form = input.form || input.closest("form");
+      if (!form) return true;
+      var pending = pendingValue();
+      var pendingDate = new Date(pending);
+      if (Number.isNaN(pendingDate.getTime())) return true;
+
+      var minName = input.getAttribute("data-min-datetime-from");
+      if (minName) {
+        var minEl = form.querySelector('[name="' + minName + '"]');
+        if (minEl && minEl.value) {
+          var minDate = new Date(minEl.value);
+          if (!Number.isNaN(minDate.getTime()) && pendingDate <= minDate) {
+            showCommitError("زمان پایان باید بعد از زمان شروع باشد.");
+            return false;
+          }
+        }
+      }
+
+      var maxName = input.getAttribute("data-max-datetime-from");
+      if (maxName) {
+        var maxEl = form.querySelector('[name="' + maxName + '"]');
+        if (maxEl && maxEl.value) {
+          var maxDate = new Date(maxEl.value);
+          if (!Number.isNaN(maxDate.getTime()) && pendingDate >= maxDate) {
+            showCommitError("زمان شروع باید قبل از زمان پایان باشد.");
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function applyToInput() {
+      var next = pendingValue();
       var changed = input.value !== next;
       input.value = next;
       // Keep default value in sync so form.reset() restores the last committed date.
@@ -479,6 +538,7 @@
 
     function open() {
       closeOtherOverlays(root);
+      clearCommitError();
       pullFromInput();
       root.classList.add("is-open");
       trigger.setAttribute("aria-expanded", "true");
@@ -539,6 +599,7 @@
       // Stop before pickDay/renderGrid — otherwise the day button is detached and
       // document click treats it as outside (BUG-006 datetime-local).
       event.stopPropagation();
+      clearCommitError();
       pickDay(Number(dayBtn.dataset.day));
     });
 
@@ -548,6 +609,7 @@
         if (!btn || !timeBlock.contains(btn)) return;
         event.preventDefault();
         event.stopPropagation();
+        clearCommitError();
         var kind = btn.dataset.kind;
         var delta = Number(btn.dataset.delta);
         if (kind === "hour") state.hour = (state.hour + delta + 24) % 24;
@@ -581,6 +643,7 @@
     okBtn.addEventListener("click", function (event) {
       event.preventDefault();
       event.stopPropagation();
+      if (!validateBeforeCommit()) return;
       applyToInput();
       close();
       trigger.focus();

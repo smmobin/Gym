@@ -52,10 +52,10 @@ export function mountClasses(root, user) {
               <option value="men">آقایان</option>
             </select>
           </label>
-          <label>شروع<input name="starts_at" type="datetime-local" required /></label>
-          <label>پایان<input name="ends_at" type="datetime-local" required /></label>
+          <label>شروع<input name="starts_at" type="datetime-local" required data-max-datetime-from="ends_at" /></label>
+          <label>پایان<input name="ends_at" type="datetime-local" required data-min-datetime-from="starts_at" /></label>
           <div class="inline-actions">
-            <button class="btn" type="submit">ذخیره</button>
+            <button class="btn" type="submit" data-class-save>ذخیره</button>
             <button class="btn ghost" type="button" data-reset>جدید</button>
           </div>
         </form>
@@ -274,15 +274,31 @@ export function mountClasses(root, user) {
       }
     })
     const classForm = root.querySelector('[data-class-form]')
+    /** @param {HTMLFormElement} form */
+    function syncClassSaveEnabled(form) {
+      const submitBtn = /** @type {HTMLButtonElement | null} */ (form.querySelector('[data-class-save]'))
+      if (!submitBtn) return
+      const startsEl = /** @type {HTMLInputElement | null} */ (form.querySelector('[name=starts_at]'))
+      const endsEl = /** @type {HTMLInputElement | null} */ (form.querySelector('[name=ends_at]'))
+      const bothSet = !!(startsEl?.value && endsEl?.value)
+      const invalid = bothSet && !classTimeRangeOk(form)
+      const busy = form.dataset.busy === '1'
+      submitBtn.disabled = busy || invalid
+      submitBtn.title = invalid ? 'زمان شروع باید قبل از زمان پایان باشد.' : ''
+    }
     classForm?.querySelector('[name=starts_at]')?.addEventListener('change', () => {
-      if (classForm instanceof HTMLFormElement) bumpEndIfNeeded(classForm)
+      if (!(classForm instanceof HTMLFormElement)) return
+      bumpEndIfNeeded(classForm)
+      syncClassSaveEnabled(classForm)
     })
     classForm?.querySelector('[name=ends_at]')?.addEventListener('change', () => {
       if (!(classForm instanceof HTMLFormElement)) return
       if (!classTimeRangeOk(classForm)) {
         setStatus(status, 'زمان پایان باید بعد از زمان شروع باشد.', 'error')
       }
+      syncClassSaveEnabled(classForm)
     })
+    if (classForm instanceof HTMLFormElement) syncClassSaveEnabled(classForm)
     classForm?.addEventListener('submit', async (e) => {
       e.preventDefault()
       const form = /** @type {HTMLFormElement} */ (e.target)
@@ -291,11 +307,11 @@ export function mountClasses(root, user) {
       globalThis.GymDatePicker?.flush?.(form)
       if (!classTimeRangeOk(form)) {
         setStatus(status, 'زمان شروع باید قبل از زمان پایان باشد.', 'error')
+        syncClassSaveEnabled(form)
         return
       }
       form.dataset.busy = '1'
-      const submitBtn = /** @type {HTMLButtonElement | null} */ (form.querySelector('[type="submit"]'))
-      if (submitBtn) submitBtn.disabled = true
+      syncClassSaveEnabled(form)
       const fd = new FormData(form)
       const id = String(fd.get('id') || '')
       const body = {
@@ -329,7 +345,7 @@ export function mountClasses(root, user) {
         setStatus(status, apiErrorMessage(err, 'ذخیره ناموفق'), 'error')
       } finally {
         form.dataset.busy = '0'
-        if (submitBtn) submitBtn.disabled = false
+        syncClassSaveEnabled(form)
       }
       if (savedOk) {
         const liveDetail = focusId != null ? { focusId } : {}
@@ -342,9 +358,13 @@ export function mountClasses(root, user) {
       form?.reset()
       const id = form?.querySelector('[name=id]')
       if (id) id.value = ''
-      if (form) syncGenderSelect(form)
+      if (form instanceof HTMLFormElement) {
+        syncGenderSelect(form)
+        syncClassSaveEnabled(form)
+      }
     })
     globalThis.GymCustomSelect?.refresh?.(root)
+    globalThis.GymDatePicker?.refresh?.(root)
   }
 }
 
