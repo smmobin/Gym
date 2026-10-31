@@ -462,9 +462,8 @@
     }
 
     /**
-     * Optional cross-field rules via data attributes on the native input:
-     * - data-min-datetime-from="starts_at" → pending value must be after that field
-     * - data-max-datetime-from="ends_at" → pending value must be before that field
+     * Optional: data-min-datetime-from="starts_at" on پایان —
+     * on تأیید, if pending ≤ that field → show error and do not commit (no auto-fix).
      */
     function validateBeforeCommit() {
       clearCommitError();
@@ -481,18 +480,6 @@
           var minDate = new Date(minEl.value);
           if (!Number.isNaN(minDate.getTime()) && pendingDate <= minDate) {
             showCommitError("زمان پایان باید بعد از زمان شروع باشد.");
-            return false;
-          }
-        }
-      }
-
-      var maxName = input.getAttribute("data-max-datetime-from");
-      if (maxName) {
-        var maxEl = form.querySelector('[name="' + maxName + '"]');
-        if (maxEl && maxEl.value) {
-          var maxDate = new Date(maxEl.value);
-          if (!Number.isNaN(maxDate.getTime()) && pendingDate >= maxDate) {
-            showCommitError("زمان شروع باید قبل از زمان پایان باشد.");
             return false;
           }
         }

@@ -52,7 +52,7 @@ export function mountClasses(root, user) {
               <option value="men">آقایان</option>
             </select>
           </label>
-          <label>شروع<input name="starts_at" type="datetime-local" required data-max-datetime-from="ends_at" /></label>
+          <label>شروع<input name="starts_at" type="datetime-local" required /></label>
           <label>پایان<input name="ends_at" type="datetime-local" required data-min-datetime-from="starts_at" /></label>
           <div class="inline-actions">
             <button class="btn" type="submit" data-class-save>ذخیره</button>
@@ -286,17 +286,13 @@ export function mountClasses(root, user) {
       submitBtn.disabled = busy || invalid
       submitBtn.title = invalid ? 'زمان شروع باید قبل از زمان پایان باشد.' : ''
     }
+    // Only validate on پایان «تأیید» (date-picker data-min-datetime-from) and on save —
+    // never auto-rewrite شروع/پایان when the other field changes.
     classForm?.querySelector('[name=starts_at]')?.addEventListener('change', () => {
-      if (!(classForm instanceof HTMLFormElement)) return
-      bumpEndIfNeeded(classForm)
-      syncClassSaveEnabled(classForm)
+      if (classForm instanceof HTMLFormElement) syncClassSaveEnabled(classForm)
     })
     classForm?.querySelector('[name=ends_at]')?.addEventListener('change', () => {
-      if (!(classForm instanceof HTMLFormElement)) return
-      if (!classTimeRangeOk(classForm)) {
-        setStatus(status, 'زمان پایان باید بعد از زمان شروع باشد.', 'error')
-      }
-      syncClassSaveEnabled(classForm)
+      if (classForm instanceof HTMLFormElement) syncClassSaveEnabled(classForm)
     })
     if (classForm instanceof HTMLFormElement) syncClassSaveEnabled(classForm)
     classForm?.addEventListener('submit', async (e) => {
@@ -396,18 +392,3 @@ export function classTimeRangeOk(form) {
   return start < end
 }
 
-/** If start moved past end, push end to one hour after start. */
-/** @param {HTMLFormElement} form */
-function bumpEndIfNeeded(form) {
-  const startsEl = form.querySelector('[name=starts_at]')
-  const endsEl = form.querySelector('[name=ends_at]')
-  if (!(startsEl instanceof HTMLInputElement) || !(endsEl instanceof HTMLInputElement)) return
-  const start = new Date(startsEl.value)
-  if (Number.isNaN(start.getTime())) return
-  const end = new Date(endsEl.value)
-  if (!endsEl.value || Number.isNaN(end.getTime()) || end <= start) {
-    const fixed = new Date(start.getTime() + 60 * 60 * 1000)
-    endsEl.value = toLocalInput(fixed.toISOString())
-    globalThis.GymDatePicker?.refresh?.(form)
-  }
-}
