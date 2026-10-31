@@ -171,9 +171,11 @@ export const MEMBER_STATUS = {
 }
 
 export const MEMBERSHIP_STATUS_LABEL = {
+  pending: 'در انتظار',
   active: 'فعال',
   frozen: 'یخ‌زده',
   expired: 'منقضی',
+  cancelled: 'لغو‌شده',
 }
 
 /** @param {string | null | undefined} value */

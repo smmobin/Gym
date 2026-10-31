@@ -1,6 +1,12 @@
 import { apiErrorMessage, apiGet, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
-import { formatJalaliDate, formatToman, onlineMethodLabel, PAYMENT_METHOD_LABEL } from './format.js'
+import {
+  formatJalaliDate,
+  formatToman,
+  membershipStatusLabelFa,
+  onlineMethodLabel,
+  PAYMENT_METHOD_LABEL,
+} from './format.js'
 import { LIVE } from './live-data.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
@@ -148,9 +154,9 @@ export function mountBilling(root, user) {
               : ''
             return `<div class="row-item"><div>
           <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
-          <p>${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)} · ${formatToman(m.agreed_amount_toman)} · ${m.status}
+          <p>${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)} · ${formatToman(m.agreed_amount_toman)} · ${membershipStatusLabelFa(m.status)}
           ${m.freeze_ends_at ? ` · توقف تا ${formatJalaliDate(m.freeze_ends_at)}` : ''}</p></div>
-          <span class="badge">${m.status}</span>${lockerBadge}</div>`
+          <span class="badge">${membershipStatusLabelFa(m.status)}</span>${lockerBadge}</div>`
           })
           .join('')
       : '<p class="hint">عضویت ندارد.</p>'
@@ -162,12 +168,15 @@ export function mountBilling(root, user) {
         '<option value="">—</option>' +
         memberships
           .filter((m) => allowed.has(m.status))
-          .map((m) => `<option value="${m.id}">#${m.id} · ${m.plan_name || m.plan_id} · ${m.status}</option>`)
+          .map(
+            (m) =>
+              `<option value="${m.id}">#${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}</option>`,
+          )
           .join('')
       if ([...sel.options].some((o) => o.value === cur)) sel.value = cur
       globalThis.GymCustomSelect?.sync?.(sel)
     }
-    // Freeze: only open memberships. Pay link: also pending (often waiting for first payment).
+    // Freeze: only open memberships. Pay link: also pending (often future-start / awaiting window).
     fill(root.querySelector('[data-freeze-m]'), ['active', 'frozen'])
     fill(root.querySelector('[data-pay-m]'), ['active', 'frozen', 'pending'])
     const payments = pay.items || []
