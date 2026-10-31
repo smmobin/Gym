@@ -1627,30 +1627,28 @@ label > .date-picker { width: 100%; }
 .form-grid .date-picker-trigger { padding: 0.7rem 0.8rem; }
 .panel:has(.date-picker.is-open) { overflow: visible; }
 
+/* Bookings panel is half-width: stack search → chip → رزرو (no side-by-side crush). */
 .class-book-bar {
-  display: grid;
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
   margin: 0 0 1rem;
-  padding: 0.85rem 0.9rem;
-  border: 1px solid color-mix(in srgb, var(--line, #2a3a4a) 80%, transparent);
-  border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--panel-2, #132033) 70%, transparent);
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 .class-book-bar .person-select {
   margin: 0;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    'label'
+    'search'
+    'chip';
+  row-gap: 0.45rem;
 }
 .class-book-bar [data-book] {
-  justify-self: start;
-  min-width: 7rem;
-}
-@media (min-width: 720px) {
-  .class-book-bar {
-    grid-template-columns: 1fr auto;
-    align-items: end;
-  }
-  .class-book-bar [data-book] {
-    margin-bottom: 0.15rem;
-  }
+  width: 100%;
+  min-height: 2.75rem;
 }
 
 .info-list {

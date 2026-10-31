@@ -38,6 +38,7 @@ export function mountClasses(root, user) {
         }
         <p class="hint" data-sel>کلاسی انتخاب نشده</p>
         <div class="list" data-bookings></div>
+        <div data-bookings-pager class="list-pager-host" hidden></div>
       </article>
       ${
         canWrite
@@ -68,7 +69,10 @@ export function mountClasses(root, user) {
   `
   const status = root.querySelector('[data-status]')
   const pager = createListPager(root.querySelector('[data-pager]'))
+  const bookingsPager = createListPager(root.querySelector('[data-bookings-pager]'), { pageSize: 6 })
   /** @type {any[]} */ let classes = []
+  /** @type {any[]} */ let classBookings = []
+  /** @type {number | null} */ let bookingsClassId = null
   /** @type {any | null} */ let selected = null
   /** @type {any | null} */ let pickMember = null
 
@@ -117,8 +121,16 @@ export function mountClasses(root, user) {
       setStatus(status, 'کلاس غیرفعال شد.', 'ok')
       if (selected?.id === id) {
         selected = null
+        classBookings = []
+        bookingsClassId = null
+        bookingsPager.reset()
         root.querySelector('[data-sel]').textContent = 'کلاسی انتخاب نشده'
         root.querySelector('[data-bookings]').innerHTML = ''
+        const bp = root.querySelector('[data-bookings-pager]')
+        if (bp instanceof HTMLElement) {
+          bp.innerHTML = ''
+          bp.hidden = true
+        }
       }
       const form = root.querySelector('[data-class-form]')
       const idInput = form?.querySelector('[name=id]')
@@ -185,6 +197,73 @@ export function mountClasses(root, user) {
     form.querySelector('[name=ends_at]').value = toLocalInput(c.ends_at)
   }
 
+  /** @param {any[]} rows */
+  function paintBookings(rows) {
+    const host = root.querySelector('[data-bookings]')
+    if (!host) return
+    const classId = bookingsClassId
+    const started = selected && new Date(selected.starts_at) <= new Date()
+    if (!rows.length) {
+      host.innerHTML = '<p class="hint">رزروی نیست.</p>'
+      return
+    }
+    host.innerHTML = rows
+      .map(
+        (b) => `<div class="row-item"><div>
+            <h3>${b.member_name || b.member_display_id}</h3>
+            <p>${bookingStatusFa(b.status)}</p></div>
+            <div class="inline-actions">
+              ${canWrite && b.status === 'booked' ? `<button type="button" class="btn small ghost" data-cancel="${b.id}">لغو</button>` : ''}
+              ${
+                canWrite && b.status === 'booked' && started
+                  ? `
+                <button type="button" class="btn small" data-att="${b.id}">حاضر</button>
+                <button type="button" class="btn small ghost" data-ns="${b.id}">غیبت</button>`
+                  : ''
+              }
+            </div></div>`,
+      )
+      .join('')
+    if (classId == null) return
+    host.querySelectorAll('[data-cancel]').forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        await apiPost(`/api/v1/group-classes/${classId}/bookings/${btn.getAttribute('data-cancel')}/cancel`)
+        setStatus(status, 'لغو شد.', 'ok')
+        emitLive(LIVE.CLASSES, { focusId: classId })
+        await autoRefresh.refresh({ focusId: classId })
+        await selectClass(classId)
+      }),
+    )
+    const outcome = async (bookingId, kind, membershipId) => {
+      const path =
+        kind === 'no-show'
+          ? `/api/v1/group-classes/${classId}/bookings/${bookingId}/no-show`
+          : `/api/v1/group-classes/${classId}/bookings/${bookingId}/attended`
+      try {
+        const body = membershipId ? { membership_id: membershipId } : {}
+        await apiPost(path, body)
+        setStatus(status, kind === 'no-show' ? 'غیبت ثبت شد.' : 'حضور ثبت شد.', 'ok')
+        emitLive(LIVE.CLASSES, { focusId: classId })
+        await autoRefresh.refresh({ focusId: classId })
+        await selectClass(classId)
+      } catch (err) {
+        if (err instanceof ApiError && err.detail && err.detail.code === 'membership_required') {
+          const opts = err.detail.options || []
+          const pick = opts[0]?.id
+          if (pick && confirm(`${err.message}\nبا عضویت #${pick} ادامه؟`)) {
+            await outcome(bookingId, kind, pick)
+          } else setStatus(status, err.message, 'error')
+        } else setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
+      }
+    }
+    host.querySelectorAll('[data-att]').forEach((btn) =>
+      btn.addEventListener('click', () => void outcome(btn.getAttribute('data-att'), 'attended')),
+    )
+    host.querySelectorAll('[data-ns]').forEach((btn) =>
+      btn.addEventListener('click', () => void outcome(btn.getAttribute('data-ns'), 'no-show')),
+    )
+  }
+
   async function selectClass(id) {
     selected = classes.find((c) => c.id === id) || null
     root.querySelector('[data-sel]').textContent = selected
@@ -192,60 +271,10 @@ export function mountClasses(root, user) {
       : 'کلاسی انتخاب نشده'
     try {
       const data = await apiGet(`/api/v1/group-classes/${id}/bookings`)
-      const items = data.items || []
-      const started = selected && new Date(selected.starts_at) <= new Date()
-      root.querySelector('[data-bookings]').innerHTML = items.length
-        ? items
-            .map(
-              (b) => `<div class="row-item"><div>
-            <h3>${b.member_name || b.member_display_id}</h3>
-            <p>${b.status}</p></div>
-            <div class="inline-actions">
-              ${canWrite && b.status === 'booked' ? `<button type="button" class="btn small ghost" data-cancel="${b.id}">لغو</button>` : ''}
-              ${canWrite && b.status === 'booked' && started ? `
-                <button type="button" class="btn small" data-att="${b.id}">حاضر</button>
-                <button type="button" class="btn small ghost" data-ns="${b.id}">غیبت</button>` : ''}
-            </div></div>`,
-            )
-            .join('')
-        : '<p class="hint">رزروی نیست.</p>'
-      root.querySelectorAll('[data-cancel]').forEach((btn) =>
-        btn.addEventListener('click', async () => {
-          await apiPost(`/api/v1/group-classes/${id}/bookings/${btn.getAttribute('data-cancel')}/cancel`)
-          setStatus(status, 'لغو شد.', 'ok')
-          emitLive(LIVE.CLASSES, { focusId: id })
-          await autoRefresh.refresh({ focusId: id })
-          await selectClass(id)
-        }),
-      )
-      const outcome = async (bookingId, kind, membershipId) => {
-        const path =
-          kind === 'no-show'
-            ? `/api/v1/group-classes/${id}/bookings/${bookingId}/no-show`
-            : `/api/v1/group-classes/${id}/bookings/${bookingId}/attended`
-        try {
-          const body = membershipId ? { membership_id: membershipId } : {}
-          await apiPost(path, body)
-          setStatus(status, kind === 'no-show' ? 'غیبت ثبت شد.' : 'حضور ثبت شد.', 'ok')
-          emitLive(LIVE.CLASSES, { focusId: id })
-          await autoRefresh.refresh({ focusId: id })
-          await selectClass(id)
-        } catch (err) {
-          if (err instanceof ApiError && err.detail && err.detail.code === 'membership_required') {
-            const opts = err.detail.options || []
-            const pick = opts[0]?.id
-            if (pick && confirm(`${err.message}\nبا عضویت #${pick} ادامه؟`)) {
-              await outcome(bookingId, kind, pick)
-            } else setStatus(status, err.message, 'error')
-          } else setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
-        }
-      }
-      root.querySelectorAll('[data-att]').forEach((btn) =>
-        btn.addEventListener('click', () => void outcome(btn.getAttribute('data-att'), 'attended')),
-      )
-      root.querySelectorAll('[data-ns]').forEach((btn) =>
-        btn.addEventListener('click', () => void outcome(btn.getAttribute('data-ns'), 'no-show')),
-      )
+      classBookings = data.items || []
+      bookingsClassId = id
+      bookingsPager.reset()
+      bookingsPager.paint(classBookings, paintBookings)
     } catch (err) {
       setStatus(status, err instanceof ApiError ? err.message : 'خطا', 'error')
     }
@@ -381,6 +410,17 @@ function toLocalInput(iso) {
   if (Number.isNaN(d.getTime())) return ''
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** @param {string | null | undefined} status */
+function bookingStatusFa(status) {
+  const map = {
+    booked: 'رزرو شده',
+    cancelled: 'لغو شده',
+    attended: 'حاضر',
+    no_show: 'غیبت',
+  }
+  return map[String(status || '')] || status || '—'
 }
 
 /** @param {HTMLFormElement} form */
