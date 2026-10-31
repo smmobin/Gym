@@ -69,7 +69,7 @@ export function mountClasses(root, user) {
   `
   const status = root.querySelector('[data-status]')
   const pager = createListPager(root.querySelector('[data-pager]'))
-  const bookingsPager = createListPager(root.querySelector('[data-bookings-pager]'), { pageSize: 6 })
+  const bookingsPager = createListPager(root.querySelector('[data-bookings-pager]'), { pageSize: 5 })
   /** @type {any[]} */ let classes = []
   /** @type {any[]} */ let classBookings = []
   /** @type {number | null} */ let bookingsClassId = null

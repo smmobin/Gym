@@ -186,7 +186,7 @@ describe('class save anti-duplicate (BUG-007)', () => {
     expect(bar?.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('paginates class bookings 6 per page', async () => {
+  it('paginates class bookings 5 per page', async () => {
     const bookings = Array.from({ length: 8 }, (_, i) => ({
       id: i + 1,
       member_name: `عضو ${i + 1}`,
@@ -224,9 +224,9 @@ describe('class save anti-duplicate (BUG-007)', () => {
       expect(root.querySelector('[data-bookings]')?.textContent).toContain('عضو 1')
     })
     const names = [...root.querySelectorAll('[data-bookings] .row-item h3')].map((el) => el.textContent)
-    expect(names).toHaveLength(6)
+    expect(names).toHaveLength(5)
     expect(names[0]).toContain('عضو 1')
-    expect(names[5]).toContain('عضو 6')
+    expect(names[4]).toContain('عضو 5')
     expect(root.querySelector('[data-bookings-pager]')?.hidden).toBe(false)
     expect(root.querySelector('[data-bookings-pager]')?.textContent).toMatch(/صفحه/)
     root.querySelector('[data-bookings-pager] [data-pager="next"]')?.dispatchEvent(
@@ -234,8 +234,8 @@ describe('class save anti-duplicate (BUG-007)', () => {
     )
     await vi.waitFor(() => {
       const page2 = [...root.querySelectorAll('[data-bookings] .row-item h3')].map((el) => el.textContent)
-      expect(page2).toHaveLength(2)
-      expect(page2[0]).toContain('عضو 7')
+      expect(page2).toHaveLength(3)
+      expect(page2[0]).toContain('عضو 6')
     })
   })
 
