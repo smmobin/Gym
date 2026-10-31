@@ -13,9 +13,18 @@ export function mountClasses(root, user) {
     <article class="panel">
       <header class="panel-head"><h2>کلاس‌های گروهی</h2></header>
       <div class="status-msg" data-status hidden></div>
-      ${
-        canWrite
-          ? `<div class="class-book-bar" data-book-bar>
+      <div class="table-wrap"><table class="responsive-table">
+        <thead><tr><th>عنوان</th><th>زمان</th><th>ظرفیت</th><th>جنسیت</th><th></th></tr></thead>
+        <tbody data-tbody></tbody>
+      </table></div>
+      <div data-pager class="list-pager-host" hidden></div>
+    </article>
+    <div class="grid-2" style="margin-top:1rem">
+      <article class="panel" data-bookings-panel>
+        <header class="panel-head"><h2>رزروهای کلاس انتخاب‌شده</h2></header>
+        ${
+          canWrite
+            ? `<div class="class-book-bar" data-book-bar>
               ${personSelectRowHtml({
                 label: 'جستجوی عضو',
                 inputAttr: 'data-mq',
@@ -25,17 +34,8 @@ export function mountClasses(root, user) {
               })}
               <button type="button" class="btn" data-book>رزرو</button>
             </div>`
-          : ''
-      }
-      <div class="table-wrap"><table class="responsive-table">
-        <thead><tr><th>عنوان</th><th>زمان</th><th>ظرفیت</th><th>جنسیت</th><th></th></tr></thead>
-        <tbody data-tbody></tbody>
-      </table></div>
-      <div data-pager class="list-pager-host" hidden></div>
-    </article>
-    <div class="grid-2" style="margin-top:1rem">
-      <article class="panel">
-        <header class="panel-head"><h2>رزروهای کلاس انتخاب‌شده</h2></header>
+            : ''
+        }
         <p class="hint" data-sel>کلاسی انتخاب نشده</p>
         <div class="list" data-bookings></div>
       </article>

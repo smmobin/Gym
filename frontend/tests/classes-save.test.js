@@ -172,19 +172,18 @@ describe('class save anti-duplicate (BUG-007)', () => {
     })
   })
 
-  it('puts member search + رزرو above the class table', async () => {
+  it('puts member search + رزرو at top of bookings panel (above list)', async () => {
     const root = document.createElement('div')
     document.body.appendChild(root)
     mountClasses(root, { role: 'receptionist' })
     await vi.waitFor(() => {
       expect(root.querySelector('[data-book-bar]')).toBeTruthy()
     })
+    const panel = root.querySelector('[data-bookings-panel]')
     const bar = root.querySelector('[data-book-bar]')
-    const table = root.querySelector('.table-wrap')
-    expect(bar).toBeTruthy()
-    expect(table).toBeTruthy()
-    expect(bar?.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(root.querySelector('[data-bookings]')?.closest('.panel')?.contains(bar)).toBe(false)
+    const list = root.querySelector('[data-bookings]')
+    expect(panel?.contains(bar)).toBe(true)
+    expect(bar?.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('renders deactivate for active classes with zero bookings', async () => {
