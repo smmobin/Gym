@@ -350,20 +350,13 @@
     todayBtn.type = "button";
     todayBtn.className = "btn ghost small";
     todayBtn.textContent = "امروز";
-    var cancelBtn = document.createElement("button");
-    cancelBtn.type = "button";
-    cancelBtn.className = "btn ghost small";
-    cancelBtn.textContent = "انصراف";
-    var okBtn = document.createElement("button");
-    okBtn.type = "button";
-    okBtn.className = "btn small";
-    okBtn.textContent = "تأیید";
     actions.appendChild(todayBtn);
-    var spacer = document.createElement("span");
-    spacer.className = "date-picker-actions-spacer";
-    actions.appendChild(spacer);
-    actions.appendChild(cancelBtn);
-    actions.appendChild(okBtn);
+    var hint = document.createElement("span");
+    hint.className = "date-picker-actions-hint";
+    hint.textContent = withTime
+      ? "روز = اعمال؛ ساعت را تنظیم کنید؛ بیرون بزنید تا بسته شود"
+      : "روز را بزنید تا انتخاب شود";
+    actions.appendChild(hint);
 
     var errEl = document.createElement("p");
     errEl.className = "date-picker-error";
@@ -532,6 +525,13 @@
       pop.hidden = false;
     }
 
+    function tryCommitAndClose() {
+      if (!validateBeforeCommit()) return false;
+      applyToInput();
+      close();
+      return true;
+    }
+
     function pickDay(day) {
       var g = jalaliToGregorian(state.viewJy, state.viewJm, day);
       state.y = g[0];
@@ -539,19 +539,17 @@
       state.d = g[2];
       syncDisplay();
       renderGrid();
-      // Date-only: commit immediately so FormData / گزارش بازه the real value (not just the label).
-      if (!withTime) {
-        applyToInput();
-        close();
-      }
+      // Apply on day click (no تأیید). Date-only closes; datetime stays open for clock, outside click closes.
+      if (!validateBeforeCommit()) return;
+      applyToInput();
+      if (!withTime) close();
     }
 
     trigger.addEventListener("click", function (event) {
       event.preventDefault();
       event.stopPropagation();
       if (root.classList.contains("is-open")) {
-        if (!withTime) applyToInput();
-        close();
+        tryCommitAndClose();
       } else open();
     });
 
@@ -602,6 +600,8 @@
         if (kind === "hour") state.hour = (state.hour + delta + 24) % 24;
         else state.minute = (state.minute + delta + 60) % 60;
         syncDisplay();
+        // Live-apply time while open; invalid range (e.g. end ≤ start) keeps previous value.
+        if (validateBeforeCommit()) applyToInput();
       });
     }
 
@@ -621,29 +621,7 @@
       state.viewJm = j[1];
       syncDisplay();
       renderGrid();
-      if (!withTime) {
-        applyToInput();
-        close();
-      }
-    });
-
-    okBtn.addEventListener("click", function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!validateBeforeCommit()) return;
-      applyToInput();
-      close();
-      trigger.focus();
-    });
-
-    cancelBtn.addEventListener("click", function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      pullFromInput();
-      syncDisplay();
-      renderGrid();
-      close();
-      trigger.focus();
+      tryCommitAndClose();
     });
 
     trigger.addEventListener("keydown", function (event) {
@@ -656,6 +634,9 @@
     pop.addEventListener("keydown", function (event) {
       if (event.key === "Escape") {
         event.preventDefault();
+        // Escape closes without forcing a new commit; last applied value stays.
+        pullFromInput();
+        syncDisplay();
         close();
         trigger.focus();
       }
@@ -669,13 +650,14 @@
         // Nodes detached mid-handler (e.g. day re-render) are not real outside clicks.
         if (!document.documentElement.contains(target)) return;
       }
-      // Keep trigger label and hidden input in sync (outside-click used to leave them mismatched).
-      if (!withTime) applyToInput();
-      else {
+      // Outside click: apply current pending value if valid, then close (no انصراف needed).
+      if (!validateBeforeCommit()) {
         pullFromInput();
         syncDisplay();
-        renderGrid();
+        close();
+        return;
       }
+      applyToInput();
       close();
     });
 

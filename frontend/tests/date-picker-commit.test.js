@@ -31,6 +31,8 @@ describe('GymDatePicker FormData commit', () => {
 
     const picker = input.closest('[data-date-picker]')
     expect(picker).toBeTruthy()
+    expect(picker?.textContent).not.toContain('انصراف')
+    expect(picker?.textContent).not.toContain('تأیید')
 
     // Open and pick day 20 of current Jalali month (Aban 1405 → 2026-11-11)
     picker.querySelector('.date-picker-trigger').click()
@@ -41,6 +43,7 @@ describe('GymDatePicker FormData commit', () => {
     day20.click()
 
     expect(input.value).toBe('2026-11-11')
+    expect(picker?.classList.contains('is-open')).toBe(false)
 
     const form = document.getElementById('f')
     window.GymDatePicker.flush(form)
@@ -48,10 +51,11 @@ describe('GymDatePicker FormData commit', () => {
     expect(fd.get('expense_date')).toBe('2026-11-11')
   })
 
-  it('datetime-local: picking a day keeps pop open and commits on confirm (BUG-006)', () => {
+  it('datetime-local: day click applies immediately without تأیید; outside click closes', () => {
     document.body.innerHTML = `
       <form id="f">
         <input type="datetime-local" name="starts_at" />
+        <button type="button" id="outside">خارج</button>
       </form>
     `
     window.GymDatePicker.refresh(document)
@@ -61,6 +65,8 @@ describe('GymDatePicker FormData commit', () => {
     const picker = input.closest('[data-date-picker]')
     expect(picker).toBeTruthy()
     expect(picker?.classList.contains('has-time')).toBe(true)
+    expect(picker?.textContent).not.toContain('انصراف')
+    expect(picker?.textContent).not.toContain('تأیید')
 
     picker.querySelector('.date-picker-trigger')?.click()
     expect(picker?.classList.contains('is-open')).toBe(true)
@@ -71,22 +77,16 @@ describe('GymDatePicker FormData commit', () => {
     expect(day20).toBeTruthy()
     day20.click()
 
-    // Must stay open; day click must not reset via fake outside-click.
+    // Applied on day click; pop stays open so clock can be tweaked.
+    expect(input.value).toMatch(/^2026-11-11T\d{2}:\d{2}$/)
     expect(picker?.classList.contains('is-open')).toBe(true)
-    const selected = picker.querySelector('.date-picker-day.is-selected')
-    expect(selected?.dataset.day).toBe('20')
-    // Value commits only on تأیید for datetime-local.
-    expect(input.value).toBe('')
 
-    const ok = picker.querySelector('.date-picker-actions .btn:not(.ghost)')
-    expect(ok?.textContent).toContain('تأیید')
-    ok?.click()
-
+    document.getElementById('outside')?.click()
     expect(picker?.classList.contains('is-open')).toBe(false)
     expect(input.value).toMatch(/^2026-11-11T\d{2}:\d{2}$/)
   })
 
-  it('blocks confirm when ends_at is not after starts_at (data-min-datetime-from)', () => {
+  it('blocks day apply when ends_at is not after starts_at (data-min-datetime-from)', () => {
     document.body.innerHTML = `
       <form id="f">
         <input type="datetime-local" name="starts_at" value="2030-06-02T10:00" />
@@ -101,19 +101,13 @@ describe('GymDatePicker FormData commit', () => {
     picker?.querySelector('.date-picker-trigger')?.click()
     expect(picker?.classList.contains('is-open')).toBe(true)
 
-    // Pick day 1 of current view month with default time — force pending before start via value override path:
-    // set state by committing a too-early day: use todayParts month; instead click تأیید after
-    // manually setting hidden value won't affect pending state. Pick an early day then confirm.
     const day1 = [...(picker?.querySelectorAll('.date-picker-day:not(.is-blank)') || [])].find(
       (btn) => btn.dataset.day === '1',
     )
     expect(day1).toBeTruthy()
     day1?.click()
 
-    const ok = picker?.querySelector('.date-picker-actions .btn:not(.ghost)')
-    ok?.click()
-
-    // Still open with error; ends_at not committed.
+    // Invalid range: show error, do not commit, stay open (no تأیید button).
     expect(picker?.classList.contains('is-open')).toBe(true)
     expect(picker?.querySelector('.date-picker-error')?.hidden).toBe(false)
     expect(picker?.querySelector('.date-picker-error')?.textContent).toContain('پایان')
