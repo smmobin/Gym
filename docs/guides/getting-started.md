@@ -128,7 +128,8 @@ cd backend
 5. از `/manager/#staff` منشی و مربی بساز؛ از `/manager/#plans` طرح بساز
 6. منشی بعد از لاگین می‌تواند از `/receptionist/#staff` فقط مربی و از `/receptionist/#plans` طرح بسازد
 
-**حذف در UI = غیرفعال** (`is_active=false`) — ردیف از دیتابیس پاک نمی‌شود.
+**اشخاص (عضو / کارکنان / مربی):** آرشیو یا غیرفعال‌سازی از UI و API میز در این نسخه فعال نیست. حذف فیزیکی از دیتابیس همچنان ممنوع است.  
+**طرح عضویت / کلاس گروهی:** حذف در UI = غیرفعال (`is_active=false`) — ردیف از دیتابیس پاک نمی‌شود.
 
 اگر موبایل کارمند با عضو یکی باشد، در ورود **صفحهٔ انتخاب نقش** نشان داده می‌شود (اولویت اجباری کارکنان نیست).
 
@@ -182,7 +183,7 @@ cd backend
 - نمونه نقش اداری: `GET /api/v1/auth/staff-ping` فقط مدیر و منشی (مربی → ۴۰۳)
 - مدیر می‌تواند رمز کارکنان را عوض کند: `POST /api/v1/auth/users/{id}/password` یا از `/manager/#staff` (رمز اختیاری هنگام ویرایش)
 - منشی فقط مربی‌هایی که می‌سازد/مدیریت می‌کند را از `/receptionist/#staff` ویرایش/رمز می‌کند
-- کارکنان: `GET/POST /api/v1/staff` ، `PATCH /api/v1/staff/{id}` ، `POST …/deactivate|activate` — مدیر: منشی+مربی؛ منشی: فقط مربی؛ مربی → ۴۰۳
+- کارکنان: `GET/POST /api/v1/staff` ، `PATCH /api/v1/staff/{id}` (بدون `is_active`) — مدیر: منشی+مربی؛ منشی: فقط مربی؛ مربی → ۴۰۳. مسیرهای `POST …/deactivate|activate` و PATCH با `is_active` → ۴۰۳ (میز نمی‌تواند شخص را خاموش/روشن کند)
 - طرح‌ها (عمومی لندینگ): `GET /api/v1/public/membership-plans` — بدون لاگین؛ فقط فعال
 - طرح‌ها (میز): `GET /api/v1/membership-plans` (فعال؛ `?include_inactive=1` برای مدیریت) ، `POST/PATCH /api/v1/membership-plans` — منشی و مدیر؛ مربی → ۴۰۳
 - UI: `/manager/#staff` ، `/manager/#plans` ، `/receptionist/#staff` ، `/receptionist/#plans`
@@ -222,9 +223,9 @@ API ورزشکار (همه فقط «خودش»):
 
 1. وارد شوید: http://127.0.0.1:5173/login/ (مثلاً مدیر `09120000001` / `ChangeMe123`)
 2. بروید به http://127.0.0.1:5173/receptionist/#members یا لینک «لیست اعضا» بعد از ورود
-3. منشی/مدیر: لیست + ثبت عضو جدید + آرشیو؛ مربی: فقط شاگردهای خودش (بدون ثبت)
+3. منشی/مدیر: لیست + ثبت عضو جدید (بدون آرشیو)؛ مربی: فقط شاگردهای خودش (بدون ثبت)
 
-API: `GET/POST /api/v1/members` ، `GET/PATCH /api/v1/members/{id}` ، `POST /api/v1/members/{id}/archive`
+API: `GET/POST /api/v1/members` ، `GET/PATCH /api/v1/members/{id}` — `POST …/archive` → ۴۰۳ (آرشیو از پنل در این نسخه فعال نیست)
 
 ## حضور و غیاب
 

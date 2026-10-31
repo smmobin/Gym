@@ -1,6 +1,8 @@
-"""Members API: list/create/detail/patch/archive + role gates."""
+"""Members API: list/create/detail/patch + desk archive blocked + role gates."""
 
 from __future__ import annotations
+
+from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,6 +13,7 @@ from app.core.rate_limit import login_rate_limiter
 from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
 from app.models import Member
+from app.models.enums import MemberStatus
 from app.services.members import next_display_id
 
 
@@ -70,9 +73,20 @@ def test_list_members_as_manager_hides_archived_by_default(client: TestClient) -
     assert created.status_code == 201
     target_id = created.json()["id"]
 
-    archived = client.post(f"/api/v1/members/{target_id}/archive")
-    assert archived.status_code == 200
-    assert archived.json()["status"] == "archived"
+    # Desk archive API is disabled; mark legacy archived row via DB for list filter checks.
+    blocked = client.post(f"/api/v1/members/{target_id}/archive")
+    assert blocked.status_code == 403
+    assert "آرشیو" in blocked.json()["detail"]
+
+    db = SessionLocal()
+    try:
+        row = db.get(Member, target_id)
+        assert row is not None
+        row.status = MemberStatus.ARCHIVED.value
+        row.archived_at = datetime.now(tz=timezone.utc)
+        db.commit()
+    finally:
+        db.close()
 
     listed = client.get("/api/v1/members").json()["items"]
     assert all(m["status"] != "archived" for m in listed)
@@ -166,11 +180,20 @@ def test_patch_member_as_receptionist(client: TestClient) -> None:
     assert response.json()["notes"] == "یادداشت ویرایش‌شده تست"
 
 
-def test_trainer_cannot_archive(client: TestClient) -> None:
-    _login(client, "09120000003")
+def test_desk_archive_forbidden_for_manager_and_trainer(client: TestClient) -> None:
+    _login(client, "09120000001")
     items = client.get("/api/v1/members").json()["items"]
     assert items
-    assert client.post(f"/api/v1/members/{items[0]['id']}/archive").status_code == 403
+    mid = items[0]["id"]
+    mgr = client.post(f"/api/v1/members/{mid}/archive")
+    assert mgr.status_code == 403
+    assert "آرشیو عضو از پنل در این نسخه فعال نیست" in mgr.json()["detail"]
+
+    client.post("/api/v1/auth/logout")
+    _login(client, "09120000003")
+    trainer_items = client.get("/api/v1/members").json()["items"]
+    assert trainer_items
+    assert client.post(f"/api/v1/members/{trainer_items[0]['id']}/archive").status_code == 403
 
 
 def test_get_member_detail(client: TestClient) -> None:

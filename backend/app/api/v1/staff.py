@@ -74,6 +74,11 @@ def update_staff(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_DESK)),
 ) -> StaffMutationResponse:
+    if body.is_active is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="تغییر وضعیت فعال/غیرفعال کارکنان از پنل در این نسخه فعال نیست.",
+        )
     try:
         row = staff_svc.update_staff(
             db,
@@ -83,7 +88,7 @@ def update_staff(
             full_name=body.full_name,
             role=body.role,
             password=body.password,
-            is_active=body.is_active,
+            is_active=None,
         )
         db.commit()
         db.refresh(row)
@@ -100,15 +105,11 @@ def deactivate_staff(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_DESK)),
 ) -> StaffMutationResponse:
-    try:
-        row = staff_svc.set_staff_active(db, actor=user, user_id=user_id, is_active=False)
-        db.commit()
-        db.refresh(row)
-    except staff_svc.StaffError as err:
-        db.rollback()
-        _raise(err)
-        raise  # pragma: no cover
-    return StaffMutationResponse(user=UserOut.model_validate(row))
+    _ = (db, user, user_id)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="غیرفعال‌سازی کارکنان از پنل در این نسخه فعال نیست.",
+    )
 
 
 @router.post("/{user_id}/activate", response_model=StaffMutationResponse)
@@ -117,12 +118,8 @@ def activate_staff(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(*_DESK)),
 ) -> StaffMutationResponse:
-    try:
-        row = staff_svc.set_staff_active(db, actor=user, user_id=user_id, is_active=True)
-        db.commit()
-        db.refresh(row)
-    except staff_svc.StaffError as err:
-        db.rollback()
-        _raise(err)
-        raise  # pragma: no cover
-    return StaffMutationResponse(user=UserOut.model_validate(row))
+    _ = (db, user, user_id)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="فعال‌سازی مجدد کارکنان از پنل در این نسخه فعال نیست.",
+    )

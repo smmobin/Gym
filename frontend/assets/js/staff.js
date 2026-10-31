@@ -25,7 +25,7 @@ export function mountStaff(root, user) {
   root.innerHTML = `
     <article class="panel">
       <header class="panel-head"><h2>کارکنان</h2></header>
-      <p class="hint">حذف = غیرفعال‌سازی (ردیف از دیتابیس پاک نمی‌شود). اگر موبایل کارمند با عضو یکی باشد، در ورود اولویت با کارکنان است.</p>
+      <p class="hint">اگر موبایل کارمند با عضو یکی باشد، در ورود صفحهٔ انتخاب نقش نشان داده می‌شود.</p>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap" style="margin-top:1rem">
         <table class="responsive-table"><thead>
@@ -62,8 +62,6 @@ export function mountStaff(root, user) {
           <label>رمز جدید (اختیاری)<input type="password" name="password" minlength="8" placeholder="خالی = بدون تغییر" /></label>
           <div class="inline-actions full">
             <button class="btn" type="submit" data-save disabled>ذخیره</button>
-            <button class="btn ghost" type="button" data-deactivate disabled>غیرفعال</button>
-            <button class="btn ghost" type="button" data-activate disabled>فعال‌سازی</button>
           </div>
         </form>
         <p class="hint" data-edit-hint>یک ردیف قابل‌ویرایش را از جدول انتخاب کنید.</p>
@@ -90,7 +88,7 @@ export function mountStaff(root, user) {
   }
 
   function setEditEnabled(on) {
-    root.querySelectorAll('[data-save],[data-deactivate],[data-activate]').forEach((b) => {
+    root.querySelectorAll('[data-save]').forEach((b) => {
       b.disabled = !on
     })
   }
@@ -134,10 +132,6 @@ export function mountStaff(root, user) {
     form.role.value = u.role
     form.password.value = ''
     setEditEnabled(true)
-    const deactivate = root.querySelector('[data-deactivate]')
-    const activate = root.querySelector('[data-activate]')
-    if (deactivate) deactivate.disabled = !u.is_active
-    if (activate) activate.disabled = !!u.is_active
     const hint = root.querySelector('[data-edit-hint]')
     if (hint) hint.textContent = `ویرایش: ${u.full_name}`
   }
@@ -240,35 +234,6 @@ export function mountStaff(root, user) {
       await autoRefresh.refresh()
       select(selectedId)
     }
-  })
-
-  root.querySelector('[data-deactivate]')?.addEventListener('click', async () => {
-    if (!selectedId) return
-    if (!confirm('این کارمند غیرفعال شود؟ (حذف فیزیکی نیست)')) return
-    try {
-      await apiPost(`/api/v1/staff/${selectedId}/deactivate`)
-      setStatus(status, 'غیرفعال شد.', 'ok')
-    } catch (err) {
-      setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
-      return
-    }
-    emitLive(LIVE.STAFF)
-    await autoRefresh.refresh()
-    select(selectedId)
-  })
-
-  root.querySelector('[data-activate]')?.addEventListener('click', async () => {
-    if (!selectedId) return
-    try {
-      await apiPost(`/api/v1/staff/${selectedId}/activate`)
-      setStatus(status, 'فعال شد.', 'ok')
-    } catch (err) {
-      setStatus(status, apiErrorMessage(err, 'عملیات ناموفق'), 'error')
-      return
-    }
-    emitLive(LIVE.STAFF)
-    await autoRefresh.refresh()
-    select(selectedId)
   })
 
   enhancePasswordFields(root)

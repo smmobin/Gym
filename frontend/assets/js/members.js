@@ -54,7 +54,6 @@ export function mountMembers(root, user) {
           <label class="full">یادداشت<textarea name="notes"></textarea></label>
           <div class="inline-actions full">
             <button class="btn" type="submit" data-save disabled>ذخیره</button>
-            <button class="btn ghost" type="button" data-archive disabled>آرشیو</button>
             <button class="btn ghost" type="button" data-unlock disabled>آزادسازی قفل</button>
           </div>
         </form>
@@ -95,7 +94,7 @@ export function mountMembers(root, user) {
             info.textContent = 'در حال گرفتن قفل…'
           else info.textContent = selectedId ? 'بدون قفل فعال' : 'عضوی انتخاب نشده'
         }
-        root.querySelectorAll('[data-save],[data-archive],[data-pw-btn]').forEach((b) => {
+        root.querySelectorAll('[data-save],[data-pw-btn]').forEach((b) => {
           b.disabled = !lockHeldByMe
         })
         const u = root.querySelector('[data-unlock]')
@@ -228,22 +227,6 @@ export function mountMembers(root, user) {
       emitLive(LIVE.MEMBERS)
       await autoRefresh.refresh()
     }
-  })
-
-  root.querySelector('[data-archive]')?.addEventListener('click', async () => {
-    if (!selectedId || !lockHeldByMe) return
-    if (!confirm('عضو آرشیو شود؟')) return
-    try {
-      await apiPost(`/api/v1/members/${selectedId}/archive`)
-      setStatus(status, 'آرشیو شد.', 'ok')
-      selectedId = null
-      if (locker) await locker.release()
-    } catch (err) {
-      setStatus(status, lockErrorMessage(err, 'آرشیو ناموفق'), 'error')
-      return
-    }
-    emitLive(LIVE.MEMBERS)
-    await autoRefresh.refresh()
   })
 
   root.querySelector('[data-unlock]')?.addEventListener('click', async () => {

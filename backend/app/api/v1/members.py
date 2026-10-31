@@ -1,8 +1,6 @@
-"""Members list / create / detail / update / soft-archive / file locks."""
+"""Members list / create / detail / update / file locks (desk archive disabled)."""
 
 from __future__ import annotations
-
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
@@ -265,14 +263,11 @@ def archive_member(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles(*_STAFF_WRITE)),
 ) -> MemberOut:
+    # Soft-archive columns remain for legacy rows; desk must not archive people in this version.
     member = db.get(Member, member_id)
     if member is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="عضو یافت نشد.")
-    if member.status == MemberStatus.ARCHIVED.value:
-        return serialize_member(db, member)
-
-    member.status = MemberStatus.ARCHIVED.value
-    member.archived_at = datetime.now(tz=timezone.utc)
-    db.commit()
-    db.refresh(member)
-    return serialize_member(db, member)
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="آرشیو عضو از پنل در این نسخه فعال نیست.",
+    )

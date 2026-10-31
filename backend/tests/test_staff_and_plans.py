@@ -124,20 +124,27 @@ def test_manager_creates_receptionist_and_trainer(client: TestClient) -> None:
     assert patch.json()["user"]["full_name"] == "مربی ویرایش‌شده"
 
     deact = client.post(f"/api/v1/staff/{trainer_id}/deactivate")
-    assert deact.status_code == 200
-    assert deact.json()["user"]["is_active"] is False
+    assert deact.status_code == 403
+    assert "غیرفعال" in deact.json()["detail"]
 
-    # Inactive trainer cannot login
+    act = client.post(f"/api/v1/staff/{trainer_id}/activate")
+    assert act.status_code == 403
+    assert "فعال" in act.json()["detail"]
+
+    patch_active = client.patch(
+        f"/api/v1/staff/{trainer_id}",
+        json={"is_active": False},
+    )
+    assert patch_active.status_code == 403
+    assert "فعال" in patch_active.json()["detail"]
+
+    # Trainer remains login-capable (desk cannot deactivate people in this version)
     login_rate_limiter.reset()
-    bad = client.post(
+    ok_login = client.post(
         "/api/v1/auth/login",
         json={"mobile": "09128888002", "password": "NewPass123"},
     )
-    assert bad.status_code == 401
-
-    act = client.post(f"/api/v1/staff/{trainer_id}/activate")
-    assert act.status_code == 200
-    assert act.json()["user"]["is_active"] is True
+    assert ok_login.status_code == 200
 
     db = SessionLocal()
     try:
@@ -320,7 +327,7 @@ def test_inactive_plan_hidden_from_default_list(client: TestClient) -> None:
     assert found["is_active"] is False
 
 
-def test_deactivate_revokes_sessions(client: TestClient) -> None:
+def test_desk_deactivate_and_activate_forbidden(client: TestClient) -> None:
     wipe_and_seed()
     _login(client)
     created = client.post(
@@ -344,5 +351,10 @@ def test_deactivate_revokes_sessions(client: TestClient) -> None:
     )
     assert other.get("/api/v1/auth/me").status_code == 200
 
-    assert client.post(f"/api/v1/staff/{trainer_id}/deactivate").status_code == 200
-    assert other.get("/api/v1/auth/me").status_code == 401
+    blocked = client.post(f"/api/v1/staff/{trainer_id}/deactivate")
+    assert blocked.status_code == 403
+    assert "غیرفعال‌سازی کارکنان از پنل در این نسخه فعال نیست" in blocked.json()["detail"]
+    # Session remains valid — desk cannot deactivate people
+    assert other.get("/api/v1/auth/me").status_code == 200
+
+    assert client.post(f"/api/v1/staff/{trainer_id}/activate").status_code == 403

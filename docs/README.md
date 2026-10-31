@@ -10,7 +10,7 @@
 | [product/business-rules.md](product/business-rules.md) | قوانین کسب‌وکار نسخهٔ عملیاتی (منبع حقیقت رفتار؛ مقدم بر پروتوتایپ) |
 | [product/roadmap-status.md](product/roadmap-status.md) | الان کجاییم و مرحلهٔ بعد چیست (سند زندهٔ مدیر محصول) |
 | [product/schema-todos.md](product/schema-todos.md) | TODOهای باز مدل داده (قفل پرونده، خروج خودکار، …) |
-| [prompts/next-coding-prompt.md](prompts/next-coding-prompt.md) | پرامپت سازنده؛ صف فعلی: حذف آرشیو/غیرفعال اشخاص از میز |
+| [prompts/next-coding-prompt.md](prompts/next-coding-prompt.md) | پرامپت سازنده؛ صف بعدی: Slice J (also_trainer) |
 | [guides/product-manager.md](guides/product-manager.md) | چطور چت مدیر محصول را راه بیندازی |
 | [guides/qa.md](guides/qa.md) | چطور چت کنترل کیفیت (QA) را راه بیندازی |
 | [qa/bug-log.md](qa/bug-log.md) | دفتر باگ زندهٔ QA |

@@ -44,6 +44,8 @@ describe('mountMembers live search / no manual buttons', () => {
     mountMembers(root, { role: 'manager' })
     expect(root.querySelector('[data-search]')).toBeNull()
     expect(root.querySelector('[data-reload]')).toBeNull()
+    expect(root.querySelector('[data-archive]')).toBeNull()
+    expect(root.textContent).not.toContain('آرشیو')
     expect(root.textContent).not.toContain('بازخوانی')
 
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled())
