@@ -59,7 +59,8 @@ export function mountNotificationBell(root) {
         return
       }
       hideEmpty()
-      list.innerHTML = data.items
+      const rows = (data.items || []).slice(0, 5)
+      list.innerHTML = rows
         .map(
           (n) => `
         <div class="notif-item ${n.is_read ? '' : 'unread'}" data-id="${n.id}">

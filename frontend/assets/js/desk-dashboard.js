@@ -36,7 +36,8 @@ export function buildDeskStatsHtml(summary) {
  * @param {string} moreLabel
  */
 export function buildDeskActionPanelHtml(title, emptyText, items, moreHref, moreLabel) {
-  const rows = items || []
+  // Keep desk action lists short (same 5-row convention as panel pagers).
+  const rows = (items || []).slice(0, 5)
   const list = rows.length
     ? rows
         .map((item) => {

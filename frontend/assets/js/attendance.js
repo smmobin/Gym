@@ -4,6 +4,7 @@ import { emitLive, LIVE } from './live-data.js'
 import { ATTENDANCE_TYPE_LABEL, formatDateTime, formatToman } from './format.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
@@ -32,13 +33,16 @@ export function mountAttendance(root, user) {
       <article class="panel">
         <header class="panel-head"><h2>حضورهای امروز</h2></header>
         <div class="list" data-today></div>
+        <div data-today-pager class="list-pager-host" hidden></div>
       </article>
     </div>
   `
   const status = root.querySelector('[data-status]')
   const todayEl = root.querySelector('[data-today]')
+  const todayPager = createListPager(root.querySelector('[data-today-pager]'))
   const secondBtn = (root.querySelector('[data-second]'))
   /** @type {any} */ let selected = null
+  /** @type {any[]} */ let todayItems = []
   let lockHeld = false
   const locker = canLock
     ? createMemberLock((st, err) => {
@@ -61,34 +65,40 @@ export function mountAttendance(root, user) {
   /**
    * @param {{ silent?: boolean }} [_ctx]
    */
-  async function loadToday(_ctx = {}) {
-    try {
-      const data = await apiGet('/api/v1/attendances/today')
-      const items = data.items || data.attendances || []
-      todayEl.innerHTML = items.length
-        ? items
-            .map(
-              (a) => `<div class="row-item">
+  /** @param {any[]} rows */
+  function paintToday(rows) {
+    todayEl.innerHTML = rows.length
+      ? rows
+          .map(
+            (a) => `<div class="row-item">
             <div><h3>عضو #${a.member_id}</h3>
             <p>${ATTENDANCE_TYPE_LABEL[a.attendance_type] || a.attendance_type}
              · ورود: ${formatDateTime(a.check_in_at)}
              ${a.is_open ? ' · باز' : ` · خروج: ${formatDateTime(a.check_out_at)}`}</p></div>
             ${a.is_open ? `<button type="button" class="btn small" data-out="${a.id}">خروج</button>` : '<em>—</em>'}
           </div>`,
-            )
-            .join('')
-        : '<p class="hint">حضور امروز ثبت نشده.</p>'
-      todayEl.querySelectorAll('[data-out]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          try {
-            await apiPost(`/api/v1/attendances/${btn.getAttribute('data-out')}/check-out`)
-            setStatus(status, 'خروج ثبت شد.', 'ok')
-            await autoRefresh.refresh()
-          } catch (err) {
-            setStatus(status, err instanceof ApiError ? err.message : 'خروج ناموفق', 'error')
-          }
-        })
+          )
+          .join('')
+      : '<p class="hint">حضور امروز ثبت نشده.</p>'
+    todayEl.querySelectorAll('[data-out]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await apiPost(`/api/v1/attendances/${btn.getAttribute('data-out')}/check-out`)
+          setStatus(status, 'خروج ثبت شد.', 'ok')
+          await autoRefresh.refresh()
+        } catch (err) {
+          setStatus(status, err instanceof ApiError ? err.message : 'خروج ناموفق', 'error')
+        }
       })
+    })
+  }
+
+  async function loadToday(_ctx = {}) {
+    try {
+      const data = await apiGet('/api/v1/attendances/today')
+      todayItems = data.items || data.attendances || []
+      if (!_ctx.silent) todayPager.reset()
+      todayPager.paint(todayItems, paintToday)
     } catch (err) {
       todayEl.innerHTML = `<p class="hint">${err instanceof ApiError ? err.message : 'خطا'}</p>`
       throw err

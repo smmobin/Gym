@@ -14,6 +14,7 @@ import {
 } from './format.js'
 import { emitLive, LIVE } from './live-data.js'
 import { enhanceMoneyInputs, moneyFromForm } from './money-input.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /** @deprecated prefer todayRangeLocal / jalaliMonthRangeLocal from format.js */
@@ -47,6 +48,7 @@ export function mountReports(root, user) {
       <article class="panel">
         <header class="panel-head"><h2>هزینه‌ها</h2></header>
         <div class="list" data-expenses></div>
+        <div data-expenses-pager class="list-pager-host" hidden></div>
       </article>
       <article class="panel">
         <header class="panel-head"><h2>ثبت هزینه</h2></header>
@@ -64,9 +66,11 @@ export function mountReports(root, user) {
     </div>
   `
   const status = root.querySelector('[data-status]')
+  const expensesPager = createListPager(root.querySelector('[data-expenses-pager]'))
   const catHost = /** @type {HTMLElement} */ (root.querySelector('[data-expense-cat-host]'))
   /** @type {Array<{ value: string, label: string }>} */
   let categories = mergeExpenseCategories()
+  /** @type {any[]} */ let expenseItems = []
   const categoryCombo = mountExpenseCategoryCombobox(catHost, {
     name: 'category',
     categories,
@@ -126,17 +130,22 @@ export function mountReports(root, user) {
         <article class="stat"><span class="stat-label">هزینه‌ها</span><strong>${formatToman(profit.expenses_toman)}</strong></article>
         <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${formatToman(profit.profit_toman)}</strong><em>درآمد − هزینه</em></article>
       `
-      const items = expenses.items || []
-      root.querySelector('[data-expenses]').innerHTML = items.length
-        ? items
-            .map(
-              (r) => `<div class="row-item"><div>
+      expenseItems = expenses.items || []
+      if (!silent) expensesPager.reset()
+      expensesPager.paint(expenseItems, (rows) => {
+        const host = root.querySelector('[data-expenses]')
+        if (!host) return
+        host.innerHTML = rows.length
+          ? rows
+              .map(
+                (r) => `<div class="row-item"><div>
             <h3>${expenseCategoryLabel(r.category)}</h3>
             <p>${formatJalaliDate(r.expense_date)}${r.note ? ' · ' + r.note : ''}</p></div>
             <em>${formatToman(r.amount_toman)}</em></div>`,
-            )
-            .join('')
-        : '<p class="hint">هزینه‌ای در این بازه نیست. تاریخ ثبت‌شدهٔ هزینه باید داخل همین بازه باشد.</p>'
+              )
+              .join('')
+          : '<p class="hint">هزینه‌ای در این بازه نیست. تاریخ ثبت‌شدهٔ هزینه باید داخل همین بازه باشد.</p>'
+      })
       if (!silent) setStatus(status, '')
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'خطا'), 'error')

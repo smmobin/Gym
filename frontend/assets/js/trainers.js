@@ -1,5 +1,6 @@
 import { apiErrorMessage, apiGet, apiPost } from './api.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /**
@@ -66,14 +67,20 @@ export function mountTrainers(root, user) {
       <button type="button" class="btn" data-assign style="margin-top:1rem">وصل مربی</button>
       <header class="panel-head" style="margin-top:1.25rem"><h3 data-roster-title>شاگردان مربی</h3></header>
       <div class="list" data-trainer-roster><p class="hint">یک مربی را از فهرست انتخاب کنید.</p></div>
+      <div data-roster-pager class="list-pager-host" hidden></div>
       <header class="panel-head" style="margin-top:1.25rem"><h3>مربیان عضو انتخاب‌شده</h3></header>
       <div class="list" data-list><p class="hint">ابتدا عضو را جستجو و انتخاب کنید.</p></div>
+      <div data-list-pager class="list-pager-host" hidden></div>
     </article>
   `
   const status = root.querySelector('[data-status]')
   const rosterEl = root.querySelector('[data-trainer-roster]')
   const rosterTitle = root.querySelector('[data-roster-title]')
+  const rosterPager = createListPager(root.querySelector('[data-roster-pager]'))
+  const assignPager = createListPager(root.querySelector('[data-list-pager]'))
   /** @type {any[]} */ let trainers = []
+  /** @type {any[]} */ let rosterItems = []
+  /** @type {any[]} */ let assignItems = []
   /** @type {any | null} */ let member = null
 
   function selectedTrainerId() {
@@ -98,6 +105,27 @@ export function mountTrainers(root, user) {
     await loadTrainerRoster()
   }
 
+  /** @param {any[]} rows */
+  function paintRoster(rows) {
+    if (!rosterEl) return
+    rosterEl.innerHTML = trainerRosterHtml(rows)
+    rosterEl.querySelectorAll('[data-roster-end]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const assignmentId = btn.getAttribute('data-roster-end')
+        const memberId = btn.getAttribute('data-member-id')
+        if (!assignmentId || !memberId) return
+        try {
+          await apiPost(`/api/v1/members/${memberId}/trainers/${assignmentId}/end`)
+          setStatus(status, 'قطع شد.', 'ok')
+          await loadTrainerRoster()
+          if (member && String(member.id) === String(memberId)) await loadAssignments()
+        } catch (err) {
+          setStatus(status, apiErrorMessage(err, 'قطع ناموفق'), 'error')
+        }
+      })
+    })
+  }
+
   async function loadTrainerRoster() {
     const tid = selectedTrainerId()
     const t = selectedTrainer()
@@ -105,44 +133,32 @@ export function mountTrainers(root, user) {
       rosterTitle.textContent = t ? `شاگردان ${t.full_name}` : 'شاگردان مربی'
     }
     if (!tid || !rosterEl) {
+      rosterItems = []
+      rosterPager.reset()
       if (rosterEl) rosterEl.innerHTML = '<p class="hint">یک مربی را از فهرست انتخاب کنید.</p>'
+      const rp = root.querySelector('[data-roster-pager]')
+      if (rp instanceof HTMLElement) {
+        rp.innerHTML = ''
+        rp.hidden = true
+      }
       return
     }
     try {
       const data = await apiGet(`/api/v1/trainers/${tid}/members`)
-      const items = (data.items || []).filter((a) => a.is_active)
-      rosterEl.innerHTML = trainerRosterHtml(items)
-      rosterEl.querySelectorAll('[data-roster-end]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const assignmentId = btn.getAttribute('data-roster-end')
-          const memberId = btn.getAttribute('data-member-id')
-          if (!assignmentId || !memberId) return
-          try {
-            await apiPost(`/api/v1/members/${memberId}/trainers/${assignmentId}/end`)
-            setStatus(status, 'قطع شد.', 'ok')
-            await loadTrainerRoster()
-            if (member && String(member.id) === String(memberId)) await loadAssignments()
-          } catch (err) {
-            setStatus(status, apiErrorMessage(err, 'قطع ناموفق'), 'error')
-          }
-        })
-      })
+      rosterItems = (data.items || []).filter((a) => a.is_active)
+      rosterPager.reset()
+      rosterPager.paint(rosterItems, paintRoster)
     } catch (err) {
       rosterEl.innerHTML = `<p class="hint">${apiErrorMessage(err, 'بارگذاری شاگردان ناموفق')}</p>`
     }
   }
 
-  async function loadAssignments() {
+  /** @param {any[]} rows */
+  function paintAssignments(rows) {
     const listEl = root.querySelector('[data-list]')
     if (!listEl) return
-    if (!member) {
-      listEl.innerHTML = '<p class="hint">ابتدا عضو را جستجو و انتخاب کنید.</p>'
-      return
-    }
-    const data = await apiGet(`/api/v1/members/${member.id}/trainers`)
-    const items = (data.items || []).filter((a) => a.is_active)
-    listEl.innerHTML = items.length
-      ? items
+    listEl.innerHTML = rows.length
+      ? rows
           .map(
             (a) => `<div class="row-item"><div>
           <h3>${escapeHtml(a.trainer_full_name)}</h3>
@@ -153,6 +169,7 @@ export function mountTrainers(root, user) {
       : '<p class="hint">مربی فعالی وصل نیست.</p>'
     listEl.querySelectorAll('[data-end]').forEach((btn) =>
       btn.addEventListener('click', async () => {
+        if (!member) return
         try {
           await apiPost(`/api/v1/members/${member.id}/trainers/${btn.getAttribute('data-end')}/end`)
           setStatus(status, 'قطع شد.', 'ok')
@@ -163,6 +180,26 @@ export function mountTrainers(root, user) {
         }
       }),
     )
+  }
+
+  async function loadAssignments() {
+    const listEl = root.querySelector('[data-list]')
+    if (!listEl) return
+    if (!member) {
+      assignItems = []
+      assignPager.reset()
+      listEl.innerHTML = '<p class="hint">ابتدا عضو را جستجو و انتخاب کنید.</p>'
+      const lp = root.querySelector('[data-list-pager]')
+      if (lp instanceof HTMLElement) {
+        lp.innerHTML = ''
+        lp.hidden = true
+      }
+      return
+    }
+    const data = await apiGet(`/api/v1/members/${member.id}/trainers`)
+    assignItems = (data.items || []).filter((a) => a.is_active)
+    assignPager.reset()
+    assignPager.paint(assignItems, paintAssignments)
   }
 
   bindMemberSearch(

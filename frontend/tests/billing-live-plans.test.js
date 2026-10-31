@@ -60,6 +60,104 @@ describe('mountBilling live plan labels', () => {
     })
   })
 
+  it('paginates memberships and payments to 5 per page', async () => {
+    vi.useFakeTimers()
+    const memberships = Array.from({ length: 7 }, (_, i) => ({
+      id: 100 + i,
+      plan_id: 1,
+      plan_name: `طرح ${i + 1}`,
+      status: 'pending',
+      start_date: '2030-01-01',
+      end_date: '2030-02-01',
+      agreed_amount_toman: 100000,
+    }))
+    const payments = Array.from({ length: 8 }, (_, i) => ({
+      id: i + 1,
+      receipt_number: `R-${i + 1}`,
+      amount_toman: 1000,
+      method: 'cash',
+      status: 'paid',
+      membership_id: null,
+    }))
+    const fetchMock = vi.fn(async (url) => {
+      const u = String(url)
+      if (u.includes('/membership-plans')) {
+        return { ok: true, status: 200, json: async () => ({ items: [], total: 0 }) }
+      }
+      if (u.includes('/payments/gateway')) {
+        return { ok: true, status: 200, json: async () => ({ enabled: false, label: '—' }) }
+      }
+      if (u.includes('/members?') || (u.includes('/members') && !u.includes('/memberships') && !u.includes('/payments') && !u.includes('/lock'))) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: [
+              {
+                id: 7,
+                display_id: 'M-1007',
+                first_name: 'تست',
+                last_name: 'بدهی',
+                mobile: '09121111007',
+                status: 'active',
+              },
+            ],
+            total: 1,
+          }),
+        }
+      }
+      if (u.includes('/members/7/memberships')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            items: memberships,
+            debt_toman: 0,
+            freeze_days_used: 0,
+            freeze_days_remaining: 14,
+          }),
+        }
+      }
+      if (u.includes('/members/7/payments')) {
+        return { ok: true, status: 200, json: async () => ({ items: payments, total: payments.length }) }
+      }
+      if (u.includes('/lock')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ held_by_me: true, holder_name: 'مدیر', locked_by_name: 'مدیر', expires_at: null }),
+        }
+      }
+      return { ok: true, status: 200, json: async () => ({ items: [], total: 0 }) }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const section = document.createElement('div')
+    section.setAttribute('data-section', 'billing')
+    const root = document.createElement('div')
+    section.appendChild(root)
+    document.body.appendChild(section)
+    mountBilling(root, { role: 'manager', id: 1 })
+    await vi.advanceTimersByTimeAsync(0)
+
+    const q = /** @type {HTMLInputElement} */ (root.querySelector('[data-q]'))
+    q.value = 'تست'
+    q.dispatchEvent(new Event('input', { bubbles: true }))
+    await vi.advanceTimersByTimeAsync(400)
+    await vi.waitFor(() => expect(root.querySelector('.member-pick-item')).toBeTruthy())
+    const pickBtn = /** @type {HTMLButtonElement} */ (root.querySelector('.member-pick-item'))
+    pickBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
+    pickBtn.click()
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-memberships] .row-item')).toBeTruthy()
+    })
+    expect(root.querySelectorAll('[data-memberships] .row-item')).toHaveLength(5)
+    expect(root.querySelectorAll('[data-payments] .row-item')).toHaveLength(5)
+    expect(root.querySelector('[data-memberships-pager]')?.hidden).toBe(false)
+    expect(root.querySelector('[data-payments-pager]')?.hidden).toBe(false)
+  })
+
   it('offers پرداخت آزاد and shows membership destination on payment rows', async () => {
     vi.useFakeTimers()
     const fetchMock = vi.fn(async (url) => {

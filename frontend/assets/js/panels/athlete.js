@@ -15,7 +15,21 @@ import { initThemeToggle } from '../theme.js'
 import { bindSidebarClose, bindHashNav, setStatus, showApiDown } from '../ui.js'
 import { athleteMembershipCardsHtml } from '../athlete-memberships.js'
 import { athletePaymentCardsHtml } from '../athlete-payments.js'
+import { createListPager } from '../pagination.js'
 import { workoutPlanItemsTableHtml } from '../workout-plan-editor.js'
+
+/** @type {ReturnType<typeof createListPager> | null} */
+let athleteClassesPager = null
+/** @type {ReturnType<typeof createListPager> | null} */
+let athleteNotifsPager = null
+/** @type {ReturnType<typeof createListPager> | null} */
+let athleteMembershipsPager = null
+/** @type {ReturnType<typeof createListPager> | null} */
+let athletePaymentsPager = null
+/** @type {any[]} */
+let athleteClassItems = []
+/** @type {any[]} */
+let athleteNotifItems = []
 
 function payResultMessage() {
   const params = new URLSearchParams(location.search)
@@ -56,10 +70,15 @@ function syncAthleteReadAllButton(items) {
  * @param {any[]} items
  * @param {HTMLElement | null} status
  */
-function paintAthleteNotifications(root, items, status) {
+/**
+ * @param {HTMLElement | null} root
+ * @param {any[]} rows
+ * @param {HTMLElement | null} status
+ */
+function paintAthleteNotificationRows(root, rows, status) {
   if (!root) return
-  root.innerHTML = items.length
-    ? items
+  root.innerHTML = rows.length
+    ? rows
         .map(
           (n) => `<div class="row-item ${n.is_read ? '' : 'unread'}"><div>
           <h3>${n.title}</h3>
@@ -70,7 +89,7 @@ function paintAthleteNotifications(root, items, status) {
         )
         .join('')
     : '<p class="hint">اعلانی نیست.</p>'
-  syncAthleteReadAllButton(items)
+  syncAthleteReadAllButton(athleteNotifItems)
   root.querySelectorAll('[data-read]').forEach((btn) =>
     btn.addEventListener('click', async () => {
       try {
@@ -82,6 +101,22 @@ function paintAthleteNotifications(root, items, status) {
         }
       }
     }),
+  )
+}
+
+/**
+ * @param {HTMLElement | null} root
+ * @param {any[]} items
+ * @param {HTMLElement | null} status
+ */
+function paintAthleteNotifications(root, items, status) {
+  athleteNotifItems = items || []
+  if (!athleteNotifsPager) {
+    athleteNotifsPager = createListPager(document.querySelector('[data-notifs-pager]'))
+  }
+  athleteNotifsPager.reset()
+  athleteNotifsPager.paint(athleteNotifItems, (rows) =>
+    paintAthleteNotificationRows(root, rows, status),
   )
 }
 
@@ -192,11 +227,24 @@ async function main() {
       : 'تسویه‌شده'
     document.querySelector('[data-debt-line]').textContent = `بدهی: ${formatToman(debt)}`
 
-    document.querySelector('[data-memberships]').innerHTML =
-      athleteMembershipCardsHtml(memItems)
+    if (!athleteMembershipsPager) {
+      athleteMembershipsPager = createListPager(document.querySelector('[data-memberships-pager]'))
+    }
+    athleteMembershipsPager.reset()
+    athleteMembershipsPager.paint(memItems, (rows) => {
+      const el = document.querySelector('[data-memberships]')
+      if (el) el.innerHTML = athleteMembershipCardsHtml(rows)
+    })
 
     const payItems = payments.items || []
-    document.querySelector('[data-payments]').innerHTML = athletePaymentCardsHtml(payItems)
+    if (!athletePaymentsPager) {
+      athletePaymentsPager = createListPager(document.querySelector('[data-payments-pager]'))
+    }
+    athletePaymentsPager.reset()
+    athletePaymentsPager.paint(payItems, (rows) => {
+      const el = document.querySelector('[data-payments]')
+      if (el) el.innerHTML = athletePaymentCardsHtml(rows)
+    })
 
     const planItems = plans.items || []
     document.querySelector('[data-plans]').innerHTML = planItems.length
@@ -217,61 +265,73 @@ async function main() {
       /** @type {HTMLElement} */ (status),
     )
 
-    const classItems = classes.items || []
-    document.querySelector('[data-classes]').innerHTML = classItems.length
-      ? classItems
-          .map((c) => {
-            const canBook = !c.booked_by_me && (c.remaining ?? 0) > 0
-            return `<div class="row-item"><div>
-            <h3>${c.title}</h3>
-            <p>${formatDateTimeShort(c.starts_at)} · ${c.trainer_full_name || '—'}
-            · باقی ${(c.remaining ?? 0).toLocaleString('fa-IR')} از ${(c.capacity ?? 0).toLocaleString('fa-IR')}
-            ${c.gender_label ? ' · ' + genderLabelFa(c.gender_label) : ''}</p></div>
-            ${
-              c.booked_by_me && c.my_booking_id
-                ? `<button type="button" class="btn small ghost" data-cancel="${c.my_booking_id}">لغو رزرو</button>`
-                : canBook
-                  ? `<button type="button" class="btn small" data-book="${c.id}">رزرو</button>`
-                  : '<em>—</em>'
-            }</div>`
-          })
-          .join('')
-      : '<p class="hint">کلاس آینده‌ای نیست.</p>'
+    athleteClassItems = classes.items || []
+    if (!athleteClassesPager) {
+      athleteClassesPager = createListPager(document.querySelector('[data-classes-pager]'))
+    }
+    athleteClassesPager.reset()
+    athleteClassesPager.paint(athleteClassItems, (rows) => {
+      const host = document.querySelector('[data-classes]')
+      if (!host) return
+      host.innerHTML = rows.length
+        ? rows
+            .map((c) => {
+              const canBook = !c.booked_by_me && (c.remaining ?? 0) > 0
+              return `<div class="row-item"><div>
+              <h3>${c.title}</h3>
+              <p>${formatDateTimeShort(c.starts_at)} · ${c.trainer_full_name || '—'}
+              · باقی ${(c.remaining ?? 0).toLocaleString('fa-IR')} از ${(c.capacity ?? 0).toLocaleString('fa-IR')}
+              ${c.gender_label ? ' · ' + genderLabelFa(c.gender_label) : ''}</p></div>
+              ${
+                c.booked_by_me && c.my_booking_id
+                  ? `<button type="button" class="btn small ghost" data-cancel="${c.my_booking_id}">لغو رزرو</button>`
+                  : canBook
+                    ? `<button type="button" class="btn small" data-book="${c.id}">رزرو</button>`
+                    : '<em>—</em>'
+              }</div>`
+            })
+            .join('')
+        : '<p class="hint">کلاس آینده‌ای نیست.</p>'
 
-    document.querySelectorAll('[data-book]').forEach((btn) =>
-      btn.addEventListener('click', async () => {
-        try {
-          const res = await apiPost(`/api/v1/athlete/group-classes/${btn.getAttribute('data-book')}/book`)
-          setStatus(
-            /** @type {HTMLElement} */ (status),
-            `رزرو ثبت شد. باقی: ${(res.remaining ?? 0).toLocaleString('fa-IR')}`,
-            'ok',
-          )
-          location.reload()
-        } catch (err) {
-          setStatus(
-            /** @type {HTMLElement} */ (status),
-            err instanceof ApiError ? err.message : 'رزرو ناموفق',
-            'error',
-          )
-        }
-      }),
-    )
-    document.querySelectorAll('[data-cancel]').forEach((btn) =>
-      btn.addEventListener('click', async () => {
-        try {
-          await apiPost(`/api/v1/athlete/class-bookings/${btn.getAttribute('data-cancel')}/cancel`)
-          setStatus(/** @type {HTMLElement} */ (status), 'رزرو لغو شد.', 'ok')
-          location.reload()
-        } catch (err) {
-          setStatus(
-            /** @type {HTMLElement} */ (status),
-            err instanceof ApiError ? err.message : 'لغو ناموفق',
-            'error',
-          )
-        }
-      }),
-    )
+      host.querySelectorAll('[data-book]').forEach((btn) =>
+        btn.addEventListener('click', async () => {
+          try {
+            const res = await apiPost(
+              `/api/v1/athlete/group-classes/${btn.getAttribute('data-book')}/book`,
+            )
+            setStatus(
+              /** @type {HTMLElement} */ (status),
+              `رزرو ثبت شد. باقی: ${(res.remaining ?? 0).toLocaleString('fa-IR')}`,
+              'ok',
+            )
+            location.reload()
+          } catch (err) {
+            setStatus(
+              /** @type {HTMLElement} */ (status),
+              err instanceof ApiError ? err.message : 'رزرو ناموفق',
+              'error',
+            )
+          }
+        }),
+      )
+      host.querySelectorAll('[data-cancel]').forEach((btn) =>
+        btn.addEventListener('click', async () => {
+          try {
+            await apiPost(
+              `/api/v1/athlete/class-bookings/${btn.getAttribute('data-cancel')}/cancel`,
+            )
+            setStatus(/** @type {HTMLElement} */ (status), 'رزرو لغو شد.', 'ok')
+            location.reload()
+          } catch (err) {
+            setStatus(
+              /** @type {HTMLElement} */ (status),
+              err instanceof ApiError ? err.message : 'لغو ناموفق',
+              'error',
+            )
+          }
+        }),
+      )
+    })
 
     document.querySelector('[data-renew]')?.addEventListener('click', async () => {
       const note = /** @type {HTMLTextAreaElement} */ (document.querySelector('[data-renew-note]'))?.value || ''

@@ -12,6 +12,7 @@ import { LIVE } from './live-data.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
+import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
 /** @param {HTMLElement} root @param {{ role: string }} user */
@@ -33,6 +34,7 @@ export function mountBilling(root, user) {
       <article class="panel">
         <header class="panel-head"><h2>عضویت‌ها</h2></header>
         <div class="list" data-memberships></div>
+        <div data-memberships-pager class="list-pager-host" hidden></div>
         <form data-renew class="form-grid" style="margin-top:1rem">
           <label>طرح<select data-plans required></select></label>
           <label>مبلغ توافقی (تومان)<input data-money name="amount" inputmode="numeric" required /></label>
@@ -50,6 +52,7 @@ export function mountBilling(root, user) {
       <article class="panel">
         <header class="panel-head"><h2>پرداخت‌ها</h2></header>
         <div class="list" data-payments></div>
+        <div data-payments-pager class="list-pager-host" hidden></div>
         <form data-pay class="form-grid" style="margin-top:1rem">
           <label>مبلغ (تومان)<input data-money name="amount" inputmode="numeric" required /></label>
           <label>روش
@@ -74,6 +77,9 @@ export function mountBilling(root, user) {
   /** @type {any} */ let selected = null
   /** @type {any[]} */ let plans = []
   /** @type {any[]} */ let memberships = []
+  /** @type {any[]} */ let payments = []
+  const membershipsPager = createListPager(root.querySelector('[data-memberships-pager]'))
+  const paymentsPager = createListPager(root.querySelector('[data-payments-pager]'))
   let lockHeld = false
   let planChangeBound = false
   const locker = createMemberLock((st, err) => {
@@ -137,17 +143,12 @@ export function mountBilling(root, user) {
     }
   }
 
-  async function loadMember(id) {
-    const [mem, pay] = await Promise.all([
-      apiGet(`/api/v1/members/${id}/memberships`),
-      apiGet(`/api/v1/members/${id}/payments`),
-    ])
-    memberships = mem.items || []
-    root.querySelector('[data-debt]').textContent = `بدهی فعلی: ${formatToman(mem.debt_toman || 0)}`
-    root.querySelector('[data-freeze-cap]').textContent =
-      `سقف توقف سالانه: ${(mem.remaining_freeze_days_this_year ?? 0).toLocaleString('fa-IR')} از ${(mem.freeze_annual_cap_days ?? 0).toLocaleString('fa-IR')} روز باقی‌مانده`
-    root.querySelector('[data-memberships]').innerHTML = memberships.length
-      ? memberships
+  /** @param {any[]} rows */
+  function paintMemberships(rows) {
+    const host = root.querySelector('[data-memberships]')
+    if (!host) return
+    host.innerHTML = rows.length
+      ? rows
           .map((m) => {
             const plan = plans.find((p) => p.id === m.plan_id)
             const lockerBadge = plan?.includes_locker
@@ -161,6 +162,63 @@ export function mountBilling(root, user) {
           })
           .join('')
       : '<p class="hint">عضویت ندارد.</p>'
+  }
+
+  /** @param {any} p */
+  function paymentMembershipLine(p) {
+    if (!p.membership_id) return 'مقصد: پرداخت آزاد'
+    const m = memberships.find((x) => x.id === p.membership_id)
+    if (m) {
+      return `مقصد: #${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}`
+    }
+    return `مقصد: عضویت #${p.membership_id}`
+  }
+
+  /** @param {any[]} rows */
+  function paintPayments(rows) {
+    const host = root.querySelector('[data-payments]')
+    if (!host) return
+    host.innerHTML = rows.length
+      ? rows
+          .map(
+            (p) => `<div class="row-item"><div>
+          <h3>${p.receipt_number}</h3>
+          <p>${formatToman(p.amount_toman)} · ${PAYMENT_METHOD_LABEL[p.method] || p.method} · ${paymentStatusLabelFa(p.status)}</p>
+          <p class="hint">${paymentMembershipLine(p)}</p></div>
+          ${p.status === 'paid' ? `<button type="button" class="btn small ghost" data-refund="${p.id}">برگشت</button>` : '<em>—</em>'}
+        </div>`,
+          )
+          .join('')
+      : '<p class="hint">پرداختی نیست.</p>'
+    host.querySelectorAll('[data-refund]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!selected?.id || !lockHeld) return
+        if (!confirm('این پرداخت برگشت بخورد؟ مبلغ ردیف عوض نمی‌شود.')) return
+        try {
+          const data = await apiPost(`/api/v1/payments/${btn.getAttribute('data-refund')}/refund`)
+          setStatus(status, `برگشت ${data.payment.receipt_number}. بدهی: ${formatToman(data.debt_toman)}`, 'ok')
+          await loadMember(selected.id)
+        } catch (err) {
+          setStatus(status, lockErrorMessage(err, 'برگشت ناموفق'), 'error')
+        }
+      })
+    })
+  }
+
+  async function loadMember(id) {
+    const [mem, pay] = await Promise.all([
+      apiGet(`/api/v1/members/${id}/memberships`),
+      apiGet(`/api/v1/members/${id}/payments`),
+    ])
+    memberships = mem.items || []
+    payments = pay.items || []
+    root.querySelector('[data-debt]').textContent = `بدهی فعلی: ${formatToman(mem.debt_toman || 0)}`
+    root.querySelector('[data-freeze-cap]').textContent =
+      `سقف توقف سالانه: ${(mem.remaining_freeze_days_this_year ?? 0).toLocaleString('fa-IR')} از ${(mem.freeze_annual_cap_days ?? 0).toLocaleString('fa-IR')} روز باقی‌مانده`
+    membershipsPager.reset()
+    membershipsPager.paint(memberships, paintMemberships)
+    paymentsPager.reset()
+    paymentsPager.paint(payments, paintPayments)
     const fill = (sel, allowedStatuses) => {
       if (!sel) return
       const cur = sel.value
@@ -196,43 +254,6 @@ export function mountBilling(root, user) {
       if ([...paySel.options].some((o) => o.value === cur)) paySel.value = cur
       globalThis.GymCustomSelect?.sync?.(paySel)
     }
-
-    /** @param {any} p */
-    function paymentMembershipLine(p) {
-      if (!p.membership_id) return 'مقصد: پرداخت آزاد'
-      const m = memberships.find((x) => x.id === p.membership_id)
-      if (m) {
-        return `مقصد: #${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}`
-      }
-      return `مقصد: عضویت #${p.membership_id}`
-    }
-
-    const payments = pay.items || []
-    root.querySelector('[data-payments]').innerHTML = payments.length
-      ? payments
-          .map(
-            (p) => `<div class="row-item"><div>
-          <h3>${p.receipt_number}</h3>
-          <p>${formatToman(p.amount_toman)} · ${PAYMENT_METHOD_LABEL[p.method] || p.method} · ${paymentStatusLabelFa(p.status)}</p>
-          <p class="hint">${paymentMembershipLine(p)}</p></div>
-          ${p.status === 'paid' ? `<button type="button" class="btn small ghost" data-refund="${p.id}">برگشت</button>` : '<em>—</em>'}
-        </div>`,
-          )
-          .join('')
-      : '<p class="hint">پرداختی نیست.</p>'
-    root.querySelectorAll('[data-refund]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        if (!lockHeld) return
-        if (!confirm('این پرداخت برگشت بخورد؟ مبلغ ردیف عوض نمی‌شود.')) return
-        try {
-          const data = await apiPost(`/api/v1/payments/${btn.getAttribute('data-refund')}/refund`)
-          setStatus(status, `برگشت ${data.payment.receipt_number}. بدهی: ${formatToman(data.debt_toman)}`, 'ok')
-          await loadMember(id)
-        } catch (err) {
-          setStatus(status, lockErrorMessage(err, 'برگشت ناموفق'), 'error')
-        }
-      })
-    })
   }
 
   /**
