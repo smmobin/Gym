@@ -1524,6 +1524,12 @@ input.date-picker-native[type="datetime-local"] {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
   color: var(--accent);
 }
+.date-picker-week[hidden],
+.date-picker-grid[hidden],
+.date-picker-months[hidden],
+.date-picker-years[hidden] {
+  display: none !important;
+}
 .date-picker-months,
 .date-picker-years {
   display: grid;
@@ -1531,9 +1537,16 @@ input.date-picker-native[type="datetime-local"] {
   gap: 0.35rem;
   min-height: 11.5rem;
 }
-.date-picker-months[hidden],
-.date-picker-years[hidden] {
+.date-picker-pop.is-picking-month .date-picker-week,
+.date-picker-pop.is-picking-month .date-picker-grid,
+.date-picker-pop.is-picking-year .date-picker-week,
+.date-picker-pop.is-picking-year .date-picker-grid {
   display: none !important;
+}
+.date-picker-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
 }
 .date-picker-month,
 .date-picker-year {

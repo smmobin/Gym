@@ -17,6 +17,11 @@
     "اسفند",
   ];
   var WEEKDAYS = ["ش", "ی", "د", "س", "چ", "پ", "ج"];
+  /** Years shown per page in the year picker (same footprint as the day grid). */
+  var YEAR_PAGE_SIZE = 12;
+  /** Browseable Jalali year span relative to today's year. */
+  var YEAR_RANGE_PAST = 80;
+  var YEAR_RANGE_FUTURE = 40;
 
   function toFaDigits(value) {
     return String(value).replace(/\d/g, function (d) {
@@ -415,29 +420,58 @@
     root.appendChild(trigger);
     root.appendChild(pop);
 
+    function jalaliYearBounds() {
+      var t = todayParts();
+      var tj = gregorianToJalali(t.y, t.m, t.d);
+      var anchor = tj[0];
+      return {
+        min: Math.max(1, anchor - YEAR_RANGE_PAST),
+        max: anchor + YEAR_RANGE_FUTURE,
+      };
+    }
+
+    function alignYearPageStart(jy) {
+      var b = jalaliYearBounds();
+      var y = Math.min(Math.max(jy, b.min), b.max);
+      var lastPage = b.min + Math.floor((b.max - b.min) / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE;
+      var start = b.min + Math.floor((y - b.min) / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE;
+      if (start > lastPage) start = lastPage;
+      return start;
+    }
+
     function syncNavChrome() {
+      var bounds = jalaliYearBounds();
       monthBtn.textContent = MONTHS[state.viewJm - 1];
       yearBtn.textContent = toFaDigits(String(state.viewJy));
       monthBtn.classList.toggle("is-active", state.navMode === "months");
       yearBtn.classList.toggle("is-active", state.navMode === "years");
       monthBtn.hidden = state.navMode === "years";
       if (state.navMode === "years") {
-        var endY = state.yearPageStart + 11;
+        var endY = Math.min(state.yearPageStart + YEAR_PAGE_SIZE - 1, bounds.max);
         yearBtn.textContent =
           toFaDigits(String(state.yearPageStart)) + "–" + toFaDigits(String(endY));
       }
       prevBtn.setAttribute(
         "aria-label",
-        state.navMode === "years" ? "بازهٔ سال قبل" : state.navMode === "months" ? "سال قبل" : "ماه قبل",
+        state.navMode === "years" ? "صفحهٔ سال قبل" : state.navMode === "months" ? "سال قبل" : "ماه قبل",
       );
       nextBtn.setAttribute(
         "aria-label",
-        state.navMode === "years" ? "بازهٔ سال بعد" : state.navMode === "months" ? "سال بعد" : "ماه بعد",
+        state.navMode === "years" ? "صفحهٔ سال بعد" : state.navMode === "months" ? "سال بعد" : "ماه بعد",
       );
+      if (state.navMode === "years") {
+        prevBtn.disabled = state.yearPageStart <= bounds.min;
+        nextBtn.disabled = state.yearPageStart + YEAR_PAGE_SIZE > bounds.max;
+      } else {
+        prevBtn.disabled = false;
+        nextBtn.disabled = false;
+      }
       week.hidden = state.navMode !== "days";
       grid.hidden = state.navMode !== "days";
       monthPanel.hidden = state.navMode !== "months";
       yearPanel.hidden = state.navMode !== "years";
+      pop.classList.toggle("is-picking-month", state.navMode === "months");
+      pop.classList.toggle("is-picking-year", state.navMode === "years");
     }
 
     function syncDisplay() {
@@ -454,14 +488,7 @@
     }
 
     function ensureYearPageContains(jy) {
-      if (
-        state.yearPageStart > 0 &&
-        jy >= state.yearPageStart &&
-        jy < state.yearPageStart + 12
-      ) {
-        return;
-      }
-      state.yearPageStart = Math.max(1, jy - 5);
+      state.yearPageStart = alignYearPageStart(jy);
     }
 
     function setNavMode(mode) {
@@ -522,9 +549,11 @@
 
     function renderYears() {
       yearPanel.innerHTML = "";
+      var bounds = jalaliYearBounds();
       var selectedJ = gregorianToJalali(state.y, state.m, state.d);
-      for (var i = 0; i < 12; i += 1) {
+      for (var i = 0; i < YEAR_PAGE_SIZE; i += 1) {
         var y = state.yearPageStart + i;
+        if (y > bounds.max) break;
         var btn = document.createElement("button");
         btn.type = "button";
         btn.className = "date-picker-year";
@@ -657,7 +686,10 @@
       event.preventDefault();
       event.stopPropagation();
       if (state.navMode === "years") {
-        state.yearPageStart = Math.max(1, state.yearPageStart - 12);
+        var boundsPrev = jalaliYearBounds();
+        state.yearPageStart = alignYearPageStart(
+          Math.max(boundsPrev.min, state.yearPageStart - YEAR_PAGE_SIZE),
+        );
         syncDisplay();
         renderYears();
         return;
@@ -682,7 +714,10 @@
       event.preventDefault();
       event.stopPropagation();
       if (state.navMode === "years") {
-        state.yearPageStart += 12;
+        var boundsNext = jalaliYearBounds();
+        state.yearPageStart = alignYearPageStart(
+          Math.min(boundsNext.max, state.yearPageStart + YEAR_PAGE_SIZE),
+        );
         syncDisplay();
         renderYears();
         return;

@@ -108,12 +108,55 @@ describe('GymDatePicker FormData commit', () => {
 
     yearBtn?.click()
     expect(picker?.querySelector('.date-picker-years')?.hidden).toBe(false)
+    expect(picker?.querySelector('.date-picker-grid')?.hidden).toBe(true)
+    expect(picker?.querySelector('.date-picker-week')?.hidden).toBe(true)
+    expect(picker?.querySelectorAll('.date-picker-year').length).toBeLessThanOrEqual(12)
+    expect(picker?.querySelectorAll('.date-picker-year').length).toBeGreaterThan(0)
+
+    // Paginate backward through 12-year pages until ~50 years earlier is visible.
+    let foundPast = [...(picker?.querySelectorAll('.date-picker-year') || [])].some(
+      (btn) => Number(btn.dataset.year) <= 1355,
+    )
+    for (let i = 0; i < 8 && !foundPast; i += 1) {
+      const prev = /** @type {HTMLButtonElement | null} */ (
+        picker?.querySelector('.date-picker-nav-btn[aria-label="صفحهٔ سال قبل"]')
+      )
+      if (!prev || prev.disabled) break
+      prev.click()
+      foundPast = [...(picker?.querySelectorAll('.date-picker-year') || [])].some(
+        (btn) => Number(btn.dataset.year) <= 1355,
+      )
+    }
+    expect(foundPast).toBe(true)
+    expect(picker?.querySelectorAll('.date-picker-year').length).toBeLessThanOrEqual(12)
+
     const y1404 = [...(picker?.querySelectorAll('.date-picker-year') || [])].find(
       (btn) => btn.dataset.year === '1404',
     )
-    expect(y1404).toBeTruthy()
-    y1404?.click()
+    if (!y1404) {
+      // Return to the page that contains 1404 if we scrolled away.
+      for (let i = 0; i < 10; i += 1) {
+        const next = /** @type {HTMLButtonElement | null} */ (
+          picker?.querySelector('.date-picker-nav-btn[aria-label="صفحهٔ سال بعد"]')
+        )
+        if (!next || next.disabled) break
+        next.click()
+        if (
+          [...(picker?.querySelectorAll('.date-picker-year') || [])].some(
+            (btn) => btn.dataset.year === '1404',
+          )
+        ) {
+          break
+        }
+      }
+    }
+    const pick1404 = [...(picker?.querySelectorAll('.date-picker-year') || [])].find(
+      (btn) => btn.dataset.year === '1404',
+    )
+    expect(pick1404).toBeTruthy()
+    pick1404?.click()
     expect(picker?.querySelector('.date-picker-months')?.hidden).toBe(false)
+    expect(picker?.querySelector('.date-picker-grid')?.hidden).toBe(true)
     expect(picker?.querySelector('.date-picker-nav-year')?.textContent).toMatch(/۱۴۰۴/)
   })
 
