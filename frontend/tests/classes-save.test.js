@@ -306,4 +306,25 @@ describe('class list focus after save (BUG-008)', () => {
     expect(vi.mocked(setStatus).mock.calls.some((args) => args[1] === 'بارگذاری…')).toBe(true)
     expect(vi.mocked(setStatus).mock.calls.some((args) => args[1] === '')).toBe(true)
   })
+
+  it('blocks save when start is after end', async () => {
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountClasses(root, { role: 'manager' })
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-class-form]')).toBeTruthy()
+    })
+    const form = /** @type {HTMLFormElement} */ (root.querySelector('[data-class-form]'))
+    fillClassForm(form, { start: '2030-06-02T21:48', end: '2030-06-01T21:48' })
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    await vi.waitFor(() => {
+      expect(vi.mocked(setStatus)).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.stringContaining('شروع باید قبل از زمان پایان'),
+        'error',
+      )
+    })
+    expect(apiPost).not.toHaveBeenCalled()
+    expect(apiPatch).not.toHaveBeenCalled()
+  })
 })

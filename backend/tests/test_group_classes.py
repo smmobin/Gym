@@ -157,6 +157,12 @@ def test_invalid_time_range_422(client: TestClient) -> None:
         },
     )
     assert response.status_code == 422
+    detail = response.json()["detail"]
+    if isinstance(detail, str):
+        assert "پایان" in detail or "شروع" in detail
+    else:
+        # FastAPI may wrap service HTTPException detail as string already
+        assert detail
 
 
 def test_invalid_capacity_rejected(client: TestClient) -> None:

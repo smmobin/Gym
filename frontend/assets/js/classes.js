@@ -273,11 +273,26 @@ export function mountClasses(root, user) {
         setStatus(status, err instanceof ApiError ? err.message : 'رزرو ناموفق', 'error')
       }
     })
-    root.querySelector('[data-class-form]')?.addEventListener('submit', async (e) => {
+    const classForm = root.querySelector('[data-class-form]')
+    classForm?.querySelector('[name=starts_at]')?.addEventListener('change', () => {
+      if (classForm instanceof HTMLFormElement) bumpEndIfNeeded(classForm)
+    })
+    classForm?.querySelector('[name=ends_at]')?.addEventListener('change', () => {
+      if (!(classForm instanceof HTMLFormElement)) return
+      if (!classTimeRangeOk(classForm)) {
+        setStatus(status, 'زمان پایان باید بعد از زمان شروع باشد.', 'error')
+      }
+    })
+    classForm?.addEventListener('submit', async (e) => {
       e.preventDefault()
       const form = /** @type {HTMLFormElement} */ (e.target)
       // BUG-007: prevent double-create from rapid/repeated Save before id is set.
       if (form.dataset.busy === '1') return
+      globalThis.GymDatePicker?.flush?.(form)
+      if (!classTimeRangeOk(form)) {
+        setStatus(status, 'زمان شروع باید قبل از زمان پایان باشد.', 'error')
+        return
+      }
       form.dataset.busy = '1'
       const submitBtn = /** @type {HTMLButtonElement | null} */ (form.querySelector('[type="submit"]'))
       if (submitBtn) submitBtn.disabled = true
@@ -345,6 +360,34 @@ function syncGenderSelect(scope) {
 function toLocalInput(iso) {
   if (!iso) return ''
   const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** @param {HTMLFormElement} form */
+export function classTimeRangeOk(form) {
+  const startsEl = form.querySelector('[name=starts_at]')
+  const endsEl = form.querySelector('[name=ends_at]')
+  if (!(startsEl instanceof HTMLInputElement) || !(endsEl instanceof HTMLInputElement)) return false
+  const start = new Date(startsEl.value)
+  const end = new Date(endsEl.value)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false
+  return start < end
+}
+
+/** If start moved past end, push end to one hour after start. */
+/** @param {HTMLFormElement} form */
+function bumpEndIfNeeded(form) {
+  const startsEl = form.querySelector('[name=starts_at]')
+  const endsEl = form.querySelector('[name=ends_at]')
+  if (!(startsEl instanceof HTMLInputElement) || !(endsEl instanceof HTMLInputElement)) return
+  const start = new Date(startsEl.value)
+  if (Number.isNaN(start.getTime())) return
+  const end = new Date(endsEl.value)
+  if (!endsEl.value || Number.isNaN(end.getTime()) || end <= start) {
+    const fixed = new Date(start.getTime() + 60 * 60 * 1000)
+    endsEl.value = toLocalInput(fixed.toISOString())
+    globalThis.GymDatePicker?.refresh?.(form)
+  }
 }
