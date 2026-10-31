@@ -154,20 +154,22 @@ export function mountBilling(root, user) {
           })
           .join('')
       : '<p class="hint">عضویت ندارد.</p>'
-    const fill = (sel) => {
+    const fill = (sel, allowedStatuses) => {
       if (!sel) return
       const cur = sel.value
+      const allowed = new Set(allowedStatuses)
       sel.innerHTML =
         '<option value="">—</option>' +
         memberships
-          .filter((m) => m.status === 'active' || m.status === 'frozen')
+          .filter((m) => allowed.has(m.status))
           .map((m) => `<option value="${m.id}">#${m.id} · ${m.plan_name || m.plan_id} · ${m.status}</option>`)
           .join('')
       if ([...sel.options].some((o) => o.value === cur)) sel.value = cur
       globalThis.GymCustomSelect?.sync?.(sel)
     }
-    fill(root.querySelector('[data-freeze-m]'))
-    fill(root.querySelector('[data-pay-m]'))
+    // Freeze: only open memberships. Pay link: also pending (often waiting for first payment).
+    fill(root.querySelector('[data-freeze-m]'), ['active', 'frozen'])
+    fill(root.querySelector('[data-pay-m]'), ['active', 'frozen', 'pending'])
     const payments = pay.items || []
     root.querySelector('[data-payments]').innerHTML = payments.length
       ? payments
