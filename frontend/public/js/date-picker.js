@@ -533,10 +533,10 @@
       state.d = g[2];
       syncDisplay();
       renderGrid();
-      // Apply on day click (no تأیید). Date-only closes; datetime stays open for clock, outside click closes.
+      // Apply on day click and always close the panel (no تأیید).
       if (!validateBeforeCommit()) return;
       applyToInput();
-      if (!withTime) close();
+      close();
     }
 
     trigger.addEventListener("click", function (event) {

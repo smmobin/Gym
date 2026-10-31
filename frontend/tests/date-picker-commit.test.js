@@ -51,11 +51,10 @@ describe('GymDatePicker FormData commit', () => {
     expect(fd.get('expense_date')).toBe('2026-11-11')
   })
 
-  it('datetime-local: day click applies immediately without تأیید; outside click closes', () => {
+  it('datetime-local: day click applies and closes the panel', () => {
     document.body.innerHTML = `
       <form id="f">
         <input type="datetime-local" name="starts_at" />
-        <button type="button" id="outside">خارج</button>
       </form>
     `
     window.GymDatePicker.refresh(document)
@@ -77,13 +76,8 @@ describe('GymDatePicker FormData commit', () => {
     expect(day20).toBeTruthy()
     day20.click()
 
-    // Applied on day click; pop stays open so clock can be tweaked.
     expect(input.value).toMatch(/^2026-11-11T\d{2}:\d{2}$/)
-    expect(picker?.classList.contains('is-open')).toBe(true)
-
-    document.getElementById('outside')?.click()
     expect(picker?.classList.contains('is-open')).toBe(false)
-    expect(input.value).toMatch(/^2026-11-11T\d{2}:\d{2}$/)
   })
 
   it('blocks day apply when ends_at is not after starts_at (data-min-datetime-from)', () => {
