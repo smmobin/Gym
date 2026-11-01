@@ -38,6 +38,7 @@ describe('Jalali display helpers', () => {
   it('keeps membership.pending distinct from payment.pending labels', () => {
     expect(membershipStatusLabelFa('pending')).toBe('شروع‌نشده')
     expect(membershipStatusLabelFa('active')).toBe('فعال')
+    expect(membershipStatusLabelFa('frozen')).toBe('توقف موقت')
     expect(paymentStatusLabelFa('pending')).toBe('در انتظار')
     expect(paymentStatusLabelFa('paid')).toBe('پرداخت‌شده')
   })
