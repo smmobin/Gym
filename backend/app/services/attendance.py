@@ -262,9 +262,11 @@ def check_in(
     today = today_tehran()
     now = now_tehran()
 
+    from app.services.billing import sync_member_membership_windows
     from app.services.membership_freeze import complete_due_freezes_for_member
 
     complete_due_freezes_for_member(db, member.id, today=today)
+    sync_member_membership_windows(db, member.id, today=today)
 
     still_open = open_attendance_for_member(db, member.id)
     if still_open is not None:

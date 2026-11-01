@@ -646,6 +646,15 @@ def seed(session: Session | None = None) -> dict[str, int]:
                 status=MembershipStatus.ACTIVE.value,
                 sessions_remaining=12,
             )
+            # Future-start renewal window (demo «شروع‌نشده» — not payment-pending).
+            m_ali_future = Membership(
+                member_id=ali.id,
+                plan_id=plan_month.id,
+                agreed_amount_toman=1_500_000,
+                start_date=today + timedelta(days=20),
+                end_date=today + timedelta(days=50),
+                status=MembershipStatus.PENDING.value,
+            )
             session.add_all(
                 [
                     m_ali,
@@ -658,6 +667,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
                     m_elham,
                     m_guest,
                     m_ali_pt,
+                    m_ali_future,
                 ]
             )
             session.flush()
@@ -681,6 +691,16 @@ def seed(session: Session | None = None) -> dict[str, int]:
                     PaymentMethod.CASH.value,
                     "بیعانه بسته مربی",
                     now - timedelta(days=2),
+                    receptionist.id,
+                ),
+                (
+                    "R-10020",
+                    ali.id,
+                    m_ali_future.id,
+                    1_500_000,
+                    PaymentMethod.POS.value,
+                    "پرداخت تمدید آینده",
+                    now - timedelta(hours=2),
                     receptionist.id,
                 ),
                 (

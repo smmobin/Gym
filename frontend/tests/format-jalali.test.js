@@ -4,6 +4,8 @@ import {
   formatJalaliDate,
   formatTodayChip,
   jalaliMonthRangeLocal,
+  membershipStatusLabelFa,
+  paymentStatusLabelFa,
   todayRangeLocal,
 } from '../assets/js/format.js'
 
@@ -31,5 +33,12 @@ describe('Jalali display helpers', () => {
     expect(chip).toContain('آبان')
     expect(chip).toContain('۱۴۰۵')
     expect(chip).toMatch(/جمعه|پنجشنبه|چهارشنبه|سه‌شنبه|دوشنبه|یکشنبه|شنبه/)
+  })
+
+  it('keeps membership.pending distinct from payment.pending labels', () => {
+    expect(membershipStatusLabelFa('pending')).toBe('شروع‌نشده')
+    expect(membershipStatusLabelFa('active')).toBe('فعال')
+    expect(paymentStatusLabelFa('pending')).toBe('در انتظار')
+    expect(paymentStatusLabelFa('paid')).toBe('پرداخت‌شده')
   })
 })

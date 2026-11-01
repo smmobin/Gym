@@ -329,3 +329,131 @@ def test_cancel_membership(client: TestClient) -> None:
     response = client.post(f"/api/v1/memberships/{mid}/cancel")
     assert response.status_code == 200
     assert response.json()["membership"]["status"] == "cancelled"
+
+
+def test_list_memberships_activates_pending_in_window(client: TestClient) -> None:
+    """pending + start_date <= today Tehran → active on desk list (window sync)."""
+    from app.services.billing import today_tehran
+
+    wipe_and_seed()
+    _login(client)
+    today = today_tehran()
+    reza = _member("M-1007")
+
+    db = SessionLocal()
+    try:
+        row = db.scalar(
+            select(Membership)
+            .where(Membership.member_id == reza.id)
+            .order_by(Membership.id.desc())
+        )
+        assert row is not None
+        row.status = MembershipStatus.PENDING.value
+        row.start_date = today - timedelta(days=1)
+        row.end_date = today + timedelta(days=20)
+        db.commit()
+        mid = row.id
+    finally:
+        db.close()
+
+    body = client.get(f"/api/v1/members/{reza.id}/memberships").json()
+    item = next(i for i in body["items"] if i["id"] == mid)
+    assert item["status"] == MembershipStatus.ACTIVE.value
+
+    db = SessionLocal()
+    try:
+        audit = db.scalar(
+            select(AuditLog)
+            .where(
+                AuditLog.action == "membership.window_sync",
+                AuditLog.entity_id == str(mid),
+            )
+            .order_by(AuditLog.id.desc())
+        )
+        assert audit is not None
+        assert audit.payload is not None
+        assert audit.payload.get("to_status") == MembershipStatus.ACTIVE.value
+    finally:
+        db.close()
+
+
+def test_future_start_stays_pending_even_after_paid(client: TestClient) -> None:
+    """Paid payment must not activate a future-start membership; list keeps pending."""
+    from app.services.billing import today_tehran
+
+    wipe_and_seed()
+    _login(client)
+    today = today_tehran()
+    ali = _member("M-1001")
+    plan_id = _active_plan_id()
+
+    renew = client.post(
+        f"/api/v1/members/{ali.id}/memberships/renew",
+        json={
+            "plan_id": plan_id,
+            "agreed_amount_toman": 1_200_000,
+        },
+    )
+    assert renew.status_code == 201, renew.text
+    membership = renew.json()["membership"]
+    mid = membership["id"]
+    start = date.fromisoformat(membership["start_date"])
+    if start <= today:
+        # Force a future window so the assertion is about calendar, not renew edge cases.
+        db = SessionLocal()
+        try:
+            row = db.get(Membership, mid)
+            assert row is not None
+            row.start_date = today + timedelta(days=10)
+            row.end_date = today + timedelta(days=40)
+            row.status = MembershipStatus.PENDING.value
+            db.commit()
+        finally:
+            db.close()
+
+    pay = client.post(
+        "/api/v1/payments",
+        json={
+            "member_id": ali.id,
+            "membership_id": mid,
+            "amount_toman": 1_200_000,
+            "method": "cash",
+            "status": "paid",
+        },
+    )
+    assert pay.status_code == 201, pay.text
+    assert pay.json()["payment"]["status"] == PaymentStatus.PAID.value
+
+    listed = client.get(f"/api/v1/members/{ali.id}/memberships").json()
+    item = next(i for i in listed["items"] if i["id"] == mid)
+    assert item["status"] == MembershipStatus.PENDING.value
+    assert date.fromisoformat(item["start_date"]) > today
+
+
+def test_window_sync_expires_past_pending(client: TestClient) -> None:
+    from app.services.billing import today_tehran
+
+    wipe_and_seed()
+    _login(client)
+    today = today_tehran()
+    mohammad = _member("M-1003")
+
+    db = SessionLocal()
+    try:
+        row = db.scalar(
+            select(Membership)
+            .where(Membership.member_id == mohammad.id)
+            .order_by(Membership.id.desc())
+        )
+        assert row is not None
+        row.status = MembershipStatus.PENDING.value
+        row.start_date = today - timedelta(days=40)
+        row.end_date = today - timedelta(days=5)
+        db.commit()
+        mid = row.id
+    finally:
+        db.close()
+
+    body = client.get(f"/api/v1/members/{mohammad.id}/memberships").json()
+    item = next(i for i in body["items"] if i["id"] == mid)
+    assert item["status"] == MembershipStatus.EXPIRED.value

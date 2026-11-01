@@ -28,6 +28,7 @@ export function athleteMembershipCardsHtml(items) {
         <h3 class="athlete-membership-title">${escapeHtml(title)}</h3>
         <p class="athlete-membership-meta">${escapeHtml(range)}</p>
         <p class="athlete-membership-price">${escapeHtml(formatToman(m.agreed_amount_toman))}</p>
+        <p class="hint athlete-membership-price-hint">مبلغ توافقی دوره</p>
       </article>`
     })
     .join('')}</div>`

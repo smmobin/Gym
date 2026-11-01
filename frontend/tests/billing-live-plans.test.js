@@ -359,7 +359,7 @@ describe('mountBilling live plan labels', () => {
     await vi.advanceTimersByTimeAsync(0)
     await vi.waitFor(() => {
       const payOpts = [...root.querySelectorAll('[data-pay-m] option')].map((o) => o.textContent)
-      expect(payOpts.some((t) => t?.includes('#6533') && t.includes('در انتظار'))).toBe(true)
+      expect(payOpts.some((t) => t?.includes('#6533') && t.includes('شروع‌نشده'))).toBe(true)
       expect(payOpts.some((t) => t?.includes('#100') && t.includes('فعال'))).toBe(true)
       expect(payOpts.some((t) => t?.includes('لغو'))).toBe(false)
     })

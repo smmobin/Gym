@@ -171,7 +171,8 @@ export const MEMBER_STATUS = {
 }
 
 export const MEMBERSHIP_STATUS_LABEL = {
-  pending: 'در انتظار',
+  // Window not started yet (Tehran calendar) — not payment.pending
+  pending: 'شروع‌نشده',
   active: 'فعال',
   frozen: 'یخ‌زده',
   expired: 'منقضی',

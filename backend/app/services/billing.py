@@ -235,8 +235,93 @@ def update_plan(
     return plan
 
 
+def sync_membership_window(
+    db: Session,
+    membership: Membership,
+    *,
+    today: date | None = None,
+    member: Member | None = None,
+    write_audit_log: bool = True,
+) -> bool:
+    """
+    Align membership.status with the Asia/Tehran calendar window.
+
+    - pending + start_date <= today <= end_date → active
+    - pending|active + end_date < today → expired
+    - frozen / cancelled: leave untouched (freeze completion is separate)
+
+    Returns True when status changed. Audits only on real change (not every GET).
+    """
+    today = today or today_tehran()
+    old = membership.status
+    if old in {MembershipStatus.CANCELLED.value, MembershipStatus.FROZEN.value}:
+        return False
+
+    new_status = old
+    if membership.end_date < today:
+        if old in {MembershipStatus.PENDING.value, MembershipStatus.ACTIVE.value}:
+            new_status = MembershipStatus.EXPIRED.value
+    elif membership.start_date <= today <= membership.end_date:
+        if old == MembershipStatus.PENDING.value:
+            new_status = MembershipStatus.ACTIVE.value
+
+    if new_status == old:
+        return False
+
+    membership.status = new_status
+
+    mem = member if member is not None else db.get(Member, membership.member_id)
+    if (
+        mem is not None
+        and mem.status == MemberStatus.PENDING.value
+        and new_status == MembershipStatus.ACTIVE.value
+    ):
+        mem.status = MemberStatus.ACTIVE.value
+
+    if write_audit_log:
+        write_audit(
+            db,
+            actor_user_id=None,
+            action="membership.window_sync",
+            entity_type="membership",
+            entity_id=membership.id,
+            summary=f"هم‌ترازسازی وضعیت عضویت #{membership.id}: {old} → {new_status}",
+            payload={
+                "from_status": old,
+                "to_status": new_status,
+                "start_date": membership.start_date.isoformat(),
+                "end_date": membership.end_date.isoformat(),
+                "today": today.isoformat(),
+                "member_id": membership.member_id,
+            },
+        )
+    return True
+
+
+def sync_member_membership_windows(
+    db: Session,
+    member_id: int,
+    *,
+    today: date | None = None,
+) -> int:
+    """Sync all memberships for a member. Returns count of rows that changed."""
+    today = today or today_tehran()
+    member = db.get(Member, member_id)
+    rows = list(
+        db.scalars(select(Membership).where(Membership.member_id == member_id)).all()
+    )
+    changed = 0
+    for row in rows:
+        if sync_membership_window(db, row, today=today, member=member):
+            changed += 1
+    if changed:
+        db.flush()
+    return changed
+
+
 def list_member_memberships(db: Session, member_id: int) -> list[Membership]:
     load_member(db, member_id)
+    sync_member_membership_windows(db, member_id)
     return list(
         db.scalars(
             select(Membership)

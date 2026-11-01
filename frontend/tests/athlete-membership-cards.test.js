@@ -25,6 +25,14 @@ describe('athlete membership cards', () => {
         end_date: '2026-11-11',
         agreed_amount_toman: 1500000,
       },
+      {
+        plan_id: 3,
+        plan_name: 'تمدید آینده',
+        status: 'pending',
+        start_date: '2026-12-01',
+        end_date: '2026-12-31',
+        agreed_amount_toman: 1500000,
+      },
     ])
     expect(html).toContain('athlete-membership-grid')
     expect(html).toContain('athlete-membership-card')
@@ -32,6 +40,9 @@ describe('athlete membership cards', () => {
     expect(html).toContain('ماهانه سالن')
     expect(html).toContain('فعال')
     expect(html).toContain('منقضی')
+    expect(html).toContain('شروع‌نشده')
+    expect(html).not.toContain('>در انتظار<')
+    expect(html).toContain('مبلغ توافقی دوره')
     expect(html).toContain('badge ok')
     expect(html).toContain('badge danger')
     expect(html).toContain('تومان')

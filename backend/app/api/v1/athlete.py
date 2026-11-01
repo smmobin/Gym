@@ -173,6 +173,7 @@ def athlete_memberships(
     member: Member = Depends(get_current_athlete),
 ) -> AthleteMembershipsResponse:
     rows, debt = athlete_svc.list_own_memberships(db, member=member)
+    db.commit()
     items = [
         AthleteMembershipOut(
             id=m.id,

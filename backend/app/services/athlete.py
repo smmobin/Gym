@@ -111,6 +111,9 @@ def patch_own_profile(
 
 
 def list_own_memberships(db: Session, *, member: Member) -> tuple[list[Membership], int]:
+    from app.services.billing import sync_member_membership_windows
+
+    sync_member_membership_windows(db, member.id)
     rows = list(
         db.scalars(
             select(Membership)

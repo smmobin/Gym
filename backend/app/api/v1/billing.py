@@ -193,8 +193,9 @@ def list_memberships(
     try:
         billing_svc.ensure_desk_staff(user)
         freeze_svc.complete_due_freezes_for_member(db, member_id)
-        db.commit()
+        # list_member_memberships also runs window sync (pending→active / expire)
         rows = billing_svc.list_member_memberships(db, member_id)
+        db.commit()
         debt = billing_svc.member_debt_toman(db, member_id)
         cap = freeze_svc.freeze_cap_info(db, member_id)
     except billing_svc.BillingError as err:

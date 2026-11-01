@@ -249,6 +249,8 @@ API: `POST /api/v1/attendances/check-in` ، `POST /api/v1/attendances/{id}/check
 
 **سیاست تاریخ تمدید:** اگر اشتراک مرجع هنوز تمام نشده (`end_date >= امروز تهران`)، `start_date` عضویت جدید = همان `end_date` (روز باقی‌مانده نسوزد). اگر منقضی باشد، شروع از امروز. بدون مرجع: شروع از امروز. `end_date` = `start_date + duration_days` طرح.
 
+**وضعیت عضویت و تقویم تهران:** `pending` روی عضویت یعنی بازه هنوز شروع نشده (مثلاً تمدید آینده) — با `payment.pending` قاطی نشود. هنگام لیست عضویت میز/ورزشکار و قبل از check-in، سیستم با `start_date`/`end_date` (Asia/Tehran) وضعیت را هم‌تراز می‌کند: داخل بازه → `active`، بعد از پایان → `expired` (بدون دست زدن به `frozen`/`cancelled`). برچسب UI برای عضویت pending: «شروع‌نشده».
+
 API: `GET /api/v1/membership-plans` (فقط فعال برای select تمدید) ، مدیریت طرح‌ها از `#plans` با `include_inactive=1` ، `GET/POST …/members/{id}/memberships` (renew) ، `POST /api/v1/memberships/{id}/cancel` ، `POST …/freeze` ، `POST …/unfreeze` ، `GET …/members/{id}/payments` ، `POST /api/v1/payments` ، `POST /api/v1/payments/{id}/refund`
 
 مربی روی این مسیرها ۴۰۳ می‌گیرد.
