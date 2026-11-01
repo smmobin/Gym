@@ -20,7 +20,7 @@ TEMPLATES: dict[str, SmsTemplate] = {
     ),
     "expiry": SmsTemplate(
         id="expiry",
-        title="انقضای نزدیک",
+        title="هشدار انقضای اشتراک",
         body="{{name}} عزیز، اشتراک شما تا {{end_date}} فعال است. برای تمدید با منشی تماس بگیرید.",
     ),
     "debt": SmsTemplate(

@@ -198,6 +198,13 @@ export function mountSmsTemplates(root) {
 
     const vars = currentPreviewVars()
     const visible = templates.filter((t) => !hiddenIds.has(t.id))
+    const restoreBar =
+      hiddenIds.size > 0
+        ? `<p class="sms-restore-bar">
+            <span>${faNum(hiddenIds.size)} قالب پنهان است.</span>
+            <button type="button" class="btn ghost small" data-sms-restore-hidden>نمایش دوبارهٔ همه</button>
+          </p>`
+        : ''
     const cards = visible
       .map((t) => {
         const meta = TEMPLATE_META[t.id] || { icon: 'star', title: t.title }
@@ -228,6 +235,7 @@ export function mountSmsTemplates(root) {
 
     const stats = smsCharStats(customDraft)
     board.innerHTML = `
+      ${restoreBar}
       <div class="sms-grid">
         ${cards}
         <article class="sms-card sms-card-custom" data-sms-custom>
@@ -297,6 +305,11 @@ export function mountSmsTemplates(root) {
         hiddenIds.add(id)
         paint()
       })
+    })
+    board.querySelector('[data-sms-restore-hidden]')?.addEventListener('click', () => {
+      hiddenIds.clear()
+      setResult('قالب‌های پنهان دوباره نمایش داده شدند.', true)
+      paint()
     })
     board.querySelector('[data-sms-custom-clear]')?.addEventListener('click', () => {
       if (!customText) return
@@ -393,6 +406,8 @@ export function mountSmsTemplates(root) {
       void loadPreviewExtras(member.id)
     })
 
+    // Always start with all system templates visible (e.g. after accidental hide).
+    hiddenIds.clear()
     templates = [...FALLBACK_TEMPLATES]
     try {
       const data = await apiGet('/api/v1/sms/templates')
@@ -404,6 +419,15 @@ export function mountSmsTemplates(root) {
       }
     } catch {
       // keep fallback
+    }
+    // Ensure built-in expiry card is never dropped if API omits it.
+    for (const fallback of FALLBACK_TEMPLATES) {
+      if (!templates.some((t) => t.id === fallback.id)) {
+        templates.push({
+          ...fallback,
+          title: (TEMPLATE_META[fallback.id] && TEMPLATE_META[fallback.id].title) || fallback.title,
+        })
+      }
     }
     paint()
   }

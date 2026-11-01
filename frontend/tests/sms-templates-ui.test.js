@@ -96,10 +96,19 @@ describe('sms templates card UI', () => {
     })
     expect(root.querySelectorAll('.sms-card').length).toBeGreaterThanOrEqual(3)
     expect(root.querySelector('[data-sms-send="welcome"]')?.textContent).toContain('ارسال سریع')
+    expect(root.querySelector('[data-sms-send="expiry"]')).toBeTruthy()
+    expect(root.querySelector('[data-sms-card="expiry"]')?.textContent).toContain('هشدار انقضای اشتراک')
     expect(root.querySelector('[data-sms-custom]')).toBeTruthy()
     expect(root.querySelector('[data-sms-custom-text]')).toBeTruthy()
     expect(root.querySelector('[data-sms-custom-send]')?.textContent).toContain('ارسال پیام دلخواه')
     expect(root.textContent).toContain('{{name}}')
+
+    window.confirm = () => true
+    root.querySelector('[data-sms-hide="expiry"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(root.querySelector('[data-sms-card="expiry"]')).toBeNull()
+    expect(root.querySelector('[data-sms-restore-hidden]')).toBeTruthy()
+    root.querySelector('[data-sms-restore-hidden]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(root.querySelector('[data-sms-card="expiry"]')).toBeTruthy()
   })
 
   it('replaces {{name}} with selected member data in card bodies', async () => {

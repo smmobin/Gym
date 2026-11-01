@@ -1525,6 +1525,20 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .sms-panel .sms-board {
   margin-top: 1rem;
 }
+.sms-restore-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
 .sms-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
