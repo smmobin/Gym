@@ -193,8 +193,20 @@ describe('mountBilling live plan labels', () => {
           status: 200,
           json: async () => ({
             items: [
-              { id: 6533, plan_id: 1, plan_name: '۸ جلسه کلاس گروهی', status: 'pending' },
-              { id: 100, plan_id: 2, plan_name: 'ماهانه', status: 'active' },
+              {
+                id: 6533,
+                plan_id: 1,
+                plan_name: '۸ جلسه کلاس گروهی',
+                status: 'pending',
+                agreed_amount_toman: 1_200_000,
+              },
+              {
+                id: 100,
+                plan_id: 2,
+                plan_name: 'ماهانه',
+                status: 'active',
+                agreed_amount_toman: 1_500_000,
+              },
             ],
             debt_toman: 250000,
             freeze_days_used: 0,
@@ -271,6 +283,11 @@ describe('mountBilling live plan labels', () => {
     expect(root.querySelector('[data-payments]')?.textContent).toContain('مقصد: #6533')
     expect(root.querySelector('[data-payments]')?.textContent).toContain('۸ جلسه کلاس گروهی')
     expect(root.querySelector('[data-payments]')?.textContent).toContain('پرداخت‌شده')
+
+    const payAmount = /** @type {HTMLInputElement} */ (root.querySelector('[data-pay] [name=amount]'))
+    paySel.value = '100'
+    paySel.dispatchEvent(new Event('change', { bubbles: true }))
+    expect(payAmount.value.replace(/\D/g, '')).toBe('1500000')
   })
 
   it('lists pending memberships in پرداخت «عضویت مرتبط» but not in توقف', async () => {

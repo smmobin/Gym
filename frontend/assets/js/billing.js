@@ -82,6 +82,7 @@ export function mountBilling(root, user) {
   const paymentsPager = createListPager(root.querySelector('[data-payments-pager]'))
   let lockHeld = false
   let planChangeBound = false
+  let payDestChangeBound = false
   const locker = createMemberLock((st, err) => {
     lockHeld = !!(st && st.held_by_me)
     const el = root.querySelector('[data-lock]')
@@ -253,7 +254,33 @@ export function mountBilling(root, user) {
           .join('')
       if ([...paySel.options].some((o) => o.value === cur)) paySel.value = cur
       globalThis.GymCustomSelect?.sync?.(paySel)
+      if (!payDestChangeBound) {
+        payDestChangeBound = true
+        paySel.addEventListener('change', () => {
+          syncPayAmountFromDestination()
+        })
+      }
     }
+  }
+
+  /** Fill payment amount from selected membership agreed amount (or plan base price). */
+  function syncPayAmountFromDestination() {
+    const paySel = /** @type {HTMLSelectElement | null} */ (root.querySelector('[data-pay-m]'))
+    const amount = /** @type {HTMLInputElement | null} */ (
+      root.querySelector('[data-pay] [name=amount]')
+    )
+    if (!paySel || !amount) return
+    const val = paySel.value
+    if (!val || val === 'free') return
+    const m = memberships.find((x) => String(x.id) === val)
+    if (!m) return
+    let toman = Number(m.agreed_amount_toman)
+    if (!Number.isFinite(toman) || toman < 0) {
+      const plan = plans.find((p) => p.id === m.plan_id)
+      toman = plan ? Number(plan.base_price_toman) : 0
+    }
+    if (!Number.isFinite(toman) || toman < 0) toman = 0
+    setMoneyInput(amount, toman)
   }
 
   /**
