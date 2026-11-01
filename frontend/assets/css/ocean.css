@@ -2079,8 +2079,9 @@ label > .date-picker { width: 100%; }
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 1rem;
+  min-width: 0;
 }
 .panel {
   background: var(--panel);
@@ -2088,6 +2089,9 @@ label > .date-picker { width: 100%; }
   border-radius: var(--radius);
   padding: 1rem 1.1rem 1.15rem;
   box-shadow: var(--shadow);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 .panel-head {
   display: flex;
