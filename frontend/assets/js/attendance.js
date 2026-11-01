@@ -52,11 +52,16 @@ export function mountAttendance(root, user) {
       })
     : null
 
+  function hideSecondConfirm() {
+    if (secondBtn instanceof HTMLButtonElement) secondBtn.hidden = true
+  }
+
   bindMemberSearch(
     (root.querySelector('[data-pick]')),
     (root.querySelector('[data-q]')),
     async (m) => {
       selected = m
+      hideSecondConfirm()
       setPersonChip(root.querySelector('[data-selected]'), m)
       if (locker) await locker.setMember(m.id)
     },
@@ -122,7 +127,7 @@ export function mountAttendance(root, user) {
       return
     }
     setStatus(status, 'در حال ثبت…', 'loading')
-    secondBtn.hidden = true
+    hideSecondConfirm()
     try {
       const data = await apiPost('/api/v1/attendances/check-in', {
         member_id: selected.id,
@@ -133,13 +138,15 @@ export function mountAttendance(root, user) {
       if (data.debt_warning) msg += ` هشدار بدهی: ${formatToman(data.debt_toman)}`
       if (data.sessions_remaining != null) msg += ` · جلسه باقی‌مانده: ${data.sessions_remaining}`
       setStatus(status, msg, 'ok')
+      hideSecondConfirm()
       emitLive(LIVE.ATTENDANCE)
       await autoRefresh.refresh()
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && String(err.message).includes('ورود دوم')) {
-        secondBtn.hidden = false
+        if (secondBtn instanceof HTMLButtonElement) secondBtn.hidden = false
         setStatus(status, err.message, 'error')
       } else {
+        hideSecondConfirm()
         setStatus(status, lockErrorMessage(err, 'ورود ناموفق'), 'error')
       }
     }

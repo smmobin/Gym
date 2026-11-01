@@ -2164,6 +2164,11 @@ label > .date-picker { width: 100%; }
   text-decoration: none;
   display: inline-block;
 }
+/* .btn { display } must not override the HTML hidden attribute */
+.btn[hidden],
+button.btn[hidden] {
+  display: none !important;
+}
 .btn.ghost {
   background: transparent;
   color: var(--text);
