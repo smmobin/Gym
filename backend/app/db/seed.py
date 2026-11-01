@@ -42,6 +42,7 @@ from app.models import (
     Membership,
     MembershipPlan,
     MembershipStatus,
+    MemberTestimonial,
     Payment,
     PaymentMethod,
     PaymentStatus,
@@ -84,6 +85,7 @@ def clear_domain_data(session: Session) -> None:
         MembershipPlan,
         Expense,
         TrialLead,
+        MemberTestimonial,
         StaffNotificationRead,
         StaffNotification,
         AthleteNotification,
@@ -159,6 +161,38 @@ def _ensure_gym_settings(session: Session) -> GymSettings:
     session.add(settings)
     session.flush()
     return settings
+
+
+def _get_or_create_testimonial(
+    session: Session,
+    *,
+    author_name: str,
+    body: str,
+    author_meta: str | None,
+    sort_order: int,
+) -> MemberTestimonial:
+    existing = session.scalar(
+        select(MemberTestimonial).where(
+            MemberTestimonial.author_name == author_name,
+            MemberTestimonial.sort_order == sort_order,
+        )
+    )
+    if existing:
+        existing.body = body
+        existing.author_meta = author_meta
+        existing.is_active = True
+        session.add(existing)
+        return existing
+    row = MemberTestimonial(
+        body=body,
+        author_name=author_name,
+        author_meta=author_meta,
+        sort_order=sort_order,
+        is_active=True,
+    )
+    session.add(row)
+    session.flush()
+    return row
 
 
 def _get_or_create_plan(
@@ -1093,6 +1127,28 @@ def seed(session: Session | None = None) -> dict[str, int]:
                 )
             )
 
+        _get_or_create_testimonial(
+            session,
+            author_name="علی رضایی",
+            body="تمدید اشتراک و پیگیری حضور برایم خیلی ساده شده؛ دیگه لازم نیست فقط با منشی هماهنگ کنم.",
+            author_meta="عضو سه‌ماهه",
+            sort_order=10,
+        )
+        _get_or_create_testimonial(
+            session,
+            author_name="سارا محمدی",
+            body="کلاس‌های عصر ظرفیت مشخص دارند و از قبل می‌دانم جا هست یا نه.",
+            author_meta="عضو ماهانه",
+            sort_order=20,
+        )
+        _get_or_create_testimonial(
+            session,
+            author_name="رضا حسینی",
+            body="فضای سالن تمیز است و مربی‌ها دقیق برنامه می‌دهند.",
+            author_meta="عضو شش‌ماهه",
+            sort_order=30,
+        )
+
         session.commit()
 
         # Consistency check for debt logic (raises if seed graph is inconsistent)
@@ -1122,6 +1178,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             "group_classes": 4,
             "trainer_assignments": 3,
             "workout_plans": 1,
+            "testimonials": 3,
             "members_created": sum(1 for c in member_is_new if c),
         }
     except Exception:

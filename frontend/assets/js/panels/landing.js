@@ -2,6 +2,7 @@ import { apiGet } from '../api.js'
 import { enhanceMobileInputs } from '../mobile-input.js'
 import { mountPublicPlans } from '../public-plans.js'
 import { mountPublicSchedule } from '../public-schedule.js'
+import { mountPublicTestimonials } from '../public-testimonials.js'
 import { initThemeToggle } from '../theme.js'
 import { mountTrialPublicForm } from '../trial.js'
 import { showApiDown } from '../ui.js'
@@ -58,6 +59,15 @@ async function main() {
     await mountPublicSchedule(
       /** @type {HTMLElement} */ (scheduleBody),
       /** @type {HTMLElement | null} */ (scheduleStatus),
+    )
+  }
+
+  const testimonialsGrid = document.querySelector('[data-testimonials-grid]')
+  const testimonialsStatus = document.querySelector('[data-testimonials-status]')
+  if (testimonialsGrid) {
+    await mountPublicTestimonials(
+      /** @type {HTMLElement} */ (testimonialsGrid),
+      /** @type {HTMLElement | null} */ (testimonialsStatus),
     )
   }
 

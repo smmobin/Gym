@@ -186,6 +186,8 @@ cd backend
 - کارکنان: `GET/POST /api/v1/staff` ، `PATCH /api/v1/staff/{id}` (بدون `is_active`) — مدیر: منشی+مربی؛ منشی: فقط مربی؛ مربی → ۴۰۳. مسیرهای `POST …/deactivate|activate` و PATCH با `is_active` → ۴۰۳ (میز نمی‌تواند شخص را خاموش/روشن کند)
 - طرح‌ها (عمومی لندینگ): `GET /api/v1/public/membership-plans` — بدون لاگین؛ فقط فعال
 - کلاس‌های گروهی (عمومی لندینگ): `GET /api/v1/public/group-classes` — بدون لاگین؛ فقط فعال و پیش‌رو (`starts_at >= الان`)؛ ظرفیت/مربی برای جدول `#schedule`
+- نظرات اعضا (عمومی لندینگ): `GET /api/v1/public/testimonials` — بدون لاگین؛ فقط فعال
+- نظرات اعضا (میز): `GET/POST/PATCH /api/v1/testimonials` — منشی و مدیر؛ مربی → ۴۰۳؛ UI مدیر: `/manager/#testimonials`
 - طرح‌ها (میز): `GET /api/v1/membership-plans` (فعال؛ `?include_inactive=1` برای مدیریت) ، `POST/PATCH /api/v1/membership-plans` — منشی و مدیر؛ مربی → ۴۰۳
 - UI: `/manager/#staff` ، `/manager/#plans` ، `/receptionist/#staff` ، `/receptionist/#plans`
 - ست رمز ورزشکار از منشی: `/receptionist/#members` (یا مدیر از `/manager/#members`) یا `POST /api/v1/members/{id}/athlete-password`
@@ -405,6 +407,14 @@ endpoint میز (`GET /api/v1/membership-plans`) همچنان فقط desk است
 مدیریت عنوان/زمان/ظرفیت/مربی: پنل منشی یا مدیر → `#classes`. رزرو از لندینگ انجام نمی‌شود؛ دکمه به `/login/` می‌رود.
 
 API: `GET /api/v1/public/group-classes` — بدون لاگین؛ rate-limit سبک روی IP؛ فیلدهای staff-only (مثلاً `trainer_schedule_conflict`) برنمی‌گردد.
+
+### نظر اعضا لندینگ (`#testimonials`)
+
+کارت‌های نقل‌قول صفحهٔ اول از جدول `member_testimonials` می‌آیند (نه HTML ثابت).  
+مدیریت: پنل مدیر → `#testimonials` (ساخت/ویرایش/غیرفعال). حذف دائمی نیست.
+
+API: `GET /api/v1/public/testimonials` — بدون لاگین؛ فقط `is_active=true`؛ مرتب‌سازی با `sort_order`.  
+میز: `GET /api/v1/testimonials?include_inactive=1` ، `POST/PATCH /api/v1/testimonials` — desk؛ مربی → ۴۰۳.
 
 ### فرم عمومی (بدون لاگین)
 

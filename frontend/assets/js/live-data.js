@@ -13,6 +13,7 @@ export const LIVE = {
   ATTENDANCE: 'gym:live:attendance',
   CLASSES: 'gym:live:classes',
   TRIAL: 'gym:live:trial',
+  TESTIMONIALS: 'gym:live:testimonials',
 }
 
 /**

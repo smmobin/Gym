@@ -11,6 +11,7 @@ import { mountReports } from '../reports.js'
 import { mountSettings } from '../settings.js'
 import { mountSmsTemplates } from '../sms-templates.js'
 import { mountStaff } from '../staff.js'
+import { mountTestimonials } from '../testimonials.js'
 import { mountTrainers } from '../trainers.js'
 import { mountTrialLeads } from '../trial.js'
 import { mountWorkouts } from '../workouts.js'
@@ -28,6 +29,7 @@ async function main() {
     checkin: () => mountAttendance(el('mount-attendance'), user),
     billing: () => mountBilling(el('mount-billing'), user),
     plans: () => mountPlans(el('mount-plans'), user),
+    testimonials: () => mountTestimonials(el('mount-testimonials'), user),
     staff: () => mountStaff(el('mount-staff'), user),
     classes: () => mountClasses(el('mount-classes'), user),
     lockers: () => mountLockers(el('mount-lockers'), user),

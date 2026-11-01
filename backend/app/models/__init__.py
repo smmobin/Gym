@@ -28,6 +28,7 @@ from app.models.membership import Membership, MembershipPlan
 from app.models.notification import StaffNotification, StaffNotificationRead
 from app.models.payment import Payment
 from app.models.session import StaffSession
+from app.models.testimonial import MemberTestimonial
 from app.models.trainer import TrainerMemberAssignment
 from app.models.trial_lead import TrialLead
 from app.models.user import User
@@ -56,6 +57,7 @@ __all__ = [
     "Membership",
     "MembershipPlan",
     "MembershipStatus",
+    "MemberTestimonial",
     "Payment",
     "PaymentMethod",
     "PaymentStatus",

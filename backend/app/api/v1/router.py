@@ -17,6 +17,7 @@ from app.api.v1 import (
     notifications,
     sms,
     staff,
+    testimonials,
     trainers,
     trial_leads,
     workout_plans,
@@ -39,6 +40,7 @@ api_router.include_router(trial_leads.router)
 api_router.include_router(guests.router)
 api_router.include_router(group_classes.router)
 api_router.include_router(group_classes.public_router)
+api_router.include_router(testimonials.router)
 api_router.include_router(lockers.router)
 api_router.include_router(staff.router)
 api_router.include_router(trainers.router)
