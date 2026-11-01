@@ -39,9 +39,10 @@ export function mountMembers(root, user) {
           <label>نام *<input name="first_name" required /></label>
           <label>نام خانوادگی *<input name="last_name" required /></label>
           <label>موبایل *<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" required /></label>
+          <label>رمز ورود ورزشکار (اختیاری)<input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="حداقل ۸ کاراکتر" /></label>
           <label class="full">یادداشت<textarea name="notes"></textarea></label>
           <button class="btn" type="submit">ثبت</button>
-          <p class="hint full">برای کمد: بعد از ثبت، در <a href="#billing">مالی</a> طرح با برچسب «شامل کمد» تمدید کنید؛ واگذاری از <a href="#lockers">کمدها</a> است (اجارهٔ جدا در v1 نیست).</p>
+          <p class="hint full">رمز اختیاری است؛ خالی بگذارید اگر فقط ورود با پیامک کافی است. برای کمد: بعد از ثبت، در <a href="#billing">مالی</a> طرح با برچسب «شامل کمد» تمدید کنید؛ واگذاری از <a href="#lockers">کمدها</a> است.</p>
         </form>
       </article>
       <article class="panel">
@@ -186,14 +187,22 @@ export function mountMembers(root, user) {
     setStatus(status, 'در حال ثبت…', 'loading')
     let createdOk = false
     try {
-      await apiPost('/api/v1/members', {
+      const password = String(fd.get('password') || '').trim()
+      /** @type {Record<string, string | null>} */
+      const payload = {
         first_name: String(fd.get('first_name') || '').trim(),
         last_name: String(fd.get('last_name') || '').trim(),
         mobile: String(fd.get('mobile') || '').trim(),
         notes: String(fd.get('notes') || '').trim() || null,
-      })
+      }
+      if (password) payload.password = password
+      await apiPost('/api/v1/members', payload)
       form.reset()
-      setStatus(status, 'عضو ثبت شد.', 'ok')
+      setStatus(
+        status,
+        password ? 'عضو ثبت شد و رمز ورود ورزشکار ست شد.' : 'عضو ثبت شد.',
+        'ok',
+      )
       createdOk = true
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')

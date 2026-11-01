@@ -47,6 +47,10 @@ describe('mountMembers live search / no manual buttons', () => {
     expect(root.querySelector('[data-archive]')).toBeNull()
     expect(root.textContent).not.toContain('آرشیو')
     expect(root.textContent).not.toContain('بازخوانی')
+    const createPw = root.querySelector('[data-create] [name=password]')
+    expect(createPw).toBeTruthy()
+    expect(createPw?.getAttribute('type')).toBe('password')
+    expect(createPw?.hasAttribute('required')).toBe(false)
 
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled())
 

@@ -82,7 +82,7 @@ def list_members(
 def create_member(
     body: MemberCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(*_STAFF_WRITE)),
+    user: User = Depends(require_roles(*_STAFF_WRITE)),
 ) -> MemberOut:
     if member_by_mobile(db, body.mobile):
         raise HTTPException(
@@ -101,7 +101,18 @@ def create_member(
     )
     db.add(member)
     try:
+        db.flush()
+        if body.password:
+            athlete_svc.set_athlete_password(
+                db,
+                user=user,
+                member_id=member.id,
+                password=body.password,
+            )
         db.commit()
+    except athlete_svc.AthleteError as err:
+        db.rollback()
+        raise HTTPException(status_code=err.status_code, detail=err.detail) from err
     except IntegrityError:
         db.rollback()
         raise HTTPException(

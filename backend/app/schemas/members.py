@@ -14,6 +14,8 @@ class MemberCreate(BaseModel):
     mobile: str = Field(min_length=10, max_length=20)
     birth_date: Optional[date] = None
     notes: Optional[str] = Field(default=None, max_length=5000)
+    # Optional athlete login password (desk may leave empty; OTP remains primary).
+    password: Optional[str] = Field(default=None, max_length=128)
 
     @field_validator("first_name", "last_name", "mobile")
     @classmethod
@@ -30,6 +32,18 @@ class MemberCreate(BaseModel):
             return None
         cleaned = value.strip()
         return cleaned or None
+
+    @field_validator("password")
+    @classmethod
+    def optional_athlete_password(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        if len(cleaned) < 8:
+            raise ValueError("رمز باید حداقل ۸ کاراکتر باشد")
+        return cleaned
 
 
 class MemberUpdate(BaseModel):

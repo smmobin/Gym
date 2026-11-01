@@ -122,6 +122,75 @@ def test_create_member_pending_and_next_display_id(client: TestClient) -> None:
     assert body["mobile"] == "09129999099"
 
 
+def test_create_member_with_optional_athlete_password(client: TestClient) -> None:
+    from app.core.security import verify_password
+
+    wipe_and_seed()
+    _login(client, "09120000001")
+    mobile = "09129999123"
+    password = "AthletePass9"
+    response = client.post(
+        "/api/v1/members",
+        json={
+            "first_name": "آیدا",
+            "last_name": "رمزدار",
+            "mobile": mobile,
+            "password": password,
+        },
+    )
+    assert response.status_code == 201, response.text
+    member_id = response.json()["id"]
+
+    db = SessionLocal()
+    try:
+        row = db.get(Member, member_id)
+        assert row is not None
+        assert row.password_hash
+        assert verify_password(password, row.password_hash)
+    finally:
+        db.close()
+
+    client.post("/api/v1/auth/logout")
+    login = client.post(
+        "/api/v1/athlete/auth/login",
+        json={"mobile": mobile, "password": password},
+    )
+    assert login.status_code == 200, login.text
+    assert login.json()["member"]["id"] == member_id
+
+    # Empty / omitted password still allowed (no athlete password hash).
+    _login(client, "09120000002")
+    bare = client.post(
+        "/api/v1/members",
+        json={
+            "first_name": "بدون",
+            "last_name": "رمز",
+            "mobile": "09129999124",
+            "password": "",
+        },
+    )
+    assert bare.status_code == 201, bare.text
+    bare_id = bare.json()["id"]
+    db = SessionLocal()
+    try:
+        row = db.get(Member, bare_id)
+        assert row is not None
+        assert not row.password_hash
+    finally:
+        db.close()
+
+    short = client.post(
+        "/api/v1/members",
+        json={
+            "first_name": "کوتاه",
+            "last_name": "رمز",
+            "mobile": "09129999125",
+            "password": "123",
+        },
+    )
+    assert short.status_code == 422
+
+
 def test_create_duplicate_mobile_conflict(client: TestClient) -> None:
     _login(client, "09120000001")
     response = client.post(
