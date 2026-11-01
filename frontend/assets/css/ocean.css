@@ -2211,6 +2211,14 @@ td { overflow-wrap: anywhere; }
   align-items: center;
   padding: 0.85rem 0;
   border-bottom: 1px solid var(--line);
+  min-width: 0;
+  max-width: 100%;
+}
+.workout > div:first-child,
+.row-item > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 a.row-item {
   color: inherit;
@@ -2220,8 +2228,25 @@ a.row-item:hover h3 {
   color: var(--accent);
 }
 .workout:last-child, .row-item:last-child { border-bottom: none; }
-.workout h3, .row-item h3 { margin: 0; font-size: 0.98rem; }
-.workout p, .row-item p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.84rem; }
+.workout h3, .row-item h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.workout p, .row-item p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  /* Long notes wrap inside the card instead of widening the page */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
 .row-item > em,
 .list .row-item > em,
 .workout > em {
