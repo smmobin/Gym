@@ -7,11 +7,15 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+# Fits ~2 lines next to the Jalali date in the expense list card.
+EXPENSE_NOTE_MAX_LEN = 64
+
+
 class ExpenseCreate(BaseModel):
     category: str = Field(..., min_length=1, max_length=32)
     amount_toman: int = Field(..., ge=0)
     expense_date: date
-    note: Optional[str] = Field(default=None, max_length=2000)
+    note: Optional[str] = Field(default=None, max_length=EXPENSE_NOTE_MAX_LEN)
 
     @field_validator("category")
     @classmethod
@@ -21,6 +25,18 @@ class ExpenseCreate(BaseModel):
             raise ValueError("دسته الزامی است.")
         if len(cleaned) > 32:
             raise ValueError("دسته حداکثر ۳۲ کاراکتر باشد.")
+        return cleaned
+
+    @field_validator("note")
+    @classmethod
+    def note_ok(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        if len(cleaned) > EXPENSE_NOTE_MAX_LEN:
+            raise ValueError(f"یادداشت حداکثر {EXPENSE_NOTE_MAX_LEN} کاراکتر باشد.")
         return cleaned
 
 

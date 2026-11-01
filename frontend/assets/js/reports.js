@@ -58,10 +58,13 @@ export function mountReports(root, user) {
           </label>
           <label>مبلغ (تومان)<input data-money name="amount_toman" inputmode="numeric" required /></label>
           <label>تاریخ<input name="expense_date" type="date" value="${range.to}" required /></label>
-          <label class="full">یادداشت<textarea name="note"></textarea></label>
+          <label class="full">یادداشت
+            <textarea name="note" maxlength="64" rows="2" placeholder="کوتاه؛ در لیست کنار تاریخ دیده می‌شود"></textarea>
+            <span class="hint" data-note-count>۰ / ۶۴</span>
+          </label>
           <button class="btn" type="submit">ثبت</button>
         </form>
-        <p class="hint">از منو انتخاب کنید یا همان‌جا دستهٔ تازه بنویسید؛ بعد از ثبت به لیست اضافه می‌شود.</p>
+        <p class="hint">یادداشت حداکثر ۶۴ کاراکتر است تا در کارت لیست جا شود. از منو دسته را انتخاب کنید یا همان‌جا دستهٔ تازه بنویسید.</p>
       </article>
     </div>
   `
@@ -77,6 +80,19 @@ export function mountReports(root, user) {
     required: true,
   })
   enhanceMoneyInputs(root)
+
+  const noteInput = /** @type {HTMLTextAreaElement | null} */ (
+    root.querySelector('[data-expense] textarea[name=note]')
+  )
+  const noteCount = /** @type {HTMLElement | null} */ (root.querySelector('[data-note-count]'))
+  const NOTE_MAX = 64
+  function syncNoteCount() {
+    if (!noteCount || !noteInput) return
+    const n = [...(noteInput.value || '')].length
+    noteCount.textContent = `${n.toLocaleString('fa-IR')} / ${NOTE_MAX.toLocaleString('fa-IR')}`
+  }
+  noteInput?.addEventListener('input', syncNoteCount)
+  syncNoteCount()
 
   async function refreshCategories() {
     try {
@@ -204,6 +220,7 @@ export function mountReports(root, user) {
       form.reset()
       categoryCombo.clear()
       enhanceMoneyInputs(root)
+      syncNoteCount()
       savedOk = true
     } catch (err) {
       setStatus(status, apiErrorMessage(err, 'ثبت ناموفق'), 'error')

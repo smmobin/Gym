@@ -103,6 +103,35 @@ def test_manager_create_and_list(client: TestClient) -> None:
     assert data["expenses_toman"] >= 77_000
 
 
+def test_expense_note_max_length(client: TestClient) -> None:
+    from app.schemas.expenses import EXPENSE_NOTE_MAX_LEN
+
+    _login(client)
+    too_long = "ن" * (EXPENSE_NOTE_MAX_LEN + 1)
+    res = client.post(
+        "/api/v1/expenses",
+        json={
+            "category": "other",
+            "amount_toman": 1000,
+            "expense_date": str(today_tehran()),
+            "note": too_long,
+        },
+    )
+    assert res.status_code == 422
+
+    ok = client.post(
+        "/api/v1/expenses",
+        json={
+            "category": "other",
+            "amount_toman": 1000,
+            "expense_date": str(today_tehran()),
+            "note": "ن" * EXPENSE_NOTE_MAX_LEN,
+        },
+    )
+    assert ok.status_code == 201, ok.text
+    assert len(ok.json()["note"]) == EXPENSE_NOTE_MAX_LEN
+
+
 def test_expense_categories_defaults_and_custom(client: TestClient) -> None:
     _login(client)
     cats = client.get("/api/v1/expenses/categories")
