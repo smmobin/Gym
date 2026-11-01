@@ -178,6 +178,50 @@ def list_group_classes(
     return [snapshot(db, row) for row in rows]
 
 
+@dataclass
+class PublicClassView:
+    group_class: GroupClass
+    booked_count: int
+    remaining: int
+    trainer_full_name: str | None
+
+
+def list_public_upcoming_classes(db: Session) -> list[PublicClassView]:
+    """Active classes with starts_at >= now — same window as athlete list; no auth."""
+    now = datetime.now(tz=timezone.utc)
+    rows = list(
+        db.scalars(
+            select(GroupClass)
+            .options(joinedload(GroupClass.trainer))
+            .where(
+                GroupClass.is_active.is_(True),
+                GroupClass.starts_at >= now,
+            )
+            .order_by(GroupClass.starts_at.asc())
+        )
+        .unique()
+        .all()
+    )
+    out: list[PublicClassView] = []
+    for row in rows:
+        snap = snapshot(db, row)
+        trainer_name = None
+        if row.trainer is not None:
+            trainer_name = row.trainer.full_name
+        elif row.trainer_user_id is not None:
+            trainer = db.get(User, row.trainer_user_id)
+            trainer_name = trainer.full_name if trainer else None
+        out.append(
+            PublicClassView(
+                group_class=row,
+                booked_count=snap.booked_count,
+                remaining=snap.remaining,
+                trainer_full_name=trainer_name,
+            )
+        )
+    return out
+
+
 def _ensure_no_active_duplicate(
     db: Session,
     *,

@@ -110,9 +110,9 @@
     <section class="section" id="schedule">
       <div class="section-intro reveal">
         <p class="eyebrow">برنامه کلاس‌ها</p>
-        <h2>پیش‌نمایش هفته جاری</h2>
-        <p>ظرفیت‌ها نمونه هستند و رزرو واقعی هنوز متصل نیست.</p>
+        <h2>کلاس‌های پیش‌رو</h2>
       </div>
+      <p class="schedule-status hint" data-schedule-status hidden></p>
       <div class="schedule-wrap reveal">
         <table class="schedule">
           <thead>
@@ -125,47 +125,8 @@
               <th></th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td data-label="کلاس">فانکشنال</td>
-              <td data-label="روز">شنبه</td>
-              <td data-label="ساعت">۰۷:۰۰</td>
-              <td data-label="مربی">سارا محمدی</td>
-              <td data-label="ظرفیت"><span class="badge ok">۸ از ۱۲</span></td>
-              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
-            </tr>
-            <tr>
-              <td data-label="کلاس">یوگا</td>
-              <td data-label="روز">یکشنبه</td>
-              <td data-label="ساعت">۱۸:۳۰</td>
-              <td data-label="مربی">نگار احمدی</td>
-              <td data-label="ظرفیت"><span class="badge warn">۲ از ۱۰</span></td>
-              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
-            </tr>
-            <tr>
-              <td data-label="کلاس">TRX</td>
-              <td data-label="روز">دوشنبه</td>
-              <td data-label="ساعت">۱۹:۰۰</td>
-              <td data-label="مربی">محمد کریمی</td>
-              <td data-label="ظرفیت"><span class="badge ok">۵ از ۱۲</span></td>
-              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
-            </tr>
-            <tr>
-              <td data-label="کلاس">هوازی</td>
-              <td data-label="روز">چهارشنبه</td>
-              <td data-label="ساعت">۱۷:۰۰</td>
-              <td data-label="مربی">سارا محمدی</td>
-              <td data-label="ظرفیت"><span class="badge danger">تکمیل</span></td>
-              <td data-label=""><button class="btn ghost small" type="button" disabled>لیست انتظار</button></td>
-            </tr>
-            <tr>
-              <td data-label="کلاس">قدرت مبتدی</td>
-              <td data-label="روز">پنجشنبه</td>
-              <td data-label="ساعت">۲۰:۰۰</td>
-              <td data-label="مربی">علی رضایی</td>
-              <td data-label="ظرفیت"><span class="badge ok">۹ از ۱۴</span></td>
-              <td data-label=""><button class="btn small" type="button">رزرو نمایشی</button></td>
-            </tr>
+          <tbody data-schedule-body aria-live="polite">
+            <tr data-schedule-loading><td colspan="6"><p class="hint">در حال بارگذاری کلاس‌ها…</p></td></tr>
           </tbody>
         </table>
       </div>

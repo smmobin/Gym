@@ -129,6 +129,29 @@ export function formatDateTimeShort(iso) {
 }
 
 /**
+ * Jalali weekday name for a date/datetime (شنبه … جمعه).
+ * @param {string | number | Date | null | undefined} value
+ */
+export function formatJalaliWeekday(value) {
+  const p = partsFromValue(value)
+  if (!p) return '—'
+  const d = new Date(p.y, p.m - 1, p.d)
+  return JALALI_WEEKDAY_NAMES[(d.getDay() + 1) % 7]
+}
+
+/**
+ * Clock time only, Persian digits (مثلاً ۰۷:۳۰).
+ * @param {string | number | Date | null | undefined} value
+ */
+export function formatTimeFa(value) {
+  const p = partsFromValue(value)
+  if (!p || !p.hasTime) return '—'
+  return toFaDigits(
+    `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`,
+  )
+}
+
+/**
  * Topbar chip: «امروز پنجشنبه ۱ آبان ۱۴۰۵»
  * @param {Date} [now]
  */

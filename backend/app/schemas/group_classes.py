@@ -69,6 +69,25 @@ class GroupClassListResponse(BaseModel):
     total: int
 
 
+class PublicGroupClassOut(BaseModel):
+    """Landing schedule row — no staff-only fields (conflict, is_active, trainer id)."""
+
+    id: int
+    title: str
+    trainer_full_name: Optional[str] = None
+    capacity: int
+    booked_count: int
+    remaining: int
+    gender_label: str
+    starts_at: datetime
+    ends_at: datetime
+
+
+class PublicGroupClassListResponse(BaseModel):
+    items: list[PublicGroupClassOut]
+    total: int
+
+
 class GroupClassMutationResponse(BaseModel):
     group_class: GroupClassOut
     trainer_schedule_conflict: bool = False

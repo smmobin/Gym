@@ -1,6 +1,7 @@
 import { apiGet } from '../api.js'
 import { enhanceMobileInputs } from '../mobile-input.js'
 import { mountPublicPlans } from '../public-plans.js'
+import { mountPublicSchedule } from '../public-schedule.js'
 import { initThemeToggle } from '../theme.js'
 import { mountTrialPublicForm } from '../trial.js'
 import { showApiDown } from '../ui.js'
@@ -48,6 +49,15 @@ async function main() {
     await mountPublicPlans(
       /** @type {HTMLElement} */ (plansGrid),
       /** @type {HTMLElement | null} */ (plansStatus),
+    )
+  }
+
+  const scheduleBody = document.querySelector('[data-schedule-body]')
+  const scheduleStatus = document.querySelector('[data-schedule-status]')
+  if (scheduleBody) {
+    await mountPublicSchedule(
+      /** @type {HTMLElement} */ (scheduleBody),
+      /** @type {HTMLElement | null} */ (scheduleStatus),
     )
   }
 

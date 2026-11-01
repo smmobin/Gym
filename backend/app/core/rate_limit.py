@@ -49,3 +49,6 @@ trial_lead_rate_limiter = SlidingWindowRateLimiter(max_attempts=15, window_secon
 
 # Public landing plans list (by client IP); tests may call reset.
 public_plans_rate_limiter = SlidingWindowRateLimiter(max_attempts=60, window_seconds=60)
+
+# Public landing group-classes list (by client IP); tests may call reset.
+public_group_classes_rate_limiter = SlidingWindowRateLimiter(max_attempts=60, window_seconds=60)

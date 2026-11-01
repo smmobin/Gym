@@ -185,6 +185,7 @@ cd backend
 - منشی فقط مربی‌هایی که می‌سازد/مدیریت می‌کند را از `/receptionist/#staff` ویرایش/رمز می‌کند
 - کارکنان: `GET/POST /api/v1/staff` ، `PATCH /api/v1/staff/{id}` (بدون `is_active`) — مدیر: منشی+مربی؛ منشی: فقط مربی؛ مربی → ۴۰۳. مسیرهای `POST …/deactivate|activate` و PATCH با `is_active` → ۴۰۳ (میز نمی‌تواند شخص را خاموش/روشن کند)
 - طرح‌ها (عمومی لندینگ): `GET /api/v1/public/membership-plans` — بدون لاگین؛ فقط فعال
+- کلاس‌های گروهی (عمومی لندینگ): `GET /api/v1/public/group-classes` — بدون لاگین؛ فقط فعال و پیش‌رو (`starts_at >= الان`)؛ ظرفیت/مربی برای جدول `#schedule`
 - طرح‌ها (میز): `GET /api/v1/membership-plans` (فعال؛ `?include_inactive=1` برای مدیریت) ، `POST/PATCH /api/v1/membership-plans` — منشی و مدیر؛ مربی → ۴۰۳
 - UI: `/manager/#staff` ، `/manager/#plans` ، `/receptionist/#staff` ، `/receptionist/#plans`
 - ست رمز ورزشکار از منشی: `/receptionist/#members` (یا مدیر از `/manager/#members`) یا `POST /api/v1/members/{id}/athlete-password`
@@ -397,6 +398,13 @@ API: `GET/POST /api/v1/expenses?from=&to=` ، `GET /api/v1/reports/profit?from=&
 
 API: `GET /api/v1/public/membership-plans` — بدون لاگین؛ فقط `is_active=true`؛ rate-limit سبک روی IP.  
 endpoint میز (`GET /api/v1/membership-plans`) همچنان فقط desk است و `include_inactive` را به اینترنت باز نمی‌کند.
+
+### برنامه کلاس لندینگ (`#schedule`)
+
+جدول کلاس‌های صفحهٔ اول از کلاس‌های **فعال پیش‌رو** دیتابیس می‌آید (همان پنجرهٔ لیست ورزشکار؛ کلاس گذشته مثل کراس‌فیت seed دیده نمی‌شود).  
+مدیریت عنوان/زمان/ظرفیت/مربی: پنل منشی یا مدیر → `#classes`. رزرو از لندینگ انجام نمی‌شود؛ دکمه به `/login/` می‌رود.
+
+API: `GET /api/v1/public/group-classes` — بدون لاگین؛ rate-limit سبک روی IP؛ فیلدهای staff-only (مثلاً `trainer_schedule_conflict`) برنمی‌گردد.
 
 ### فرم عمومی (بدون لاگین)
 

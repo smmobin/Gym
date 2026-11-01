@@ -46,4 +46,15 @@ describe('public UI has no demo seed accounts', () => {
     expect(html).toContain('aria-label="ورود به سامانه"')
     expect(html).toContain('aria-label="رزرو جلسه آزمایشی"')
   })
+
+  it('landing schedule is API-driven, not static marketing rows', () => {
+    const html = read('index.html')
+    expect(html).toContain('data-schedule-body')
+    expect(html).not.toContain('رزرو نمایشی')
+    expect(html).not.toContain('ظرفیت‌ها نمونه هستند')
+    const schedule = html.match(/id=["']schedule["'][\s\S]*?<\/section>/)?.[0] || ''
+    expect(schedule).toContain('data-schedule-body')
+    expect(schedule).not.toContain('<button')
+    expect(schedule).not.toMatch(/data-label=["']کلاس["']>\s*یوگا\s*</)
+  })
 })

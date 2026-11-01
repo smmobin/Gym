@@ -5,11 +5,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_roles
 from app.core.db import get_db
+from app.core.rate_limit import public_group_classes_rate_limiter
 from app.models.enums import StaffRole
 from app.models.group_class import ClassBooking
 from app.models.user import User
@@ -25,10 +26,13 @@ from app.schemas.group_classes import (
     GroupClassMutationResponse,
     GroupClassOut,
     GroupClassUpdate,
+    PublicGroupClassListResponse,
+    PublicGroupClassOut,
 )
 from app.services import group_classes as gc_svc
 
 router = APIRouter(prefix="/group-classes", tags=["group-classes"])
+public_router = APIRouter(tags=["group-classes"])
 
 _STAFF_ALL = (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value, StaffRole.TRAINER.value)
 _DESK = (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value)
@@ -73,6 +77,43 @@ def _booking_out(booking: ClassBooking) -> BookingOut:
         status=booking.status,
         created_at=booking.created_at,
         cancelled_at=booking.cancelled_at,
+    )
+
+
+def _public_class_out(view: gc_svc.PublicClassView) -> PublicGroupClassOut:
+    row = view.group_class
+    return PublicGroupClassOut(
+        id=row.id,
+        title=row.title,
+        trainer_full_name=view.trainer_full_name,
+        capacity=row.capacity,
+        booked_count=view.booked_count,
+        remaining=view.remaining,
+        gender_label=row.gender_label,
+        starts_at=row.starts_at,
+        ends_at=row.ends_at,
+    )
+
+
+@public_router.get(
+    "/public/group-classes",
+    response_model=PublicGroupClassListResponse,
+)
+def list_public_classes(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> PublicGroupClassListResponse:
+    """No auth. Active upcoming classes for landing schedule."""
+    client = request.client.host if request.client else "unknown"
+    if not public_group_classes_rate_limiter.is_allowed(client):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="تعداد درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید.",
+        )
+    items = gc_svc.list_public_upcoming_classes(db)
+    return PublicGroupClassListResponse(
+        items=[_public_class_out(v) for v in items],
+        total=len(items),
     )
 
 
