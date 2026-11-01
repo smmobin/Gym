@@ -197,9 +197,10 @@ def test_book_until_full_then_block_then_cancel_frees(client: TestClient) -> Non
     assert created.status_code == 201
     class_id = created.json()["group_class"]["id"]
 
-    m1 = _member_id("M-1001")
-    m2 = _member_id("M-1002")
-    m3 = _member_id("M-1004")
+    # Need active session packs (duration-only members cannot book group classes).
+    m1 = _member_id("M-1001")  # علی — ۱۲ جلسه مربی
+    m2 = _member_id("M-1006")  # مریم — ۸ جلسه کلاس
+    m3 = _member_id("M-1004")  # نگار — بسته مربی
 
     b1 = client.post(f"/api/v1/group-classes/{class_id}/bookings", json={"member_id": m1})
     assert b1.status_code == 201
@@ -231,6 +232,41 @@ def test_book_until_full_then_block_then_cancel_frees(client: TestClient) -> Non
     b3 = client.post(f"/api/v1/group-classes/{class_id}/bookings", json={"member_id": m3})
     assert b3.status_code == 201
     assert b3.json()["remaining"] == 0
+
+
+def test_book_requires_active_session_pack(client: TestClient) -> None:
+    """Duration-only membership (Sara quarter) cannot book a group class."""
+    _login(client)
+    starts, ends = _future_range(135)
+    created = client.post(
+        "/api/v1/group-classes",
+        json={
+            "title": "نیاز به بسته جلسه",
+            "capacity": 5,
+            "gender_label": "mixed",
+            "starts_at": starts,
+            "ends_at": ends,
+        },
+    )
+    assert created.status_code == 201
+    class_id = created.json()["group_class"]["id"]
+    sara = _member_id("M-1002")
+    blocked = client.post(
+        f"/api/v1/group-classes/{class_id}/bookings",
+        json={"member_id": sara},
+    )
+    assert blocked.status_code == 409
+    detail = blocked.json()["detail"]
+    assert isinstance(detail, dict)
+    assert detail["code"] == "no_class_session_pack"
+    assert "جلسه‌ای" in detail["message"]
+
+    maryam = _member_id("M-1006")
+    ok = client.post(
+        f"/api/v1/group-classes/{class_id}/bookings",
+        json={"member_id": maryam},
+    )
+    assert ok.status_code == 201, ok.text
 
 
 def test_duplicate_booking_409(client: TestClient) -> None:
@@ -358,14 +394,15 @@ def test_patch_capacity_below_booked_rejected(client: TestClient) -> None:
         },
     )
     class_id = created.json()["group_class"]["id"]
-    client.post(
+    b1 = client.post(
         f"/api/v1/group-classes/{class_id}/bookings",
         json={"member_id": _member_id("M-1001")},
     )
-    client.post(
+    b2 = client.post(
         f"/api/v1/group-classes/{class_id}/bookings",
-        json={"member_id": _member_id("M-1002")},
+        json={"member_id": _member_id("M-1006")},
     )
+    assert b1.status_code == 201 and b2.status_code == 201
     patched = client.patch(
         f"/api/v1/group-classes/{class_id}",
         json={"capacity": 1},
@@ -411,11 +448,12 @@ def test_rebook_after_cancel(client: TestClient) -> None:
         },
     )
     class_id = created.json()["group_class"]["id"]
-    member_id = _member_id("M-1008")
+    member_id = _member_id("M-1006")  # مریم — بسته کلاس گروهی
     booked = client.post(
         f"/api/v1/group-classes/{class_id}/bookings",
         json={"member_id": member_id},
     )
+    assert booked.status_code == 201, booked.text
     booking_id = booked.json()["booking"]["id"]
     client.post(f"/api/v1/group-classes/{class_id}/bookings/{booking_id}/cancel")
     again = client.post(

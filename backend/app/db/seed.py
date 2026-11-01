@@ -1006,10 +1006,11 @@ def seed(session: Session | None = None) -> dict[str, int]:
             member_id=ali.id,
             status=BookingStatus.BOOKED.value,
         )
+        # Only members with an active session pack may book group classes (desk/athlete gate).
         _ensure_booking(
             session,
             group_class_id=spin.id,
-            member_id=hosein.id,
+            member_id=maryam.id,
             status=BookingStatus.BOOKED.value,
         )
 

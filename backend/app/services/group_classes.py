@@ -368,6 +368,21 @@ def book_member_core(
     if existing is not None and existing.status == BookingStatus.BOOKED.value:
         raise GroupClassError(409, "این عضو قبلاً برای این کلاس رزرو شده است.")
 
+    # Same eligibility as mark attended/no-show: need an active session pack with remaining sessions.
+    # Duration-only gym memberships (e.g. ماهانه / سه‌ماهه) cannot book group classes.
+    session_packs = _session_pack_options(db, member_id)
+    if not session_packs:
+        raise GroupClassError(
+            409,
+            {
+                "code": "no_class_session_pack",
+                "message": (
+                    "برای رزرو کلاس گروهی باید بستهٔ جلسه‌ای فعال با جلسهٔ باقی‌مانده داشته باشد "
+                    "(مثلاً «۸ جلسه کلاس گروهی»). اشتراک فقط مدت‌دار سالن کافی نیست."
+                ),
+            },
+        )
+
     try:
         assert_can_book(db, group_class)
     except ClassFullError as err:
