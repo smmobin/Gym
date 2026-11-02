@@ -143,6 +143,28 @@ def _plan_is_session_pack(plan: MembershipPlan) -> bool:
     return plan.session_count is not None
 
 
+def _pack_kind(plan: MembershipPlan) -> str:
+    """Normalize pack kind; legacy null session packs count as any."""
+    raw = (plan.session_pack_kind or "").strip().lower()
+    if raw in {"class", "pt", "any"}:
+        return raw
+    return "any"
+
+
+def _pack_matches_attendance(plan: MembershipPlan, attendance_type: str) -> bool:
+    """PT packs must not be consumed by class check-in (and vice versa)."""
+    if not _plan_is_session_pack(plan):
+        return False
+    kind = _pack_kind(plan)
+    if kind == "any":
+        return True
+    if attendance_type == AttendanceType.CLASS.value:
+        return kind == "class"
+    if attendance_type == AttendanceType.PT.value:
+        return kind == "pt"
+    return True
+
+
 def select_membership_for_checkin(
     db: Session,
     *,
@@ -156,7 +178,8 @@ def select_membership_for_checkin(
     - optional membership_id wins if valid for today and ACTIVE
     - frozen memberships are never valid for check-in
     - gym → prefer duration plans (no session_count)
-    - class / pt → prefer session packs with sessions_remaining > 0
+    - class → session packs kind class/any with remaining > 0 (not pure PT)
+    - pt → session packs kind pt/any with remaining > 0 (not pure class)
     """
     if membership_id is not None:
         targeted = db.get(Membership, membership_id)
@@ -186,12 +209,15 @@ def select_membership_for_checkin(
         session_packs = [
             m
             for m in candidates
-            if _plan_is_session_pack(m.plan) and (m.sessions_remaining or 0) > 0
+            if m.plan is not None
+            and _pack_matches_attendance(m.plan, attendance_type)
+            and (m.sessions_remaining or 0) > 0
         ]
         if not session_packs:
             raise AttendanceError(
                 409,
-                "بستهٔ جلسه‌ای با جلسهٔ باقی‌مانده برای این نوع ورود یافت نشد.",
+                "بستهٔ جلسه‌ای مناسب این نوع ورود با جلسهٔ باقی‌مانده یافت نشد "
+                "(بستهٔ مربی برای کلاس مصرف نمی‌شود و برعکس).",
                 code="no_sessions",
             )
         # Prefer highest sessions_remaining, then newest end_date
@@ -213,8 +239,14 @@ def select_membership_for_checkin(
 
 def _ensure_sessions_ok(membership: Membership, attendance_type: str) -> Membership:
     if attendance_type in {AttendanceType.PT.value, AttendanceType.CLASS.value}:
-        if not _plan_is_session_pack(membership.plan):
+        if membership.plan is None or not _plan_is_session_pack(membership.plan):
             raise AttendanceError(409, "این عضویت بستهٔ جلسه‌ای نیست.")
+        if not _pack_matches_attendance(membership.plan, attendance_type):
+            raise AttendanceError(
+                409,
+                "این بسته برای این نوع ورود مناسب نیست (مربی ≠ کلاس گروهی).",
+                code="wrong_pack_kind",
+            )
         if (membership.sessions_remaining or 0) <= 0:
             raise AttendanceError(409, "جلسه‌ای باقی نمانده است.", code="no_sessions")
     return membership

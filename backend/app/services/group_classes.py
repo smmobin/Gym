@@ -416,10 +416,31 @@ def book_member_core(
     if existing is not None and existing.status == BookingStatus.BOOKED.value:
         raise GroupClassError(409, "این عضو قبلاً برای این کلاس رزرو شده است.")
 
-    # Same eligibility as mark attended/no-show: need an active session pack with remaining sessions.
+    # Need an active session pack with remaining sessions (class/any preferred; PT also accepted).
     # Duration-only gym memberships (e.g. ماهانه / سه‌ماهه) cannot book group classes.
     session_packs = _session_pack_options(db, member_id)
     if not session_packs:
+        depleted = _depleted_session_packs(db, member_id)
+        if depleted:
+            names = "، ".join(
+                sorted(
+                    {
+                        (m.plan.name if m.plan is not None else "بسته جلسه")
+                        for m in depleted
+                    }
+                )
+            )
+            raise GroupClassError(
+                409,
+                {
+                    "code": "session_pack_exhausted",
+                    "message": (
+                        f"بستهٔ جلسه‌ای فعال دارد ({names}) ولی جلسهٔ باقی‌مانده ۰ است. "
+                        "از مالی جلسه شارژ/تمدید کنید یا بستهٔ کلاس گروهی جدید بسازید. "
+                        "نام طرح (مثلاً ۱۲ جلسه) به‌معنی باقی‌مانده نیست."
+                    ),
+                },
+            )
         raise GroupClassError(
             409,
             {
@@ -557,9 +578,9 @@ def _class_related_attendance(
     return db.scalar(stmt)
 
 
-def _session_pack_options(db: Session, member_id: int) -> list[Membership]:
+def _active_window_memberships(db: Session, member_id: int) -> list[Membership]:
     today = today_tehran()
-    rows = list(
+    return list(
         db.scalars(
             select(Membership)
             .options(joinedload(Membership.plan))
@@ -573,12 +594,27 @@ def _session_pack_options(db: Session, member_id: int) -> list[Membership]:
         .unique()
         .all()
     )
+
+
+def _session_pack_options(db: Session, member_id: int) -> list[Membership]:
+    rows = _active_window_memberships(db, member_id)
     return [
         m
         for m in rows
         if m.plan is not None
         and m.plan.session_count is not None
         and (m.sessions_remaining or 0) > 0
+    ]
+
+
+def _depleted_session_packs(db: Session, member_id: int) -> list[Membership]:
+    rows = _active_window_memberships(db, member_id)
+    return [
+        m
+        for m in rows
+        if m.plan is not None
+        and m.plan.session_count is not None
+        and (m.sessions_remaining or 0) <= 0
     ]
 
 

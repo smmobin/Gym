@@ -48,6 +48,8 @@ class MembershipPlan(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     duration_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     session_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # When session_count is set: class | pt | any. Null → treat as any (legacy).
+    session_pack_kind: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     base_price_toman: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     includes_locker: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

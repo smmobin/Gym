@@ -239,7 +239,8 @@ API: `GET/POST /api/v1/members` ، `GET/PATCH /api/v1/members/{id}` — `POST �
 API: `POST /api/v1/attendances/check-in` ، `POST /api/v1/attendances/{id}/check-out` ، `GET /api/v1/attendances/today`
 
 **روز تقویمی:** `Asia/Tehran`.  
-**انتخاب عضویت:** اگر `membership_id` ندهید — برای `gym` اولویت با بستهٔ مدت‌دار (بدون session)، برای `class`/`pt` بستهٔ جلسه‌ای با `sessions_remaining > 0`.  
+**انتخاب عضویت:** اگر `membership_id` ندهید — برای `gym` اولویت با بستهٔ مدت‌دار (بدون session)، برای `class`/`pt` بستهٔ جلسه‌ای با `sessions_remaining > 0` و `session_pack_kind` مناسب (`class` برای کلاس، `pt` برای مربی؛ `any` برای هر دو). بستهٔ مربی با ورود کلاس کم نمی‌شود و برعکس.  
+**رزرو کلاس:** اگر بستهٔ جلسه‌ای فعال با باقی‌ماندهٔ ۰ باشد، خطای `session_pack_exhausted` (نه «بسته ندارد»)؛ نام طرح ≠ تعداد باقی‌مانده.  
 **خروج خودکار:** کرون جدا نیست؛ هنگام check-in و لیست امروز، حضور باز روز قبل (یا بعد از `day_end_time` تنظیمات) بسته می‌شود.
 
 ## مالی و تمدید

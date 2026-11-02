@@ -12,7 +12,7 @@ from app.core.db import SessionLocal
 from app.core.rate_limit import login_rate_limiter
 from app.db.seed import DEV_STAFF_PASSWORD, wipe_and_seed
 from app.main import app
-from app.models import ClassBooking, Member, User
+from app.models import ClassBooking, Member, Membership, User
 from app.models.enums import BookingStatus
 
 
@@ -267,6 +267,60 @@ def test_book_requires_active_session_pack(client: TestClient) -> None:
         json={"member_id": maryam},
     )
     assert ok.status_code == 201, ok.text
+
+
+def test_book_exhausted_session_pack_message(client: TestClient) -> None:
+    """Active pack with remaining 0 gets a distinct exhausted error (not «no pack»)."""
+    _login(client)
+    negar = _member_id("M-1004")
+    db = SessionLocal()
+    try:
+        row = db.scalar(
+            select(Membership).where(
+                Membership.member_id == negar,
+                Membership.status == "active",
+            )
+        )
+        assert row is not None
+        prev = row.sessions_remaining
+        row.sessions_remaining = 0
+        db.commit()
+        mid = row.id
+    finally:
+        db.close()
+
+    try:
+        starts, ends = _future_range(142)
+        created = client.post(
+            "/api/v1/group-classes",
+            json={
+                "title": "بسته صفر جلسه",
+                "capacity": 5,
+                "gender_label": "mixed",
+                "starts_at": starts,
+                "ends_at": ends,
+            },
+        )
+        assert created.status_code == 201
+        class_id = created.json()["group_class"]["id"]
+        blocked = client.post(
+            f"/api/v1/group-classes/{class_id}/bookings",
+            json={"member_id": negar},
+        )
+        assert blocked.status_code == 409
+        detail = blocked.json()["detail"]
+        assert isinstance(detail, dict)
+        assert detail["code"] == "session_pack_exhausted"
+        assert "۰" in detail["message"] or "0" in detail["message"]
+    finally:
+        db = SessionLocal()
+        try:
+            row = db.get(Membership, mid)
+            if row is not None:
+                row.sessions_remaining = prev
+                db.commit()
+        finally:
+            db.close()
 
 
 def test_duplicate_booking_409(client: TestClient) -> None:

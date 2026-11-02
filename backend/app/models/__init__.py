@@ -13,6 +13,7 @@ from app.models.enums import (
     MembershipStatus,
     PaymentMethod,
     PaymentStatus,
+    SessionPackKind,
     StaffRole,
     TrialLeadStatus,
 )
@@ -61,6 +62,7 @@ __all__ = [
     "Payment",
     "PaymentMethod",
     "PaymentStatus",
+    "SessionPackKind",
     "StaffNotification",
     "StaffNotificationRead",
     "StaffRole",

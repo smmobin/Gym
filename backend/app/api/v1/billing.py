@@ -143,6 +143,7 @@ def create_plan(
             description=body.description,
             duration_days=body.duration_days,
             session_count=body.session_count,
+            session_pack_kind=body.session_pack_kind,
             base_price_toman=body.base_price_toman,
             includes_locker=body.includes_locker,
             is_active=body.is_active,
@@ -166,6 +167,7 @@ def update_plan(
     data = body.model_dump(exclude_unset=True)
     clear_duration = bool(data.pop("clear_duration_days", False))
     clear_sessions = bool(data.pop("clear_session_count", False))
+    clear_kind = bool(data.pop("clear_session_pack_kind", False))
     try:
         plan = billing_svc.update_plan(
             db,
@@ -173,6 +175,7 @@ def update_plan(
             plan_id=plan_id,
             clear_duration_days=clear_duration,
             clear_session_count=clear_sessions,
+            clear_session_pack_kind=clear_kind,
             **data,
         )
         db.commit()

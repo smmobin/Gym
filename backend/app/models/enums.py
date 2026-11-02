@@ -51,6 +51,14 @@ class AttendanceType(StrEnum):
     PT = "pt"
 
 
+class SessionPackKind(StrEnum):
+    """Kind of session pack (only meaningful when plan.session_count is set)."""
+
+    CLASS = "class"
+    PT = "pt"
+    ANY = "any"
+
+
 class GenderLabel(StrEnum):
     """Display-only class label; not used to reject bookings."""
 

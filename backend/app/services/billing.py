@@ -126,6 +126,7 @@ def create_plan(
     base_price_toman: int,
     includes_locker: bool,
     is_active: bool = True,
+    session_pack_kind: str | None = None,
 ) -> MembershipPlan:
     ensure_desk_staff(user)
     if base_price_toman < 0:
@@ -136,12 +137,16 @@ def create_plan(
         raise BillingError(422, "مدت طرح باید بزرگ‌تر از صفر باشد.")
     if session_count is not None and session_count <= 0:
         raise BillingError(422, "تعداد جلسه باید بزرگ‌تر از صفر باشد.")
+    kind = None
+    if session_count is not None:
+        kind = session_pack_kind or "any"
 
     plan = MembershipPlan(
         name=name,
         description=description,
         duration_days=duration_days,
         session_count=session_count,
+        session_pack_kind=kind,
         base_price_toman=base_price_toman,
         includes_locker=includes_locker,
         is_active=is_active,
@@ -159,6 +164,7 @@ def create_plan(
             "name": name,
             "duration_days": duration_days,
             "session_count": session_count,
+            "session_pack_kind": kind,
             "base_price_toman": base_price_toman,
             "includes_locker": includes_locker,
             "is_active": is_active,
@@ -179,8 +185,10 @@ def update_plan(
     base_price_toman: int | None = None,
     includes_locker: bool | None = None,
     is_active: bool | None = None,
+    session_pack_kind: str | None = None,
     clear_duration_days: bool = False,
     clear_session_count: bool = False,
+    clear_session_pack_kind: bool = False,
 ) -> MembershipPlan:
     """Update plan fields. Changing base_price does NOT rewrite past memberships/payments."""
     ensure_desk_staff(user)
@@ -200,12 +208,21 @@ def update_plan(
         plan.duration_days = duration_days
     if clear_session_count:
         plan.session_count = None
+        plan.session_pack_kind = None
     elif session_count is not None:
         if session_count <= 0:
             raise BillingError(422, "تعداد جلسه باید بزرگ‌تر از صفر باشد.")
         plan.session_count = session_count
     if plan.duration_days is None and plan.session_count is None:
         raise BillingError(422, "حداقل یکی از مدت (روز) یا تعداد جلسه باید >۰ باشد.")
+    if clear_session_pack_kind:
+        plan.session_pack_kind = None
+    elif session_pack_kind is not None:
+        plan.session_pack_kind = session_pack_kind
+    if plan.session_count is not None and plan.session_pack_kind is None:
+        plan.session_pack_kind = "any"
+    if plan.session_count is None:
+        plan.session_pack_kind = None
     if base_price_toman is not None:
         if base_price_toman < 0:
             raise BillingError(422, "قیمت پایه نمی‌تواند منفی باشد.")
@@ -227,6 +244,7 @@ def update_plan(
             "name": plan.name,
             "duration_days": plan.duration_days,
             "session_count": plan.session_count,
+            "session_pack_kind": plan.session_pack_kind,
             "base_price_toman": plan.base_price_toman,
             "includes_locker": plan.includes_locker,
             "is_active": plan.is_active,

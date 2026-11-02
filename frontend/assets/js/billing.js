@@ -158,6 +158,7 @@ export function mountBilling(root, user) {
             return `<div class="row-item"><div>
           <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
           <p>${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)} · مبلغ توافقی ${formatToman(m.agreed_amount_toman)} · ${membershipStatusLabelFa(m.status)}
+          ${m.sessions_remaining != null ? ` · جلسه باقی‌مانده: ${Number(m.sessions_remaining).toLocaleString('fa-IR')}` : ''}
           ${m.freeze_ends_at ? ` · توقف تا ${formatJalaliDate(m.freeze_ends_at)}` : ''}</p></div>
           <span class="badge">${membershipStatusLabelFa(m.status)}</span>${lockerBadge}</div>`
           })

@@ -204,12 +204,17 @@ def _get_or_create_plan(
     session_count: int | None,
     base_price_toman: int,
     includes_locker: bool,
+    session_pack_kind: str | None = None,
 ) -> MembershipPlan:
+    kind = session_pack_kind if session_count is not None else None
+    if session_count is not None and kind is None:
+        kind = "any"
     existing = session.scalar(select(MembershipPlan).where(MembershipPlan.name == name))
     if existing:
         existing.description = description
         existing.duration_days = duration_days
         existing.session_count = session_count
+        existing.session_pack_kind = kind
         existing.base_price_toman = base_price_toman
         existing.includes_locker = includes_locker
         existing.is_active = True
@@ -220,6 +225,7 @@ def _get_or_create_plan(
         description=description,
         duration_days=duration_days,
         session_count=session_count,
+        session_pack_kind=kind,
         base_price_toman=base_price_toman,
         includes_locker=includes_locker,
         is_active=True,
@@ -490,6 +496,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             session_count=12,
             base_price_toman=3_600_000,
             includes_locker=False,
+            session_pack_kind="pt",
         )
         plan_class = _get_or_create_plan(
             session,
@@ -499,6 +506,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             session_count=8,
             base_price_toman=1_200_000,
             includes_locker=False,
+            session_pack_kind="class",
         )
         plan_guest = _get_or_create_plan(
             session,

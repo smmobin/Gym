@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+SessionPackKindLiteral = Literal["class", "pt", "any"]
 
 
 class MembershipPlanOut(BaseModel):
@@ -14,6 +16,7 @@ class MembershipPlanOut(BaseModel):
     description: Optional[str] = None
     duration_days: Optional[int] = None
     session_count: Optional[int] = None
+    session_pack_kind: Optional[str] = None
     base_price_toman: int
     includes_locker: bool
     is_active: bool
@@ -50,6 +53,7 @@ class MembershipPlanCreateRequest(BaseModel):
     description: Optional[str] = Field(default=None, max_length=5000)
     duration_days: Optional[int] = Field(default=None, ge=1)
     session_count: Optional[int] = Field(default=None, ge=1)
+    session_pack_kind: Optional[SessionPackKindLiteral] = None
     base_price_toman: int = Field(ge=0)
     includes_locker: bool = False
     is_active: bool = True
@@ -74,6 +78,10 @@ class MembershipPlanCreateRequest(BaseModel):
     def need_duration_or_sessions(self) -> MembershipPlanCreateRequest:
         if self.duration_days is None and self.session_count is None:
             raise ValueError("حداقل یکی از مدت (روز) یا تعداد جلسه باید >۰ باشد.")
+        if self.session_count is None:
+            self.session_pack_kind = None
+        elif self.session_pack_kind is None:
+            self.session_pack_kind = "any"
         return self
 
 
@@ -82,11 +90,13 @@ class MembershipPlanUpdateRequest(BaseModel):
     description: Optional[str] = Field(default=None, max_length=5000)
     duration_days: Optional[int] = Field(default=None, ge=1)
     session_count: Optional[int] = Field(default=None, ge=1)
+    session_pack_kind: Optional[SessionPackKindLiteral] = None
     base_price_toman: Optional[int] = Field(default=None, ge=0)
     includes_locker: Optional[bool] = None
     is_active: Optional[bool] = None
     clear_duration_days: bool = False
     clear_session_count: bool = False
+    clear_session_pack_kind: bool = False
 
     @field_validator("name")
     @classmethod
@@ -116,8 +126,10 @@ class MembershipPlanUpdateRequest(BaseModel):
             and self.base_price_toman is None
             and self.includes_locker is None
             and self.is_active is None
+            and self.session_pack_kind is None
             and not self.clear_duration_days
             and not self.clear_session_count
+            and not self.clear_session_pack_kind
         ):
             raise ValueError("حداقل یک فیلد برای ویرایش لازم است.")
         return self
