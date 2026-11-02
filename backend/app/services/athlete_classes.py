@@ -1,8 +1,8 @@
 """
 Athlete self-service for group classes.
 
-List policy (v1): active classes with starts_at >= now (UTC) — upcoming only.
-Past classes (e.g. seed کراس‌فیت) are hidden; later-today classes still appear.
+List policy (v1): active classes with ends_at >= now (UTC) — not yet finished.
+Past sessions (e.g. seed کراس‌فیت) stay hidden; in-progress and later classes appear.
 Booking uses group_classes.book_member_core (same capacity guard as desk).
 """
 
@@ -40,7 +40,7 @@ def list_athlete_classes(db: Session, *, member: Member) -> list[AthleteClassVie
             .options(joinedload(GroupClass.trainer))
             .where(
                 GroupClass.is_active.is_(True),
-                GroupClass.starts_at >= now,
+                GroupClass.ends_at >= now,
             )
             .order_by(GroupClass.starts_at.asc())
         )

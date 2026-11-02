@@ -187,7 +187,11 @@ class PublicClassView:
 
 
 def list_public_upcoming_classes(db: Session) -> list[PublicClassView]:
-    """Active classes with starts_at >= now — same window as athlete list; no auth."""
+    """Active classes not yet finished (ends_at >= now) — landing schedule; no auth.
+
+    Uses ends_at (not starts_at) so a session that already began still appears
+    until it ends — matching desk rows that span today→future end dates.
+    """
     now = datetime.now(tz=timezone.utc)
     rows = list(
         db.scalars(
@@ -195,7 +199,7 @@ def list_public_upcoming_classes(db: Session) -> list[PublicClassView]:
             .options(joinedload(GroupClass.trainer))
             .where(
                 GroupClass.is_active.is_(True),
-                GroupClass.starts_at >= now,
+                GroupClass.ends_at >= now,
             )
             .order_by(GroupClass.starts_at.asc())
         )

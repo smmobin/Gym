@@ -103,7 +103,7 @@ def list_public_classes(
     request: Request,
     db: Session = Depends(get_db),
 ) -> PublicGroupClassListResponse:
-    """No auth. Active upcoming classes for landing schedule."""
+    """No auth. Active not-finished classes (ends_at >= now) for landing schedule."""
     client = request.client.host if request.client else "unknown"
     if not public_group_classes_rate_limiter.is_allowed(client):
         raise HTTPException(

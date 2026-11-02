@@ -313,7 +313,7 @@ def athlete_list_group_classes(
     db: Session = Depends(get_db),
     member: Member = Depends(get_current_athlete),
 ) -> AthleteGroupClassListResponse:
-    """Active upcoming classes (starts_at >= now); includes my booking flag."""
+    """Active not-finished classes (ends_at >= now); includes my booking flag."""
     views = athlete_class_svc.list_athlete_classes(db, member=member)
     items = [
         AthleteGroupClassOut(

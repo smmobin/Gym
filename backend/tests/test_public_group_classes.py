@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +13,7 @@ from app.core.rate_limit import public_group_classes_rate_limiter
 from app.db.seed import wipe_and_seed
 from app.main import app
 from app.models import GroupClass
+from app.models.enums import GenderLabel
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -58,13 +59,49 @@ def test_public_group_classes_only_upcoming_active(client: TestClient) -> None:
     assert "یوگا بانوان" in titles or "اسپینینگ عصر" in titles or "پیلاتس عصر" in titles
 
 
+def test_public_shows_in_progress_until_ends_at(client: TestClient) -> None:
+    """Class that already started but has not ended must still appear on landing."""
+    now = datetime.now(tz=timezone.utc)
+    db = SessionLocal()
+    try:
+        row = GroupClass(
+            title="کلاس در حال برگزاری تست",
+            capacity=8,
+            gender_label=GenderLabel.MIXED.value,
+            starts_at=now - timedelta(hours=1),
+            ends_at=now + timedelta(days=30),
+            is_active=True,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        class_id = row.id
+    finally:
+        db.close()
+
+    try:
+        response = client.get("/api/v1/public/group-classes")
+        assert response.status_code == 200
+        ids = {item["id"] for item in response.json()["items"]}
+        assert class_id in ids
+    finally:
+        db = SessionLocal()
+        try:
+            doomed = db.get(GroupClass, class_id)
+            if doomed is not None:
+                db.delete(doomed)
+                db.commit()
+        finally:
+            db.close()
+
+
 def test_public_group_classes_excludes_inactive(client: TestClient) -> None:
     db = SessionLocal()
     try:
         row = db.scalar(
             select(GroupClass).where(
                 GroupClass.is_active.is_(True),
-                GroupClass.starts_at >= datetime.now(tz=timezone.utc),
+                GroupClass.ends_at >= datetime.now(tz=timezone.utc),
             )
         )
         assert row is not None
