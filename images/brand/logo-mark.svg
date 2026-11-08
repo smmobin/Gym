@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="GYM CONTROL">
+  <title>GYM CONTROL</title>
+  <defs>
+    <linearGradient id="ocean" x1="28" y1="20" x2="228" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3EC7C2"/>
+      <stop offset="0.55" stop-color="#2AA8C4"/>
+      <stop offset="1" stop-color="#1F8FBF"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#ocean)"/>
+  <g
+    fill="none"
+    stroke="#042428"
+    stroke-width="28"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <!-- Open ring + spur = geometric G -->
+    <path d="M178 90 A 56 56 0 1 0 178 166"/>
+    <path d="M124 128 H186"/>
+    <path d="M186 128 V162"/>
+  </g>
+</svg>

@@ -58,6 +58,7 @@ export const NAV_ICON_BY_HASH = {
   guests: 'ticket',
   trial: 'hourglass',
   sms: 'chat',
+  testimonials: 'chat',
   settings: 'gear',
   notif: 'bell',
 }

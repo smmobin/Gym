@@ -333,6 +333,15 @@
 .login-card-head {
   margin-bottom: 1.35rem;
 }
+.login-brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: block;
+  margin: 0 0 0.85rem;
+  box-shadow: 0 0 0 4px var(--accent-dim);
+  object-fit: cover;
+}
 .login-card .eyebrow {
   margin: 0 0 0.55rem;
   color: var(--accent);
