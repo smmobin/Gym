@@ -72,7 +72,7 @@ npm run dev
 
 **تم UI:** پیش‌فرض همیشه **تاریک (Ocean Dark)**. سوئیچ ماه/خورشید در هدر لندینگ و لاگین، و در نوار بالای پنل‌ها (کنار تاریخ/کاربر)، تم روشن را روشن می‌کند. ترجیح در `localStorage` کلید `gym-theme` می‌ماند؛ از `prefers-color-scheme` سیستم برای پیش‌فرض استفاده نمی‌شود.
 
-**لوگوی برند:** mark در `frontend/public/images/brand/logo-mark.svg` (+ PNG هم‌مسیر)؛ favicon در `frontend/public/favicon.svg`.
+**لوگوی برند:** mark فعلی در `frontend/public/images/brand/logo-mark.svg` (+ PNG هم‌مسیر)؛ favicon در `frontend/public/favicon.svg`. پیشنهادهای در انتظار تأیید: `frontend/public/images/brand/proposals/` و صفحهٔ مقایسه `http://127.0.0.1:5173/brand-review/`.
 
 ## ۳) ماکت GitHub Pages (ریشه)
 

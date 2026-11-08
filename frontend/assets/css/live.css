@@ -332,13 +332,14 @@
 }
 .login-card-head {
   margin-bottom: 1.35rem;
+  text-align: center;
 }
 .login-brand-mark {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
   display: block;
-  margin: 0 0 0.85rem;
+  margin: 0 auto 1rem;
   box-shadow: 0 0 0 4px var(--accent-dim);
   object-fit: cover;
 }

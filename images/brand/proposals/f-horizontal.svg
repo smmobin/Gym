@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-label="~Ì4FG'/ F  'ABÌ GYM CONTROL">
+  <defs>
+    <linearGradient id="oceanF" x1="16" y1="16" x2="144" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3EC7C2"/>
+      <stop offset="1" stop-color="#1F8FBF"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="16" width="128" height="128" rx="28" fill="url(#oceanF)"/>
+  <g fill="none" stroke="#042428" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M98 52 A 30 30 0 1 0 98 108"/>
+    <path d="M64 80 H104"/>
+    <path d="M104 80 V100"/>
+  </g>
+  <text x="168" y="78" fill="#E6F3F8" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="1.5">GYM</text>
+  <text x="168" y="122" fill="#3EC7C2" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" letter-spacing="3">CONTROL</text>
+</svg>

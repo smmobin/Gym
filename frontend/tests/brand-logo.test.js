@@ -43,4 +43,29 @@ describe('GYM CONTROL brand logo assets', () => {
     }
     expect(read('login/index.html')).toContain('login-brand-mark')
   })
+
+  it('nav brand is logo-only (no wordmark HTML beside mark)', () => {
+    const landingBrand = read('index.html').match(/class="site-brand"[\s\S]*?<\/a>/)?.[0] || ''
+    expect(landingBrand).toContain(markPath)
+    expect(landingBrand).not.toContain('<strong')
+    expect(landingBrand).not.toContain('<small')
+
+    for (const panel of ['manager', 'receptionist', 'trainer', 'athlete']) {
+      const brand = read(`${panel}/index.html`).match(/class="brand"[\s\S]*?<\/a>/)?.[0] || ''
+      expect(brand, panel).toContain(markPath)
+      expect(brand, panel).not.toContain('<strong')
+      expect(brand, panel).not.toContain('<small')
+    }
+  })
+
+  it('keeps logo proposals available for owner review', () => {
+    const dir = join(root, 'public/images/brand/proposals')
+    expect(existsSync(join(dir, 'a-monogram-gc.png'))).toBe(true)
+    expect(existsSync(join(dir, 'b-dumbbell.png'))).toBe(true)
+    expect(existsSync(join(dir, 'c-shield.png'))).toBe(true)
+    expect(existsSync(join(dir, 'd-horizontal.png'))).toBe(true)
+    expect(existsSync(join(dir, 'e-ring-g.svg'))).toBe(true)
+    expect(existsSync(join(dir, 'f-horizontal.svg'))).toBe(true)
+    expect(read('brand-review/index.html')).toContain('/images/brand/proposals/')
+  })
 })

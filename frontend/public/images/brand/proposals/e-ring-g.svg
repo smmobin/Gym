@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="~Ì4FG'/ E  -DBG H G">
+  <defs>
+    <linearGradient id="oceanE" x1="28" y1="20" x2="228" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3EC7C2"/>
+      <stop offset="1" stop-color="#1F8FBF"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#oceanE)"/>
+  <circle cx="128" cy="128" r="70" fill="none" stroke="#042428" stroke-width="18"/>
+  <path
+    fill="none"
+    stroke="#042428"
+    stroke-width="18"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    d="M150 108 A 36 36 0 1 0 150 148 M118 128 H162"
+  />
+</svg>
