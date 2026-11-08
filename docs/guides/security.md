@@ -196,7 +196,15 @@ HTTPS → SSL Labs + Security Headers + Mozilla Observatory → ZAP baseline ر�
 
 ---
 
-## ۸) ارتباط با بقیهٔ مستندات
+## ۸) چت دستیار بررسی امنیت
+
+برای بازبینی عمیق (authz، API، DB، فایل، audit، ارزیابی مجاز لوکال): یک **چت جدید** باز کن و پرامپت کامل را از اینجا کپی کن:
+
+- [prompts/security-auditor-prompt.md](../prompts/security-auditor-prompt.md)
+
+آن چت فیچر نمی‌سازد؛ گزارش شدت + پیشنهاد رفع (+ پرامپت سازنده) می‌دهد. فقط روی همین پروژه/لوکال خودت.
+
+## ۹) ارتباط با بقیهٔ مستندات
 
 - قوانین کلی و ترتیب کار: [project-rules.md](project-rules.md)
 - تست قبل از push: [testing.md](testing.md)
