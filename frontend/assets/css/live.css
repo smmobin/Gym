@@ -343,6 +343,16 @@
   box-shadow: 0 0 0 4px var(--accent-dim);
   object-fit: cover;
 }
+.pwa-install-hint {
+  margin-top: 1rem;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+.site-footer .pwa-install-hint {
+  flex: 1 0 100%;
+  margin: 0.35rem 0 0;
+  order: 3;
+}
 .login-card .eyebrow {
   margin: 0 0 0.55rem;
   color: var(--accent);

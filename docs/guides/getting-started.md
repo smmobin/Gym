@@ -74,6 +74,21 @@ npm run dev
 
 **لوگوی برند:** mark فعلی در `frontend/public/images/brand/logo-mark.svg` (+ PNG هم‌مسیر)؛ favicon در `frontend/public/favicon.svg`. پیشنهادهای در انتظار تأیید: `frontend/public/images/brand/proposals/` و صفحهٔ مقایسه `http://127.0.0.1:5173/brand-review/`.
 
+### PWA (نصب‌پذیر)
+
+فرانت با `vite-plugin-pwa` نصب‌پذیر است. Service Worker فقط پوستهٔ UI را precache می‌کند؛ **`/api` هرگز کش نمی‌شود** (پول/عضویت/OTP همیشه آنلاین).
+
+تست لوکال Install در کروم دسکتاپ:
+
+```powershell
+cd frontend
+npm run build
+npm run preview
+```
+
+سپس `http://127.0.0.1:4173/` را باز کن → DevTools → Application → Manifest / Service Workers؛ آیکون Install در نوار آدرس. روی گوشی واقعی معمولاً **HTTPS دامنه** لازم است (localhost استثناست).  
+iOS: Share → Add to Home Screen (منوی Install کروم اندروید را ندارد).
+
 ## ۳) ماکت GitHub Pages (ریشه)
 
 HTMLهای ریشه فقط برای نمایش استاتیک روی Pages‌اند و به API وصل نیستند.  

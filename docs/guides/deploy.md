@@ -84,6 +84,8 @@ npm run build
 
 خروجی: `frontend/dist/` — این پوشه را روی هاست استاتیک لیارا (یا nginx) آپلود کن.
 
+**PWA:** بیلد شامل `manifest.webmanifest` و Service Worker است. هاست باید HTTPS باشد تا نصب روی گوشی کار کند؛ SW فقط UI را کش می‌کند و `/api` را NetworkOnly می‌گذارد. جزئیات تست لوکال: [getting-started.md](getting-started.md) بخش PWA.
+
 **توصیهٔ کوکی:** فرانت و API را طوری بچین که مرورگر همان سایت را ببیند (پروکسی `/api` → بک‌اند). آن‌وقت `VITE_API_BASE_URL` خالی می‌ماند و cookie نشست بدون دردسر SameSite کار می‌کند.
 
 ### ۴) دامنه + HTTPS
