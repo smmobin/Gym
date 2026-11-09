@@ -353,6 +353,107 @@
   margin: 0.35rem 0 0;
   order: 3;
 }
+
+/* Soft PWA install prompt (bottom sheet / toast) */
+.pwa-install-banner {
+  position: fixed;
+  z-index: 10060;
+  inset-inline: 1rem;
+  bottom: 1rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "mark copy"
+    "actions actions";
+  gap: 0.75rem 0.9rem;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--panel) 94%, #000 6%);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  box-shadow:
+    0 22px 56px rgba(0, 0, 0, 0.48),
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text);
+  backdrop-filter: blur(12px);
+  transform: translate3d(0, 1.35rem, 0) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.32s ease;
+}
+.pwa-install-banner.is-visible {
+  transform: translate3d(0, 0, 0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.pwa-install-banner.is-leaving {
+  transform: translate3d(0, 1.1rem, 0) scale(0.97);
+  opacity: 0;
+  pointer-events: none;
+}
+.pwa-install-banner__mark {
+  grid-area: mark;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.pwa-install-banner__mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pwa-install-banner__copy {
+  grid-area: copy;
+  min-width: 0;
+  text-align: right;
+}
+.pwa-install-banner__title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.pwa-install-banner__body {
+  margin: 0.28rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.65;
+}
+.pwa-install-banner__actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .pwa-install-banner {
+    inset-inline: auto 1.25rem;
+    bottom: 1.25rem;
+    margin-inline: 0;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "mark copy actions";
+    align-items: center;
+  }
+  .pwa-install-banner__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pwa-install-banner,
+  .pwa-install-banner.is-visible,
+  .pwa-install-banner.is-leaving {
+    transition: opacity 0.12s ease !important;
+    transform: none !important;
+  }
+}
 .login-card .eyebrow {
   margin: 0 0 0.55rem;
   color: var(--accent);

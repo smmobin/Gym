@@ -56,6 +56,16 @@ describe('PWA wiring (manifest + SW security)', () => {
     expect(src).toContain('virtual:pwa-register')
     expect(src).toContain('registerSW')
   })
+
+  it('wires soft install prompt module from pwa-register', () => {
+    const reg = read('assets/js/pwa-register.js')
+    const install = read('assets/js/pwa-install.js')
+    expect(reg).toContain("from './pwa-install.js'")
+    expect(reg).toContain('initPwaInstallPrompt')
+    expect(install).toContain('beforeinstallprompt')
+    expect(install).toContain('pwa-install-banner')
+    expect(read('assets/css/live.css')).toContain('.pwa-install-banner')
+  })
 })
 
 describe('PWA production build artifacts', () => {

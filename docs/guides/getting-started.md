@@ -87,7 +87,8 @@ npm run preview
 ```
 
 سپس `http://127.0.0.1:4173/` را باز کن → DevTools → Application → Manifest / Service Workers؛ آیکون Install در نوار آدرس. روی گوشی واقعی معمولاً **HTTPS دامنه** لازم است (localhost استثناست).  
-iOS: Share → Add to Home Screen (منوی Install کروم اندروید را ندارد).
+بعد از واجدشرایط شدن نصب، یک بنر پایین صفحه («نصب اپ») ظاهر می‌شود؛ رد کردن تا ۱۴ روز دوباره نشان داده نمی‌شود.  
+iOS: بنر راهنما برای Share → Add to Home Screen (منوی Install کروم اندروید را ندارد).
 
 ## ۳) ماکت GitHub Pages (ریشه)
 
