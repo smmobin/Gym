@@ -1,105 +1,84 @@
 # پرامپت مرحلهٔ بعد — برای چت سازنده (Agent)
 
 آخرین به‌روزرسانی: ۱۴۰۴-۰۸-۲۰ (2026-11-10)  
-**وضعیت صف:** برش **Logging + فعالیت مدیر** — اولویت جلوتر از Slice J  
-**مشخصات:** `docs/guides/logging.md`
+**وضعیت صف:** برش **Slice J — مدیر/منشی هم‌زمان مربی (`also_trainer`)**  
+**Logging:** انجام‌شده — دست نزن مگر رگرسیون دیدی
 
 ---
 
 ## پرامپت کامل — کپی در چت سازنده
 
 ```text
-تو Agent توسعهٔ GYM CONTROL هستی. docs را خودت پیدا و بخوان (به‌ویژه guides/logging.md، guides/security.md، guides/project-rules.md §۷ audit، product/business-rules.md، product/roadmap-status.md، guides/testing.md، adr فرانت Ocean Dark MPA). لیست URL از صاحب نخواه.
+تو Agent توسعهٔ GYM CONTROL هستی. docs را خودت پیدا و بخوان (به‌ویژه product/business-rules.md بخش «هم‌زمانی نقش کارکنان»، product/roadmap-status.md، guides/security.md، guides/testing.md، guides/project-rules.md، adr فرانت Ocean Dark MPA). لیست URL از صاحب نخواه.
 
-## هدف این برش
-یک سامانهٔ لاگ یکپارچهٔ پایتون + تکمیل آدیت + بخش «فعالیت سامانه» فقط در پنل مدیر (زیرمجموعهٔ خوانا) + خروجی .log بازهٔ تاریخ + تست خودکار. لاگ کامل فایل فقط برای سازنده روی دیسک — نه dump کامل در UI مدیر.
+## هدف
+پشتیبانی از یک حساب کارکنان که هم‌زمان **مدیر+مربی** یا **منشی+مربی** باشد — یک موبایل، بدون ساختن user دوم. ورود با انتخاب نقش (`acting_role`)؛ مجوز سرور بر اساس نقشِ جلسه‌ای؛ UI کارکنان با گزینهٔ «مربی هم هست».
 
-## سه لایه (قاطی نکن)
+## وضعیت الان (حفره)
+- `users.role` فقط یک مقدار است (manager | receptionist | trainer).
+- `list_identities_for_mobile` فقط یک هویت staff برمی‌گرداند.
+- `staff_sessions` ستون `acting_role` ندارد.
+- authorize معمولاً از `user.role` می‌خواند؛ کلاینت نمی‌تواند نقش دوم را انتخاب کند.
+- UI کارکنان فقط نقش تکی می‌سازد؛ چک‌باکس «مربی هم هست» نیست.
+- فهرست مربیان/واگذاری کلاس فقط `role=trainer` را می‌بیند.
 
-### A) لاگ سیستمی فایل (مخاطب: سازنده)
-- پوشه: `backend/logs/` (از قبل در .gitignore با `logs/` و `*.log` هست؛ اگر لازم تقویت کن، ولی secrets را commit نکن).
-- فایل‌ها:
-  - `access.log` — هر درخواست HTTP به اپ: زمان، method، path (بدون query دارای توکن)، status، مدت ms، scheme (http/https)، client host، `request_id`
-  - `app.log` — رویدادهای عمومی اپ + همان access در سطح INFO در صورت تمایل ساختاریافته
-  - `error.log` — exceptionها با stack trace کامل + request_id
-  - `sensitive.log` — فقط فیلدهای حساسِ مجاز دیباگ (مثلاً موبایل کامل هنگام خطای SMS). هرگز: password، SMS_API_KEY، OTP کامل ۶ رقمی، cookie/session خام، Authorization bearer
-- پیکربندی متمرکز Python logging (dictConfig یا معادل تمیز در ماژول مثلاً `app/core/logging_setup.py`)؛ از startup در `main.py` / lifespan صدا زده شود.
-- سطح لاگ از Settings قابل تنظیم (مثلاً LOG_LEVEL=INFO) — در `.env.example` نه مقدار واقعی محرمانه.
-- Uvicorn/access پیش‌فرض را طوری یکپارچه کن که همان درخواست‌ها در فایل access هم بنشینند (نه فقط کنسول PowerShell). هدف: چیزی که الان فقط در ترمینال دیده می‌شود، در فایل هم بماند.
-- Rotation ساده (مثلاً RotatingFileHandler اندازه/تعداد backup) تا دیسک پر نشود.
-- Middleware FastAPI:
-  - تولید یا پذیرش `X-Request-ID` (UUID)
-  - قرار دادن در contextvars برای logger
-  - برگرداندن هدر `X-Request-ID` در پاسخ
-  - ثبت زمان پاسخ و status
-- Redaction helper مرکزی: قبل از log هر dict/پیام، کلیدهای حساس را بپوشان (`password`, `password_hash`, `api_key`, `token`, `otp`, `code` وقتی OTP است، `authorization`, `cookie`, `secret`, …).
+## قوانین کسب‌وکار (اجباری)
+- مجاز: مدیر+مربی یا منشی+مربی روی یک حساب.
+- ممنوع نسخهٔ اول: مدیر+منشی هم‌زمان روی یک حساب.
+- وقتی با نقش میز (manager/receptionist) وارد شده: دسترسی میز همان نقش؛ APIهای اختصاصی مربی (محدود به شاگردان خودش) باز نمی‌شوند مگر مسیرهایی که از قبل برای مدیر مجاز بود.
+- وقتی با نقش trainer وارد شده: پنل `/trainer/` و محدودیت «فقط شاگردان خودش».
+- ورود: اگر چند هویت → انتخاب نقش؛ بدون اولویت خودکار.
+- مدیر/منشی (نقش میز): فقط رمز. مربی: OTP (+ رمز پشتیبان مثل امروز).
+- موبایل کارکنان یکتاست؛ ساخت حساب دوم با همان موبایل ممنوع.
+- حذف دائمی اشخاص و آرشیو از میز ممنوع (وضعیت فعلی را نشکن).
 
-### B) آدیت دیتابیس (تکمیل)
-جدول `audit_logs` و `write_audit` از قبل هست. شکاف‌ها را ببند — حداقل این actionها (نام‌گذاری پایدار نقطه‌ای مثل بقیه):
-- `auth.login.success` / `auth.login.failure` (staff و athlete؛ در failure رمز ننویس؛ موبایل ماسک در summary OK)
-- `auth.logout`
-- `auth.otp.send` / `auth.otp.verify.success` / `auth.otp.verify.failure` (بدون کد OTP در payload)
-- تغییر طرح/قیمت (اگر الان نیست کامل کن)
-- تنظیمات باشگاه (الان هست — مطمئن شو قبل/بعد بدون رمز)
-- تمدید/پرداخت/برگشت/نقش کارکنان — اگر از قبل هست رگرسیون نشکن؛ فقط پوشش ورود/خروج و موارد گم‌شده را اضافه کن
-- در صورت امکان `request_id` را هم به ردیف آدیت وصل کن اگر ستون جدید لازم است → Alembic migration تمیز؛ وگرنه داخل payload JSONB بگذار — یکی را انتخاب کن و در docs کوتاه بگو.
+## طراحی پیشنهادی (اگر بهتر دیدی بگو ولی رفتار یکی باشد)
+1. ستون بولین `users.also_trainer` (پیش‌فرض false). فقط وقتی `role` برابر manager یا receptionist است معنا دارد؛ برای `role=trainer` نادیده/false بماند.
+2. ستون `staff_sessions.acting_role` (manager|receptionist|trainer) — هنگام login ست شود و در همهٔ `require_roles` / وابستگی‌های auth از **acting_role نشست** استفاده شود نه فقط `users.role`.
+3. `list_identities_for_mobile`: اگر staff فعال و `also_trainer` و role میز → دو هویت staff برگردان (یکی role میز با auth password-only؛ یکی role=trainer با otp+password). اگر فقط trainer یا فقط میز بدون پرچم → مثل امروز یک هویت.
+4. resolve/login: کلاینت `kind=staff` + `role` انتخابی را می‌فرستد؛ سرور چک کند آن role برای آن user واقعاً مجاز است (میز اصلی یا also_trainer).
+5. UI کارکنان (manager؛ و receptionist فقط روی مربی‌ها طبق قواعد فعلی):
+   - وقتی نقش انتخابی manager یا receptionist است: چک‌باکس واضح «مربی هم هست».
+   - ویرایش مدیر موجود: بتواند also_trainer را روشن/خاموش کند (بدون تغییر نقش به trainer خالص مگر مسیر جداگانهٔ آگاهانه — ترجیح: role میز بماند + پرچم).
+   - تبدیل اشتباه به دو user ممنوع.
+6. فهرست مربیان، انتخاب مربی کلاس، وصل شاگرد: userهایی با `role=trainer` **یا** (`also_trainer` و فعال) را شامل شود.
+7. Seed: حداقل یک نمونهٔ واقعی‌نما — مثلاً مدیر seed با `also_trainer=true` و یک منشی با `also_trainer=true` (موبایل ساختگی؛ رمز/OTP مطابق seed فعلی). در لاگین چندهویتی قابل انتخاب باشد.
+8. Audit: `staff.update` وقتی also_trainer عوض شد before/after را بنویسد (بدون رمز).
 
-### C) پنل مدیر — فقط زیرمجموعه (مخاطب: مدیر باشگاه)
-- مسیر UI: `/manager/#activity` با عنوان فارسی مثل «فعالیت سامانه»
-- آیکن outline مثل بقیهٔ ناوبری پنل‌ها (الگوی موجود panel-nav)
-- فقط نقش **manager** (منشی این بخش را نبیند؛ API هم ۴۰۳ برای non-manager)
-- نشان بده:
-  1. ورود/خروج موفق و ناموفق (از آدیت)
-  2. تغییرات قیمت/طرح/عضویت/پرداخت مهم/تنظیمات/نقش کارکنان (از آدیت — فیلتر actionهای مجاز)
-  3. خطاهای مهم سرور: خلاصهٔ ۵xx (و در صورت صلاح‌دید تعداد محدود ۴۰۳/۴۲۹ مشکوک) با زمان + request_id + path — بدون stack کامل و بدون body محرمانه
-- برای (۳): یا جدول سبک DB برای «رویدادهای قابل‌نمایش مدیر» هنگام ۵xx بنویس، یا API که از آدیت+جدول error_events بخواند — فایل خام `error.log` را مستقیم به مرورگر سرو نکن.
-- ظاهر: هم‌سبک Ocean Dark MPA، شیک و خلوت، یک جدول/لیست RTL با فیلتر بازهٔ تاریخ جلالی در UI (مثل بقیهٔ پروژه)، جستجوی ساده روی خلاصه.
-- خروجی: دکمه «خروجی بازه» → دانلود فایل UTF-8 با پسوند `.log` (نه xlsx) شامل همان ردیف‌های فیلترشدهٔ فعالیت مدیر؛ نام فایل مثلاً `gym-activity-YYYYMMDD-YYYYMMDD.log`.
-- Seed: چند ردیف آدیت نمونهٔ واقعی‌نما (بدون PII واقعی) تا مدیر با دیتابیس خالی صفحه را خالی نبیند اگر seed خالی بود؛ اگر seed فعلی آدیت دارد، در صورت نیاز غنی‌تر کن.
+## خارج محدوده
+- مدیر+منشی روی یک حساب
+- بازنویسی کل سیستم نقش‌ها / RBAC عمومی سنگین
+- تغییر سامانهٔ Logging مگر رگرسیون
+- commit `.env` یا secrets
+- HTML ریشهٔ GitHub Pages مگر ضروری نباشد
+- آرشیو/حذف اشخاص از میز
 
-## API پیشنهادی (تحت /api/v1 — نام‌ها را با سبک موجود هماهنگ کن)
-- `GET /api/v1/manager/activity` — query: from, to, q?, cursor/limit — فقط manager
-- `GET /api/v1/manager/activity/export` — همان فیلتر → text/plain یا attachment `.log` — فقط manager
-- هر دو: بدون لاگین ۴۰۱؛ receptionist/trainer/athlete ۴۰۳
-
-## خارج محدوده (نساز)
-- Slice J (also_trainer / مدیر+مربی)
-- نمایش یا API عمومی برای خواندن کل `backend/logs/*.log` از اینترنت
-- Excel/CSV اجباری (فقط .log)
-- تغییر HTML ریشهٔ پروتوتایپ GitHub Pages مگر ضروری نباشد
-- commit کردن `.env` یا هر فایل داخل `backend/logs/`
-- پنل فعالیت برای منشی
-- لاگ کردن هر تغییر hash سمت کلاینت بدون درخواست سرور (عمداً خارج — فقط رویدادهای سرور)
-
-## تست (اجباری قبل از commit)
+## تست (سبز قبل از commit)
 Backend pytest حداقل:
-- middleware: پاسخ دارای `X-Request-ID`؛ دو درخواست id متفاوت
-- redaction: پیام شامل password/api_key لاگ نمی‌شود (caplog یا فایل temp)
-- login failure/success حداقل یک مسیر آدیت می‌نویسد
-- `GET manager/activity` برای manager ۲۰۰؛ برای receptionist ۴۰۳؛ بدون سشن ۴۰۱
-- export بازه یک فایل متنی با content-type مناسب برمی‌گرداند
-Frontend vitest در صورت ماژول JS جدید برای activity (مثل بقیهٔ desk mounts): رندر اولیه / فیلتر نقش اگر منطق کلاینت جداست.
+- user میز + also_trainer → identities دو نقش staff برمی‌گرداند
+- login با role=trainer روی همان user → session.acting_role=trainer؛ دسترسی trainer OK؛ دسترسی PATCH تنظیمات باشگاه (فقط manager) → ۴۰۳
+- login با role=manager روی همان user → acting_role=manager؛ میز OK؛ endpoint فقط-شاگرد-مربی رفتار trainer-only را باز نکند
+- also_trainer=false → نمی‌توان با role=trainer لاگین کرد
+- receptionist نمی‌تواند manager بسازد (رگرسیون)
+- لیست مربیان شامل also_trainer می‌شود
+Frontend vitest: فرم کارکنان چک‌باکس؛ در صورت منطق انتخاب نقش لاگین، پوشش انتخاب دو هویت staff
 
-پوشهٔ تست موقت لاگ را در tmp بگذار تا pytest دیسک پروژه را کثیف نکند.
+Migration Alembic تمیز؛ از پوشهٔ `backend` تست را اجرا کن.
 
 ## Docs
-- `docs/guides/logging.md` را با واقعیت پیاده‌سازی هم‌خوان کن (مسیر فایل‌ها، نام API، actionهای آدیت جدید).
-- `docs/guides/getting-started.md` یک پاراگراف کوتاه: کجا لاگ فایل ببینی.
-- `docs/product/roadmap-status.md` را بعد از سبز شدن تست به‌روز نکن مگر صاحب/مدیر گفته — در این برش اگر سبز شد وضعیت برش Logging را انجام‌شده علامت بزن و بگو Slice J هنوز صف بعدی محصول بزرگ است.
-- اگر قرارداد تست عوض شد: `docs/guides/testing.md` یک خط.
+- roadmap-status: Slice J انجام‌شده
+- business-rules اگر جزئیات پیاده‌سازی نیاز به یک خط هم‌خوانی دارد
+- getting-started: یک خط نحوهٔ تست لاگین مدیر+مربی seed
+- next-coding-prompt را خالی/صف بعدی ننویس مگر مدیر محصول بگوید — فقط وضعیت J را در roadmap درست کن
 
 ## تحویل
-1. تست‌های مرتبط سبز
-2. commit متمرکز + push به origin/main (طبق قانون Gym؛ بدون secrets)
-3. گزارش فارسی به صاحب:
-   - کاملاً OK یا ناقص
-   - مسیر فولدر لاگ سازنده روی دیسک
-   - آدرس UI مدیر `#activity`
-   - یادآوری: لاگ کامل وب ندارد (عمدی)
+تست سبز → commit/push بدون secrets → گزارش فارسی: کاملاً OK یا ناقص + موبایل‌های seed برای تست دستی انتخاب نقش.
 ```
 
 ---
 
-## صف بعدی بعد از این برش
+## یادآوری Logging (انجام‌شده — برای صاحب)
 
-Slice J — مدیر/منشی هم‌زمان مربی (`also_trainer`) — از مدیر محصول پرامپت بگیر.
+- لاگ فایل: `backend/logs/` (بدون URL وب)
+- UI مدیر: `/manager/#activity` + خروجی `.log`
+- جزئیات: `docs/guides/logging.md`

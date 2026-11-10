@@ -16,8 +16,9 @@
 
 ## مرحلهٔ بعد
 
-1. Slice J (نقش ترکیبی) — پرامپت تازه از مدیر محصول  
+1. Slice J (نقش ترکیبی `also_trainer` + `acting_role`) — پرامپت کامل در `prompts/next-coding-prompt.md`  
 2. یا سخت‌کردن دیپلوی HTTPS  
+
 
 ## تصمیم محصولی قفل‌شده (لاگ)
 
