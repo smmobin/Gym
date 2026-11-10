@@ -82,6 +82,64 @@ export function extractRequestIds(text) {
   return ids
 }
 
+const DETAIL_FIELDS = [
+  'entity_type',
+  'entity_id',
+  'request_id',
+  'actor_name',
+  'actor_role',
+  'method',
+  'path',
+  'status_code',
+  'error_type',
+  'summary',
+]
+
+/**
+ * Detail JSON for every precise-activity row. Stored payload wins when it has keys.
+ * @param {any} item
+ * @returns {Record<string, unknown>}
+ */
+export function preciseDetail(item) {
+  const stored = item?.payload
+  if (
+    stored &&
+    typeof stored === 'object' &&
+    !Array.isArray(stored) &&
+    Object.keys(stored).length > 0
+  ) {
+    return stored
+  }
+  /** @type {Record<string, unknown>} */
+  const detail = {
+    action: item?.action || '',
+    source: item?.source || '',
+    category: item?.category || '',
+    outcome: item?.outcome || '',
+  }
+  for (const key of DETAIL_FIELDS) {
+    const value = item?.[key]
+    if (value != null && value !== '') detail[key] = value
+  }
+  return detail
+}
+
+/**
+ * @param {any} item
+ */
+export function precisePayloadMarkup(item) {
+  const json = JSON.stringify(preciseDetail(item), null, 2)
+  return `<pre class="dev-precise-payload">${escapeHtml(json)}</pre>`
+}
+
+/** @param {unknown} value */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 /**
  * @param {{ offset: number, lines: {line:number}[], total_matched: number }} page
  */

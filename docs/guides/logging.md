@@ -67,7 +67,7 @@ API (allowlist فقط `access` / `app` / `error` / `sensitive`؛ `../` رد می
 - `GET /api/v1/dev/logs/files`
 - `GET /api/v1/dev/logs/read?file=access&limit=&offset=&q=&level=&rid=` — حداکثر ۲۰۰۰ خط
 - `GET /api/v1/dev/logs/download?file=access` یا `start_line`/`end_line` برای بازهٔ دیده‌شده
-- `GET /api/v1/dev/logs/activity` — همان رویدادهای `#activity` مدیر، با `action`، `payload` (رمز دوباره `[REDACTED]`) و `request_id` کامل. پنل مدیر همچنان فقط خلاصه است.
+- `GET /api/v1/dev/logs/activity` — همان رویدادهای `#activity` مدیر. در بینندهٔ سازنده **هر ردیف** همیشه JSON جزئیات دارد (payload ذخیره‌شده، یا اگر خالی بود از action/request_id/method/path/… ساخته می‌شود؛ رمز `[REDACTED]`). پنل مدیر همچنان فقط خلاصه است و payload خام نمی‌گیرد.
 
 **روی سرور واقعی از فایل یا SSH بخوانید.** حتی اگر flag اشتباه ست شود، در production-like پنل ۴۰۴ می‌ماند. نشست مدیر باشگاه این API را باز نمی‌کند.
 

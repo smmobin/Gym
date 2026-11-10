@@ -8,6 +8,7 @@ import {
   isTailPage,
   lineLevel,
   olderOffset,
+  precisePayloadMarkup,
   viewerMessage,
   viewerStateFromStatus,
 } from '../dev-logs-logic.js'
@@ -390,10 +391,7 @@ function preciseRow(item) {
   const role = item.actor_role ? ROLE_LABEL[item.actor_role] || item.actor_role : ''
   const actor = [item.actor_name, role].filter(Boolean).join(' · ')
   const cat = CATEGORIES.find(([id]) => id === item.category)?.[1] || item.category
-  const payload =
-    item.payload && typeof item.payload === 'object'
-      ? `<pre class="dev-precise-payload">${escapeHtml(JSON.stringify(item.payload, null, 2))}</pre>`
-      : ''
+  const payload = precisePayloadMarkup(item)
   const entity = [item.entity_type, item.entity_id].filter(Boolean).join(' #')
   const errType = item.error_type ? ` · ${item.error_type}` : ''
   const path = item.path

@@ -189,6 +189,64 @@ def test_precise_activity_includes_payload(client: TestClient, viewer_on: None) 
     assert "SecretPass99" not in str(hit["payload"])
 
 
+def test_precise_activity_synthesizes_detail_without_stored_payload(
+    client: TestClient, viewer_on: None
+) -> None:
+    from app.core.db import SessionLocal
+    from app.models import AuditLog, SystemErrorEvent
+
+    db = SessionLocal()
+    try:
+        db.add(
+            AuditLog(
+                actor_user_id=None,
+                action="auth.logout",
+                entity_type="user",
+                entity_id="3",
+                summary="خروج بدون payload",
+                payload=None,
+                request_id="rid-empty-payload-0001",
+            )
+        )
+        db.add(
+            SystemErrorEvent(
+                request_id="rid-empty-error-0001",
+                method="GET",
+                path="/api/v1/health",
+                status_code=500,
+                error_type="RuntimeError",
+                summary="خطای داخلی",
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    audit = client.get(
+        "/api/v1/dev/logs/activity",
+        params={"q": "rid-empty-payload-0001"},
+        headers=_hdr(),
+    )
+    assert audit.status_code == 200, audit.text
+    row = audit.json()["items"][0]
+    assert isinstance(row["payload"], dict) and row["payload"]
+    assert row["payload"]["action"] == "auth.logout"
+    assert row["payload"]["request_id"] == "rid-empty-payload-0001"
+    assert row["payload"]["entity_type"] == "user"
+
+    error = client.get(
+        "/api/v1/dev/logs/activity",
+        params={"q": "rid-empty-error-0001", "category": "errors"},
+        headers=_hdr(),
+    )
+    assert error.status_code == 200, error.text
+    err = error.json()["items"][0]
+    assert err["payload"]["method"] == "GET"
+    assert err["payload"]["path"] == "/api/v1/health"
+    assert err["payload"]["status_code"] == 500
+    assert err["payload"]["error_type"] == "RuntimeError"
+
+
 def test_manager_session_does_not_open_logs(client: TestClient, viewer_on: None) -> None:
     wipe_and_seed()
     login_rate_limiter.reset()

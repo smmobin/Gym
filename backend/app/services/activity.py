@@ -107,12 +107,40 @@ class ActivityItem:
             "status_code": self.status_code,
         }
 
+    def precise_detail(self) -> dict[str, Any]:
+        """Always a non-empty object for the builder viewer. Manager as_dict stays payload-free."""
+        stored = redact_mapping(self.payload) if isinstance(self.payload, dict) else None
+        if isinstance(stored, dict) and stored:
+            return stored
+        detail: dict[str, Any] = {
+            "action": self.action,
+            "source": self.source,
+            "category": self.category,
+            "outcome": self.outcome,
+        }
+        optional = {
+            "entity_type": self.entity_type,
+            "entity_id": self.entity_id,
+            "request_id": self.request_id,
+            "actor_name": self.actor_name,
+            "actor_role": self.actor_role,
+            "method": self.method,
+            "path": self.path,
+            "status_code": self.status_code,
+            "error_type": self.error_type,
+            "summary": self.summary,
+        }
+        for key, value in optional.items():
+            if value is not None and value != "":
+                detail[key] = value
+        return detail
+
     def as_precise_dict(self) -> dict[str, Any]:
         data = self.as_dict()
         data["entity_type"] = self.entity_type
         data["entity_id"] = self.entity_id
         data["error_type"] = self.error_type
-        data["payload"] = redact_mapping(self.payload) if isinstance(self.payload, dict) else None
+        data["payload"] = self.precise_detail()
         return data
 
 

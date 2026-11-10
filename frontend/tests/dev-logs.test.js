@@ -6,6 +6,8 @@ import {
   isTailPage,
   lineLevel,
   olderOffset,
+  preciseDetail,
+  precisePayloadMarkup,
   viewerMessage,
   viewerStateFromStatus,
 } from '../assets/js/dev-logs-logic.js'
@@ -42,6 +44,25 @@ describe('dev log viewer state', () => {
     expect(olderOffset(900, 400)).toBe(500)
     expect(isTailPage({ offset: 10, lines: [{ line: 1 }, { line: 2 }], total_matched: 12 })).toBe(true)
     expect(isTailPage({ offset: 0, lines: [{ line: 1 }], total_matched: 12 })).toBe(false)
+  })
+
+  it('renders a detail pre even when the stored payload is empty', () => {
+    const item = {
+      action: 'auth.login.failure',
+      source: 'audit',
+      category: 'auth',
+      outcome: 'fail',
+      payload: null,
+      request_id: 'abc12345',
+      summary: 'ورود ناموفق',
+    }
+    const detail = preciseDetail(item)
+    expect(detail.action).toBe('auth.login.failure')
+    expect(detail.request_id).toBe('abc12345')
+    const html = precisePayloadMarkup(item)
+    expect(html).toContain('dev-precise-payload')
+    expect(html).toContain('auth.login.failure')
+    expect(precisePayloadMarkup({ ...item, payload: {} })).toContain('request_id')
   })
 
   it('reads level and request id from a log line', () => {
