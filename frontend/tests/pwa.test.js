@@ -31,6 +31,27 @@ describe('PWA wiring (manifest + SW security)', () => {
     expect(existsSync(join(root, 'public/images/brand/pwa-maskable-512.png'))).toBe(true)
   })
 
+  it('maskable icon is full-bleed opaque brand (no letterbox corners)', async () => {
+    const sharp = (await import('sharp')).default
+    const file = join(root, 'public/images/brand/pwa-maskable-512.png')
+    const img = sharp(file)
+    const { width, height } = await img.metadata()
+    expect(width).toBe(512)
+    expect(height).toBe(512)
+    const { data } = await img.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+    const px = (x, y) => {
+      const i = (y * width + x) * 4
+      return { r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3] }
+    }
+    for (const sample of [px(0, 0), px(width - 1, 0), px(0, height - 1), px(width - 1, height - 1)]) {
+      expect(sample.a).toBe(255)
+      // Not white/black letterbox — ocean teal/blue corners.
+      expect(sample.r + sample.g + sample.b).toBeGreaterThan(200)
+      expect(sample.r).toBeLessThan(120)
+      expect(sample.g).toBeGreaterThan(100)
+    }
+  })
+
   it('HTML shells link manifest and register the SW module', () => {
     const pages = [
       'index.html',
