@@ -11,6 +11,7 @@ from app.models.enums import StaffRole, TrialLeadStatus
 from app.models.trial_lead import TrialLead
 from app.models.user import User
 from app.services.notifications import notify_trial_lead_created
+from app.services.staff_roles import effective_role
 
 _STATUSES = {s.value for s in TrialLeadStatus}
 
@@ -23,7 +24,7 @@ class TrialLeadError(Exception):
 
 
 def ensure_desk(user: User) -> None:
-    if user.role not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         raise TrialLeadError(403, "دسترسی مجاز نیست.")
 
 

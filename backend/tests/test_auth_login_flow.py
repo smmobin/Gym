@@ -46,10 +46,10 @@ def test_lookup_single_manager(client: TestClient) -> None:
     res = client.post("/api/v1/auth/lookup", json={"mobile": "09120000001"})
     assert res.status_code == 200
     body = res.json()
-    assert len(body["identities"]) == 1
-    assert body["identities"][0]["kind"] == "staff"
-    assert body["identities"][0]["role"] == "manager"
-    assert body["identities"][0]["auth_methods"] == ["password"]
+    # Seed manager has also_trainer → desk + trainer identities
+    roles = {(i["kind"], i["role"], tuple(i["auth_methods"])) for i in body["identities"]}
+    assert ("staff", "manager", ("password",)) in roles
+    assert ("staff", "trainer", ("otp", "password")) in roles
     assert body["otp_dev_hint"] is True
 
 
@@ -81,6 +81,7 @@ def test_lookup_staff_athlete_conflict(client: TestClient) -> None:
     assert res.status_code == 200
     kinds = {(i["kind"], i["role"]) for i in res.json()["identities"]}
     assert ("staff", "receptionist") in kinds
+    assert ("staff", "trainer") in kinds  # also_trainer on seed receptionist
     assert ("athlete", "athlete") in kinds
 
     # Password without kind must not auto-pick staff
@@ -126,7 +127,12 @@ def test_manager_password_only_otp_rejected(client: TestClient) -> None:
 
     ok = client.post(
         "/api/v1/auth/login",
-        json={"mobile": "09120000001", "password": DEV_STAFF_PASSWORD},
+        json={
+            "mobile": "09120000001",
+            "password": DEV_STAFF_PASSWORD,
+            "kind": "staff",
+            "role": "manager",
+        },
     )
     assert ok.status_code == 200
     assert ok.json()["role"] == "manager"

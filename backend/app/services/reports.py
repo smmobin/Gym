@@ -17,6 +17,7 @@ from app.models.enums import ExpenseCategory, PaymentStatus, StaffRole
 from app.models.expense import Expense
 from app.models.payment import Payment
 from app.models.user import User
+from app.services.staff_roles import effective_role
 
 TEHRAN = ZoneInfo("Asia/Tehran")
 _CATEGORIES = {c.value for c in ExpenseCategory}
@@ -96,7 +97,7 @@ def default_month_range(*, today: date | None = None) -> tuple[date, date]:
 
 
 def ensure_manager(user: User) -> None:
-    if user.role != StaffRole.MANAGER.value:
+    if effective_role(user) != StaffRole.MANAGER.value:
         raise ReportError(403, "فقط مدیر به گزارش هزینه و سود دسترسی دارد.")
 
 

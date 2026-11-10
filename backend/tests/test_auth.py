@@ -25,12 +25,21 @@ def client() -> TestClient:
 
 
 def _login(
-    client: TestClient,
-    *,
-    mobile: str = "09120000001",
-    password: str = DEV_STAFF_PASSWORD,
+    client: TestClient, mobile: str = "09120000001", password: str = "ChangeMe123"
 ):
-    return client.post("/api/v1/auth/login", json={"mobile": mobile, "password": password})
+    role_map = {
+        "09120000001": "manager",
+        "09120000002": "receptionist",
+        "09120000003": "trainer",
+        "09120000004": "trainer",
+    }
+    body = {"mobile": mobile, "password": password}
+    acting = role_map.get(mobile)
+    if acting:
+        body["kind"] = "staff"
+        body["role"] = acting
+    return client.post("/api/v1/auth/login", json=body)
+
 
 
 def test_login_success_sets_httponly_cookie(client: TestClient) -> None:
@@ -97,7 +106,10 @@ def test_unified_login_conflict_requires_kind(client: TestClient) -> None:
     finally:
         db.close()
 
-    bare = _login(client, mobile="09120000002", password=DEV_STAFF_PASSWORD)
+    bare = client.post(
+        "/api/v1/auth/login",
+        json={"mobile": "09120000002", "password": DEV_STAFF_PASSWORD},
+    )
     assert bare.status_code == 409
 
     as_staff = client.post(

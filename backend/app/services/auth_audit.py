@@ -30,7 +30,14 @@ def failure_reason(status_code: int) -> str:
     return _REASON_BY_STATUS.get(status_code, "error")
 
 
-def login_success_staff(db: Session, *, user: User, method: AuthMethod) -> None:
+def login_success_staff(
+    db: Session,
+    *,
+    user: User,
+    method: AuthMethod,
+    acting_role: str | None = None,
+) -> None:
+    role = acting_role or user.role
     write_audit(
         db,
         actor_user_id=user.id,
@@ -38,7 +45,12 @@ def login_success_staff(db: Session, *, user: User, method: AuthMethod) -> None:
         entity_type="user",
         entity_id=user.id,
         summary=f"ورود موفق {user.full_name} با {_METHOD_FA[method]}",
-        payload={"kind": "staff", "role": user.role, "method": method},
+        payload={
+            "kind": "staff",
+            "role": role,
+            "desk_role": user.role,
+            "method": method,
+        },
     )
 
 

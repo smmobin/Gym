@@ -18,6 +18,7 @@ from app.models.payment import Payment
 from app.models.user import User
 from app.services.debt import member_debt
 from app.services.members import trainer_can_view_member
+from app.services.staff_roles import effective_role
 
 TEHRAN = ZoneInfo("Asia/Tehran")
 
@@ -59,9 +60,9 @@ def get_day_end_time(db: Session) -> time:
 def ensure_staff_may_touch_member(db: Session, user: User, member_id: int) -> None:
     from app.models.enums import StaffRole
 
-    if user.role in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         return
-    if user.role == StaffRole.TRAINER.value and trainer_can_view_member(
+    if effective_role(user) == StaffRole.TRAINER.value and trainer_can_view_member(
         db, trainer=user, member_id=member_id
     ):
         return
@@ -387,7 +388,7 @@ def list_today_attendances(
     rows = list(db.scalars(select(Attendance).order_by(Attendance.check_in_at.desc())).all())
     filtered: list[Attendance] = []
     allowed: set[int] | None = None
-    if user.role == StaffRole.TRAINER.value:
+    if effective_role(user) == StaffRole.TRAINER.value:
         allowed = active_trainee_member_ids(db, user.id)
 
     for row in rows:

@@ -30,14 +30,29 @@ def client() -> TestClient:
     return TestClient(app)
 
 
-def _login(client: TestClient, mobile: str = "09120000001") -> None:
-    assert (
-        client.post(
-            "/api/v1/auth/login",
-            json={"mobile": mobile, "password": DEV_STAFF_PASSWORD},
-        ).status_code
-        == 200
+def _login(
+    client: TestClient,
+    mobile: str = "09120000001",
+    password: str = "ChangeMe123",
+) -> None:
+    role_map = {
+        "09120000001": "manager",
+        "09120000002": "receptionist",
+        "09120000003": "trainer",
+        "09120000004": "trainer",
+    }
+    body = {"mobile": mobile, "password": password}
+    acting = role_map.get(mobile)
+    if acting:
+        body["kind"] = "staff"
+        body["role"] = acting
+    res = client.post(
+        "/api/v1/auth/login",
+        json=body,
     )
+    assert res.status_code == 200, res.text
+
+
 
 
 def test_bootstrap_manager_only_when_zero_managers() -> None:

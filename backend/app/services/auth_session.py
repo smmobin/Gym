@@ -32,6 +32,7 @@ def create_session(
     *,
     user: User,
     settings: Settings,
+    acting_role: str,
     user_agent: str | None = None,
 ) -> tuple[StaffSession, str]:
     raw_token = new_session_token()
@@ -40,6 +41,7 @@ def create_session(
     row = StaffSession(
         token_hash=hash_session_token(raw_token),
         user_id=user.id,
+        acting_role=acting_role,
         expires_at=expires_at,
         user_agent=(user_agent or "")[:255] or None,
     )

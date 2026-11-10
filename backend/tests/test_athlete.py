@@ -42,13 +42,19 @@ def _athlete_login(
 
 
 def _staff_login(client: TestClient, mobile: str = "09120000001") -> None:
-    assert (
-        client.post(
-            "/api/v1/auth/login",
-            json={"mobile": mobile, "password": DEV_STAFF_PASSWORD},
-        ).status_code
-        == 200
-    )
+    role_map = {
+        "09120000001": "manager",
+        "09120000002": "receptionist",
+        "09120000003": "trainer",
+        "09120000004": "trainer",
+    }
+    body = {
+        "mobile": mobile,
+        "password": DEV_STAFF_PASSWORD,
+        "kind": "staff",
+        "role": role_map.get(mobile, "manager"),
+    }
+    assert client.post("/api/v1/auth/login", json=body).status_code == 200
 
 
 def test_unauthorized_athlete_routes(client: TestClient) -> None:

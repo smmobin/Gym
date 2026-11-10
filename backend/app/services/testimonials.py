@@ -11,6 +11,7 @@ from app.models.enums import StaffRole
 from app.models.testimonial import MemberTestimonial
 from app.models.user import User
 from app.services.audit import write_audit
+from app.services.staff_roles import effective_role
 
 
 class TestimonialError(Exception):
@@ -21,7 +22,7 @@ class TestimonialError(Exception):
 
 
 def ensure_desk_staff(user: User) -> None:
-    if user.role not in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
+    if effective_role(user) not in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
         raise TestimonialError(403, "دسترسی مجاز نیست.")
 
 

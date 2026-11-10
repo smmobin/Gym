@@ -28,6 +28,7 @@ from app.services.class_booking import (
     assert_can_book,
     remaining_capacity,
 )
+from app.services.staff_roles import effective_role, is_trainer_capable
 
 
 class GroupClassError(Exception):
@@ -64,7 +65,7 @@ class AttendanceOutcomeSnapshot:
 
 
 def ensure_desk_staff(user: User) -> None:
-    if user.role not in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
+    if effective_role(user) not in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
         raise GroupClassError(403, "دسترسی مجاز نیست.")
 
 
@@ -129,7 +130,7 @@ def _get_class_or_404(db: Session, class_id: int) -> GroupClass:
 
 
 def _trainer_may_view(user: User, group_class: GroupClass) -> bool:
-    if user.role != StaffRole.TRAINER.value:
+    if effective_role(user) != StaffRole.TRAINER.value:
         return True
     return group_class.trainer_user_id == user.id
 
@@ -162,7 +163,7 @@ def list_group_classes(
     if not include_inactive:
         stmt = stmt.where(GroupClass.is_active.is_(True))
 
-    if user.role == StaffRole.TRAINER.value:
+    if effective_role(user) == StaffRole.TRAINER.value:
         stmt = stmt.where(GroupClass.trainer_user_id == user.id)
 
     if upcoming:
@@ -268,7 +269,7 @@ def create_group_class(
 
     if trainer_user_id is not None:
         trainer = db.get(User, trainer_user_id)
-        if trainer is None or trainer.role != StaffRole.TRAINER.value or not trainer.is_active:
+        if trainer is None or not is_trainer_capable(trainer):
             raise GroupClassError(400, "مربی معتبر نیست.")
 
     _ensure_no_active_duplicate(
@@ -356,7 +357,7 @@ def update_group_class(
         row.trainer_user_id = None
     elif trainer_user_id is not None:
         trainer = db.get(User, trainer_user_id)
-        if trainer is None or trainer.role != StaffRole.TRAINER.value or not trainer.is_active:
+        if trainer is None or not is_trainer_capable(trainer):
             raise GroupClassError(400, "مربی معتبر نیست.")
         new_trainer_id = trainer_user_id
         row.trainer_user_id = trainer_user_id

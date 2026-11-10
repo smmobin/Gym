@@ -29,14 +29,29 @@ def client() -> TestClient:
     return TestClient(app)
 
 
-def _login(client: TestClient, mobile: str = "09120000001") -> None:
-    assert (
-        client.post(
-            "/api/v1/auth/login",
-            json={"mobile": mobile, "password": DEV_STAFF_PASSWORD},
-        ).status_code
-        == 200
+def _login(
+    client: TestClient,
+    mobile: str = "09120000001",
+    password: str = "ChangeMe123",
+) -> None:
+    role_map = {
+        "09120000001": "manager",
+        "09120000002": "receptionist",
+        "09120000003": "trainer",
+        "09120000004": "trainer",
+    }
+    body = {"mobile": mobile, "password": password}
+    acting = role_map.get(mobile)
+    if acting:
+        body["kind"] = "staff"
+        body["role"] = acting
+    res = client.post(
+        "/api/v1/auth/login",
+        json=body,
     )
+    assert res.status_code == 200, res.text
+
+
 
 
 def _member_id(display_id: str) -> int:
@@ -335,6 +350,8 @@ def test_assign_non_trainer_user_400(client: TestClient) -> None:
             )
         )
         assert mgr is not None
+        mgr.also_trainer = False  # without flag, desk manager is not assignable
+        db.commit()
         mgr_id = mgr.id
     finally:
         db.close()
@@ -343,3 +360,5 @@ def test_assign_non_trainer_user_400(client: TestClient) -> None:
         json={"trainer_user_id": mgr_id},
     )
     assert response.status_code == 400
+    # restore seed flag for other tests
+    wipe_and_seed()

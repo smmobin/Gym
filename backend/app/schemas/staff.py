@@ -19,6 +19,7 @@ class StaffCreateRequest(BaseModel):
     password: str = Field(min_length=MIN_PASSWORD_LEN, max_length=72)
     full_name: str = Field(min_length=2, max_length=120)
     role: str
+    also_trainer: bool = False
 
     @field_validator("mobile")
     @classmethod
@@ -48,6 +49,12 @@ class StaffCreateRequest(BaseModel):
             raise ValueError("رمز باید حداقل ۸ کاراکتر باشد.")
         return value
 
+    @model_validator(mode="after")
+    def also_trainer_only_for_desk(self) -> StaffCreateRequest:
+        if self.role == StaffRole.TRAINER.value and self.also_trainer:
+            self.also_trainer = False
+        return self
+
 
 class StaffUpdateRequest(BaseModel):
     mobile: Optional[str] = Field(default=None, min_length=10, max_length=20)
@@ -55,6 +62,7 @@ class StaffUpdateRequest(BaseModel):
     role: Optional[str] = None
     password: Optional[str] = Field(default=None, min_length=MIN_PASSWORD_LEN, max_length=72)
     is_active: Optional[bool] = None
+    also_trainer: Optional[bool] = None
 
     @field_validator("mobile")
     @classmethod
@@ -100,6 +108,7 @@ class StaffUpdateRequest(BaseModel):
             and self.role is None
             and self.password is None
             and self.is_active is None
+            and self.also_trainer is None
         ):
             raise ValueError("حداقل یک فیلد برای ویرایش لازم است.")
         return self

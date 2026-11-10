@@ -57,6 +57,7 @@ def create_staff(
             password=body.password,
             full_name=body.full_name,
             role=body.role,
+            also_trainer=body.also_trainer,
         )
         db.commit()
         db.refresh(row)
@@ -89,6 +90,7 @@ def update_staff(
             role=body.role,
             password=body.password,
             is_active=None,
+            also_trainer=body.also_trainer,
         )
         db.commit()
         db.refresh(row)

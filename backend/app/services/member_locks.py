@@ -24,6 +24,7 @@ from app.models.member_file_lock import MemberFileLock
 from app.models.member_file_lock_interest import MemberFileLockInterest
 from app.models.user import User
 from app.services.members import trainer_can_view_member
+from app.services.staff_roles import effective_role
 
 
 class MemberLockError(Exception):
@@ -64,9 +65,9 @@ def _is_expired(lock: MemberFileLock, *, now: datetime, settings: Settings | Non
 
 
 def _ensure_can_access_member(db: Session, user: User, member: Member) -> None:
-    if user.role in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         return
-    if user.role == StaffRole.TRAINER.value and trainer_can_view_member(
+    if effective_role(user) == StaffRole.TRAINER.value and trainer_can_view_member(
         db, trainer=user, member_id=member.id
     ):
         return
@@ -290,7 +291,7 @@ def unlock(
         return _snapshot(member_id, None, None, current_user=user, settings=settings)
 
     is_holder = lock.locked_by_user_id == user.id
-    is_manager = user.role == StaffRole.MANAGER.value
+    is_manager = effective_role(user) == StaffRole.MANAGER.value
     if not is_holder and not is_manager:
         raise MemberLockError(
             403,

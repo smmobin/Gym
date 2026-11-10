@@ -14,6 +14,7 @@ from app.models.locker import Locker, LockerAssignment
 from app.models.member import Member
 from app.models.membership import Membership, MembershipPlan
 from app.models.user import User
+from app.services.staff_roles import effective_role
 
 
 class LockerError(Exception):
@@ -24,7 +25,7 @@ class LockerError(Exception):
 
 
 def ensure_desk_staff(user: User) -> None:
-    if user.role not in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
+    if effective_role(user) not in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
         raise LockerError(403, "دسترسی مجاز نیست.")
 
 

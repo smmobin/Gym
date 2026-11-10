@@ -54,14 +54,29 @@ def disabled_sms(monkeypatch: pytest.MonkeyPatch):
     get_settings.cache_clear()
 
 
-def _login(client: TestClient, mobile: str) -> None:
-    assert (
-        client.post(
-            "/api/v1/auth/login",
-            json={"mobile": mobile, "password": DEV_STAFF_PASSWORD},
-        ).status_code
-        == 200
+def _login(
+    client: TestClient,
+    mobile: str = "09120000001",
+    password: str = "ChangeMe123",
+) -> None:
+    role_map = {
+        "09120000001": "manager",
+        "09120000002": "receptionist",
+        "09120000003": "trainer",
+        "09120000004": "trainer",
+    }
+    body = {"mobile": mobile, "password": password}
+    acting = role_map.get(mobile)
+    if acting:
+        body["kind"] = "staff"
+        body["role"] = acting
+    res = client.post(
+        "/api/v1/auth/login",
+        json=body,
     )
+    assert res.status_code == 200, res.text
+
+
 
 
 def _seed_member_id(mobile: str = "09121111001") -> int:

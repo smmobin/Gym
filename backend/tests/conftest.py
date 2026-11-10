@@ -119,8 +119,38 @@ db_mod.SessionLocal = sessionmaker(bind=db_mod.engine, autoflush=False, autocomm
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.db.seed import clear_domain_data, seed, wipe_and_seed  # noqa: E402
+from app.db.seed import (  # noqa: E402
+    DEV_ATHLETE_PASSWORD,
+    DEV_STAFF_PASSWORD,
+    clear_domain_data,
+    seed,
+    wipe_and_seed,
+)
 from app.main import app  # noqa: E402
+
+# Seed staff mobiles → permanent desk/trainer role (also_trainer accounts still need this).
+SEED_STAFF_ACTING_ROLE = {
+    "09120000001": "manager",
+    "09120000002": "receptionist",
+    "09120000003": "trainer",
+    "09120000004": "trainer",
+}
+
+
+def staff_login(
+    client: "TestClient",
+    mobile: str = "09120000001",
+    password: str = DEV_STAFF_PASSWORD,
+    *,
+    role: str | None = None,
+) -> object:
+    """Password login with explicit acting role (required when also_trainer yields dual identities)."""
+    acting = role or SEED_STAFF_ACTING_ROLE.get(mobile)
+    body: dict[str, str] = {"mobile": mobile, "password": password}
+    if acting:
+        body["kind"] = "staff"
+        body["role"] = acting
+    return client.post("/api/v1/auth/login", json=body)
 
 
 def _psycopg_admin_url(app_url: str) -> str:
@@ -182,4 +212,8 @@ __all__ = [
     "wipe_and_seed",
     "seed",
     "clear_domain_data",
+    "staff_login",
+    "DEV_STAFF_PASSWORD",
+    "DEV_ATHLETE_PASSWORD",
+    "SEED_STAFF_ACTING_ROLE",
 ]

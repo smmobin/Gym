@@ -33,12 +33,29 @@ def client() -> TestClient:
     return TestClient(app)
 
 
-def _login(client: TestClient, mobile: str = "09120000001") -> None:
-    response = client.post(
+def _login(
+    client: TestClient,
+    mobile: str = "09120000001",
+    password: str = "ChangeMe123",
+) -> None:
+    role_map = {
+        "09120000001": "manager",
+        "09120000002": "receptionist",
+        "09120000003": "trainer",
+        "09120000004": "trainer",
+    }
+    body = {"mobile": mobile, "password": password}
+    acting = role_map.get(mobile)
+    if acting:
+        body["kind"] = "staff"
+        body["role"] = acting
+    res = client.post(
         "/api/v1/auth/login",
-        json={"mobile": mobile, "password": DEV_STAFF_PASSWORD},
+        json=body,
     )
-    assert response.status_code == 200
+    assert res.status_code == 200, res.text
+
+
 
 
 def test_list_members_unauthorized(client: TestClient) -> None:

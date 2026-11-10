@@ -25,6 +25,7 @@ from app.models.user import User
 from app.services.audit import write_audit
 from app.services.billing import ensure_desk_staff, today_tehran
 from app.services.gym_settings import get_or_create_settings
+from app.services.staff_roles import effective_role
 
 
 class FreezeError(Exception):
@@ -283,5 +284,5 @@ def load_membership_with_plan(db: Session, membership_id: int) -> Membership:
 
 
 def assert_desk_or_raise(user: User) -> None:
-    if user.role not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         raise FreezeError(403, "دسترسی مجاز نیست.")

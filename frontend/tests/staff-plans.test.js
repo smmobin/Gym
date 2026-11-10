@@ -55,11 +55,38 @@ describe('mountStaff / mountPlans', () => {
     const roleSelect = root.querySelector('[data-create] [name=role]')
     expect(roleSelect.innerHTML).toContain('receptionist')
     expect(roleSelect.innerHTML).toContain('trainer')
+    expect(root.querySelector('[data-also-trainer-create]')).toBeTruthy()
+    expect(root.textContent).toContain('مربی هم هست')
     expect(root.textContent).not.toContain('حذف = غیرفعال')
     expect(root.querySelector('[data-deactivate]')).toBeNull()
     expect(root.querySelector('[data-activate]')).toBeNull()
     expect(root.querySelector('[data-reload]')).toBeNull()
     expect(root.textContent).not.toContain('بازخوانی')
+  })
+
+  it('mountStaff also_trainer checkbox hides for pure trainer role', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ items: [], total: 0 }),
+      }),
+    )
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    mountStaff(root, { role: 'manager', id: 1 })
+    await vi.waitFor(() => expect(root.querySelector('[data-create]')).toBeTruthy())
+    const roleSelect = /** @type {HTMLSelectElement} */ (
+      root.querySelector('[data-create] [name=role]')
+    )
+    const box = /** @type {HTMLElement} */ (root.querySelector('[data-also-trainer-create]'))
+    roleSelect.value = 'receptionist'
+    roleSelect.dispatchEvent(new Event('change'))
+    expect(box.hidden).toBe(false)
+    roleSelect.value = 'trainer'
+    roleSelect.dispatchEvent(new Event('change'))
+    expect(box.hidden).toBe(true)
   })
 
   it('mountStaff create 201 shows success not ثبت ناموفق', async () => {

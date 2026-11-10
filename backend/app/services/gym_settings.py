@@ -12,6 +12,7 @@ from app.models.enums import StaffRole
 from app.models.gym_settings import GymSettings
 from app.models.user import User
 from app.services.audit import write_audit
+from app.services.staff_roles import effective_role
 
 _DEFAULTS: dict[str, Any] = {
     "gym_name": "باشگاه آذر",
@@ -44,7 +45,7 @@ class GymSettingsError(Exception):
 
 
 def ensure_staff(user: User) -> None:
-    if user.role not in {
+    if effective_role(user) not in {
         StaffRole.MANAGER.value,
         StaffRole.RECEPTIONIST.value,
         StaffRole.TRAINER.value,
@@ -53,7 +54,7 @@ def ensure_staff(user: User) -> None:
 
 
 def ensure_manager(user: User) -> None:
-    if user.role != StaffRole.MANAGER.value:
+    if effective_role(user) != StaffRole.MANAGER.value:
         raise GymSettingsError(403, "دسترسی مجاز نیست.")
 
 

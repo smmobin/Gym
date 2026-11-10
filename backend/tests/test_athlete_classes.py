@@ -45,7 +45,12 @@ def _staff_login(client: TestClient) -> None:
     assert (
         client.post(
             "/api/v1/auth/login",
-            json={"mobile": "09120000001", "password": DEV_STAFF_PASSWORD},
+            json={
+                "mobile": "09120000001",
+                "password": DEV_STAFF_PASSWORD,
+                "kind": "staff",
+                "role": "manager",
+            },
         ).status_code
         == 200
     )

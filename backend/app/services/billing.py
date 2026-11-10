@@ -22,6 +22,7 @@ from app.models.payment import Payment
 from app.models.user import User
 from app.services.audit import write_audit
 from app.services.debt import member_debt
+from app.services.staff_roles import effective_role
 
 _RECEIPT_RE = re.compile(r"^R-(\d+)$", re.IGNORECASE)
 _RECEIPT_START = 1001
@@ -76,7 +77,7 @@ def next_receipt_number(db: Session) -> str:
 
 
 def ensure_desk_staff(user: User) -> None:
-    if user.role not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         raise BillingError(403, "دسترسی مجاز نیست.")
 
 

@@ -191,6 +191,8 @@ cd backend
 
 مثال seed: ورزشکار `09121111001` یا مربی `09120000003` → OTP `123456` (یا رمز پشتیبان `ChangeMe123`).
 
+**مدیر/منشی + مربی (Slice J):** seed روی `09120000001` (مدیر) و `09120000002` (منشی) پرچم `also_trainer` دارد — بعد از موبایل، نقش میز یا مربی را انتخاب کنید (میز = رمز؛ مربی = OTP/`ChangeMe123`).
+
 ### رفتار سرور
 
 - `POST /api/v1/auth/lookup` با `{ "mobile" }` → `{ identities: [{ kind, role, label, auth_methods, has_password }], otp_dev_hint }`

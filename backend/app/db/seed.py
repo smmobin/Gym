@@ -128,12 +128,14 @@ def _get_or_create_user(
     full_name: str,
     role: str,
     password_hash: str,
+    also_trainer: bool = False,
 ) -> tuple[User, bool]:
     existing = _get_user_by_mobile(session, mobile)
     if existing:
         # Align non-destructive seed fields; leave password as owner may have changed it.
         existing.full_name = full_name
         existing.role = role
+        existing.also_trainer = also_trainer
         session.add(existing)
         return existing, False
     user = User(
@@ -141,6 +143,7 @@ def _get_or_create_user(
         password_hash=password_hash,
         full_name=full_name,
         role=role,
+        also_trainer=also_trainer,
     )
     session.add(user)
     session.flush()
@@ -550,6 +553,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             full_name="مدیر نمونه",
             role=StaffRole.MANAGER.value,
             password_hash=staff_password_hash,
+            also_trainer=True,
         )
         receptionist, _ = _get_or_create_user(
             session,
@@ -557,6 +561,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             full_name="منشی نمونه",
             role=StaffRole.RECEPTIONIST.value,
             password_hash=staff_password_hash,
+            also_trainer=True,
         )
         trainer1, _ = _get_or_create_user(
             session,
@@ -564,6 +569,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             full_name="مربی یک",
             role=StaffRole.TRAINER.value,
             password_hash=staff_password_hash,
+            also_trainer=False,
         )
         trainer2, _ = _get_or_create_user(
             session,
@@ -571,6 +577,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
             full_name="مربی دو",
             role=StaffRole.TRAINER.value,
             password_hash=staff_password_hash,
+            also_trainer=False,
         )
         session.flush()
 

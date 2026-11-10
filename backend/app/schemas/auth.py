@@ -104,6 +104,7 @@ class UserOut(BaseModel):
     mobile: str
     full_name: str
     role: str
+    also_trainer: bool = False
     is_active: bool
 
     model_config = {"from_attributes": True}

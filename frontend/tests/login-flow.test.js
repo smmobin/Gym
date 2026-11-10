@@ -59,6 +59,21 @@ describe('login-flow helpers', () => {
     expect(next.selected).toBeNull()
   })
 
+  it('shows chooser for desk+trainer dual staff identities (also_trainer)', () => {
+    const identities = [manager, trainer]
+    expect(needsRoleChooser(identities)).toBe(true)
+    const next = reduceLoginStep(
+      { step: 'mobile', identities: [], selected: null },
+      { type: 'lookup_ok', identities },
+    )
+    expect(next.step).toBe('chooser')
+    const chosen = reduceLoginStep(next, { type: 'choose', identity: trainer })
+    expect(chosen.step).toBe('auth')
+    expect(chosen.selected).toEqual(trainer)
+    expect(defaultAuthMode(trainer)).toBe('otp')
+    expect(defaultAuthMode(manager)).toBe('password')
+  })
+
   it('defaults manager to password and trainer/athlete to otp', () => {
     expect(defaultAuthMode(manager)).toBe('password')
     expect(defaultAuthMode(trainer)).toBe('otp')

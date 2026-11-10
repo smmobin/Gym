@@ -8,11 +8,17 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.enums import StaffRole
 from app.models.member import Member
 from app.models.trainer import TrainerMemberAssignment
 from app.models.user import User
 from app.services.members import trainer_can_view_member
+from app.services.staff_roles import (
+    DESK_ROLES,
+    TRAINER_ROLE,
+    effective_role,
+    is_trainer_capable,
+    trainer_capable_clause,
+)
 
 
 class TrainerError(Exception):
@@ -23,7 +29,7 @@ class TrainerError(Exception):
 
 
 def ensure_desk_staff(user: User) -> None:
-    if user.role not in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
+    if effective_role(user) not in DESK_ROLES:
         raise TrainerError(403, "دسترسی مجاز نیست.")
 
 
@@ -35,9 +41,10 @@ def _get_member_or_404(db: Session, member_id: int) -> Member:
 
 
 def ensure_can_view_member_assignments(db: Session, user: User, member_id: int) -> None:
-    if user.role in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
+    role = effective_role(user)
+    if role in DESK_ROLES:
         return
-    if user.role == StaffRole.TRAINER.value and trainer_can_view_member(
+    if role == TRAINER_ROLE and trainer_can_view_member(
         db, trainer=user, member_id=member_id
     ):
         return
@@ -49,7 +56,7 @@ def list_trainers(db: Session, *, user: User) -> list[User]:
     stmt = (
         select(User)
         .where(
-            User.role == StaffRole.TRAINER.value,
+            trainer_capable_clause(),
             User.is_active.is_(True),
         )
         .order_by(User.full_name.asc(), User.id.asc())
@@ -111,7 +118,7 @@ def list_trainer_members(
     """Desk staff: list members currently (or historically) assigned to a trainer."""
     ensure_desk_staff(user)
     trainer = db.get(User, trainer_user_id)
-    if trainer is None or trainer.role != StaffRole.TRAINER.value:
+    if trainer is None or not is_trainer_capable(trainer):
         raise TrainerError(404, "مربی یافت نشد.")
     stmt = (
         select(TrainerMemberAssignment)
@@ -164,11 +171,7 @@ def assign_trainer(
     _get_member_or_404(db, member_id)
 
     trainer = db.get(User, trainer_user_id)
-    if (
-        trainer is None
-        or trainer.role != StaffRole.TRAINER.value
-        or not trainer.is_active
-    ):
+    if trainer is None or not is_trainer_capable(trainer):
         raise TrainerError(400, "کاربر انتخاب‌شده مربی فعال نیست.")
 
     if active_assignment_pair(db, trainer_user_id=trainer_user_id, member_id=member_id):

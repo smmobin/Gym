@@ -28,6 +28,7 @@ from app.models.user import User
 from app.services.audit import write_audit
 from app.services.billing import next_receipt_number, today_tehran
 from app.services.members import member_by_mobile, next_display_id
+from app.services.staff_roles import effective_role
 
 GUEST_PLAN_NAME = "مهمان یک‌روزه"
 _PAYMENT_METHODS = {m.value for m in PaymentMethod}
@@ -49,7 +50,7 @@ class DayGuestResult:
 
 
 def ensure_desk(user: User) -> None:
-    if user.role not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         raise GuestError(403, "دسترسی مجاز نیست.")
 
 

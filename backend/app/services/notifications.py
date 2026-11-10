@@ -17,6 +17,7 @@ from app.models.trial_lead import TrialLead
 from app.models.user import User
 from app.services.debt import member_debt
 from app.services.gym_settings import get_or_create_settings
+from app.services.staff_roles import effective_role
 
 KIND_TRIAL_LEAD_NEW = "trial_lead_new"
 KIND_MEMBERSHIP_EXPIRING = "membership_expiring"
@@ -268,7 +269,7 @@ def list_for_user(
 
     visible: list[dict] = []
     for row in rows:
-        if not _audience_allows(row.role_audience, user.role):
+        if not _audience_allows(row.role_audience, effective_role(user)):
             continue
         is_read = row.id in read_ids
         visible.append(
@@ -295,7 +296,7 @@ def mark_read(db: Session, *, user: User, notification_id: int) -> StaffNotifica
     row = db.get(StaffNotification, notification_id)
     if row is None:
         raise NotificationError(404, "اعلان یافت نشد.")
-    if not _audience_allows(row.role_audience, user.role):
+    if not _audience_allows(row.role_audience, effective_role(user)):
         raise NotificationError(403, "دسترسی مجاز نیست.")
     existing = db.scalar(
         select(StaffNotificationRead).where(

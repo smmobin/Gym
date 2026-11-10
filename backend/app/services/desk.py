@@ -19,6 +19,7 @@ from app.services.debt import member_debt
 from app.services.guests import GuestError, find_guest_day_plan
 from app.services.gym_settings import get_or_create_settings
 from app.services.notifications import KIND_RENEWAL_REQUEST
+from app.services.staff_roles import effective_role
 
 _DESK = {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}
 _ACTIVE_MEMBERSHIP = {
@@ -38,7 +39,7 @@ class DeskError(Exception):
 
 
 def ensure_desk(user: User) -> None:
-    if user.role not in _DESK:
+    if effective_role(user) not in _DESK:
         raise DeskError(403, "دسترسی مجاز نیست.")
 
 

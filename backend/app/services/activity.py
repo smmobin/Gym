@@ -20,6 +20,7 @@ from app.models.enums import StaffRole
 from app.models.system_event import SystemErrorEvent
 from app.models.user import User
 from app.services.reports import range_bounds_utc, today_tehran
+from app.services.staff_roles import effective_role
 
 DEFAULT_RANGE_DAYS = 7
 MAX_RANGE_DAYS = 366
@@ -111,7 +112,7 @@ class ActivityPage:
 
 
 def ensure_manager(user: User) -> None:
-    if user.role != StaffRole.MANAGER.value:
+    if effective_role(user) != StaffRole.MANAGER.value:
         raise ActivityError(403, "فقط مدیر به فعالیت سامانه دسترسی دارد.")
 
 

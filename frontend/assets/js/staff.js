@@ -9,8 +9,8 @@ import { setStatus } from './ui.js'
 
 /**
  * Staff accounts UI.
- * Manager: create/edit receptionist + trainer; managers listed read-only.
- * Receptionist: create/edit trainer only.
+ * Manager: create/edit receptionist + trainer; managers listed; also_trainer toggle.
+ * Receptionist: create/edit trainer only (no also_trainer).
  *
  * @param {HTMLElement} root
  * @param {{ role: string, id?: number }} user
@@ -22,10 +22,29 @@ export function mountStaff(root, user) {
     ? `<option value="receptionist">منشی</option><option value="trainer">مربی</option>`
     : `<option value="trainer">مربی</option>`
 
+  const alsoTrainerCreate = isManager
+    ? `<label class="full" data-also-trainer-create>
+        <span class="inline-check">
+          <input type="checkbox" name="also_trainer" value="1" />
+          مربی هم هست
+        </span>
+        <span class="hint">با یک موبایل می‌تواند به‌عنوان مربی هم وارد شود (مدیر+منشی روی یک حساب مجاز نیست).</span>
+      </label>`
+    : ''
+
+  const alsoTrainerEdit = isManager
+    ? `<label class="full" data-also-trainer-edit>
+        <span class="inline-check">
+          <input type="checkbox" name="also_trainer" value="1" />
+          مربی هم هست
+        </span>
+      </label>`
+    : ''
+
   root.innerHTML = `
     <article class="panel">
       <header class="panel-head"><h2>کارکنان</h2></header>
-      <p class="hint">اگر موبایل کارمند با عضو یکی باشد، در ورود صفحهٔ انتخاب نقش نشان داده می‌شود.</p>
+      <p class="hint">اگر موبایل کارمند با عضو یکی باشد، یا نقش میز+مربی فعال باشد، در ورود صفحهٔ انتخاب نقش نشان داده می‌شود.</p>
       <div class="status-msg" data-status hidden></div>
       <div class="table-wrap" style="margin-top:1rem">
         <table class="responsive-table"><thead>
@@ -44,8 +63,9 @@ export function mountStaff(root, user) {
           <label>نام کامل *<input name="full_name" required minlength="2" /></label>
           <label>موبایل *<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" required /></label>
           <label>نقش *
-            <select name="role" required>${roleOptions}</select>
+            <select name="role" required data-role-create>${roleOptions}</select>
           </label>
+          ${alsoTrainerCreate}
           <label>رمز * (حداقل ۸)<input type="password" name="password" required minlength="8" /></label>
           <button class="btn" type="submit">ثبت</button>
         </form>
@@ -54,12 +74,13 @@ export function mountStaff(root, user) {
         <header class="panel-head"><h2>ویرایش</h2></header>
         <form data-edit class="form-grid">
           <input type="hidden" name="id" />
-          <label>نام کامل<input name="full_name" minlength="2" /></label>
-          <label>موبایل<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" /></label>
-          <label>نقش
+          <label data-edit-name>نام کامل<input name="full_name" minlength="2" /></label>
+          <label data-edit-mobile>موبایل<input name="mobile" type="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="09[0-9]{9}" /></label>
+          <label data-edit-role>نقش
             <select name="role">${roleOptions}</select>
           </label>
-          <label>رمز جدید (اختیاری)<input type="password" name="password" minlength="8" placeholder="خالی = بدون تغییر" /></label>
+          ${alsoTrainerEdit}
+          <label data-edit-password>رمز جدید (اختیاری)<input type="password" name="password" minlength="8" placeholder="خالی = بدون تغییر" /></label>
           <div class="inline-actions full">
             <button class="btn" type="submit" data-save disabled>ذخیره</button>
           </div>
@@ -80,11 +101,42 @@ export function mountStaff(root, user) {
   /** @type {number | null} */
   let selectedId = null
 
+  function roleLabelWithTrainer(u) {
+    const base = ROLE_LABEL[u.role] || u.role
+    if (u.also_trainer && (u.role === 'manager' || u.role === 'receptionist')) {
+      return `${base} + مربی`
+    }
+    return base
+  }
+
   function canEditRow(u) {
     if (!canWrite) return false
-    if (u.role === 'manager') return false
+    if (u.role === 'manager') return isManager
     if (isManager) return u.role === 'receptionist' || u.role === 'trainer'
     return u.role === 'trainer'
+  }
+
+  function syncAlsoTrainerVisibility(form, role, { forceShow } = {}) {
+    const box = form.querySelector('[data-also-trainer-create], [data-also-trainer-edit]')
+    if (!(box instanceof HTMLElement)) return
+    const desk = role === 'manager' || role === 'receptionist'
+    box.hidden = forceShow ? false : !desk
+    if (!desk && !forceShow) {
+      const cb = box.querySelector('input[name=also_trainer]')
+      if (cb instanceof HTMLInputElement) cb.checked = false
+    }
+  }
+
+  function setEditMode(u) {
+    const form = /** @type {HTMLFormElement | null} */ (root.querySelector('[data-edit]'))
+    if (!form) return
+    const managerOnlyAlso = u.role === 'manager'
+    form.querySelectorAll('[data-edit-name], [data-edit-mobile], [data-edit-role], [data-edit-password]').forEach((el) => {
+      if (el instanceof HTMLElement) el.hidden = managerOnlyAlso
+    })
+    const roleSel = form.querySelector('[name=role]')
+    if (roleSel instanceof HTMLSelectElement) roleSel.disabled = managerOnlyAlso
+    syncAlsoTrainerVisibility(form, u.role, { forceShow: managerOnlyAlso })
   }
 
   function setEditEnabled(on) {
@@ -108,7 +160,7 @@ export function mountStaff(root, user) {
           return `<tr>
           <td data-label="نام">${escapeHtml(u.full_name)}</td>
           <td data-label="موبایل">${escapeHtml(u.mobile)}</td>
-          <td data-label="نقش">${ROLE_LABEL[u.role] || u.role}</td>
+          <td data-label="نقش">${escapeHtml(roleLabelWithTrainer(u))}</td>
           <td data-label="وضعیت">${badge}</td>
           <td data-label="اقدام">${action}</td>
         </tr>`
@@ -127,10 +179,21 @@ export function mountStaff(root, user) {
     const form = /** @type {HTMLFormElement | null} */ (root.querySelector('[data-edit]'))
     if (!form) return
     form.id.value = String(u.id)
-    form.full_name.value = u.full_name
-    form.mobile.value = sanitizeMobileInput(u.mobile || '')
-    form.role.value = u.role
-    form.password.value = ''
+    if (form.full_name) form.full_name.value = u.full_name
+    if (form.mobile) form.mobile.value = sanitizeMobileInput(u.mobile || '')
+    if (form.role) {
+      // Manager rows keep role=manager even if select lacks that option.
+      if (u.role === 'manager') {
+        if (![...form.role.options].some((o) => o.value === 'manager')) {
+          form.role.add(new Option('مدیر', 'manager'))
+        }
+      }
+      form.role.value = u.role
+    }
+    if (form.password) form.password.value = ''
+    const also = form.querySelector('input[name=also_trainer]')
+    if (also instanceof HTMLInputElement) also.checked = Boolean(u.also_trainer)
+    setEditMode(u)
     setEditEnabled(true)
     const hint = root.querySelector('[data-edit-hint]')
     if (hint) hint.textContent = `ویرایش: ${u.full_name}`
@@ -161,29 +224,45 @@ export function mountStaff(root, user) {
     events: [LIVE.STAFF],
   })
 
-  root.querySelector('[data-create]')?.addEventListener('submit', async (e) => {
+  const createForm = root.querySelector('[data-create]')
+  createForm?.querySelector('[data-role-create]')?.addEventListener('change', (e) => {
+    const sel = /** @type {HTMLSelectElement} */ (e.target)
+    if (createForm instanceof HTMLFormElement) syncAlsoTrainerVisibility(createForm, sel.value)
+  })
+  if (createForm instanceof HTMLFormElement) {
+    const sel = createForm.querySelector('[data-role-create]')
+    if (sel instanceof HTMLSelectElement) syncAlsoTrainerVisibility(createForm, sel.value)
+  }
+
+  createForm?.addEventListener('submit', async (e) => {
     e.preventDefault()
     const form = /** @type {HTMLFormElement} */ (e.target)
-    // Guard double-submit: first POST may be 201, second 409 — old catch showed «ثبت ناموفق».
     if (form.dataset.busy === '1') return
     form.dataset.busy = '1'
     const submitBtn = /** @type {HTMLButtonElement | null} */ (form.querySelector('[type="submit"]'))
     if (submitBtn) submitBtn.disabled = true
     const fd = new FormData(form)
+    const role = String(fd.get('role') || '').trim()
+    /** @type {Record<string, unknown>} */
+    const payload = {
+      full_name: String(fd.get('full_name') || '').trim(),
+      mobile: String(fd.get('mobile') || '').trim(),
+      role,
+      password: String(fd.get('password') || ''),
+    }
+    if (isManager && (role === 'receptionist' || role === 'manager')) {
+      payload.also_trainer = form.querySelector('input[name=also_trainer]')?.checked === true
+    }
     setStatus(status, 'در حال ثبت…', 'loading')
     let createdOk = false
     try {
-      const res = await apiPost('/api/v1/staff', {
-        full_name: String(fd.get('full_name') || '').trim(),
-        mobile: String(fd.get('mobile') || '').trim(),
-        role: String(fd.get('role') || '').trim(),
-        password: String(fd.get('password') || ''),
-      })
+      const res = await apiPost('/api/v1/staff', payload)
       form.reset()
       if (!isManager) {
         const roleSel = form.querySelector('[name=role]')
         if (roleSel instanceof HTMLSelectElement) roleSel.value = 'trainer'
       }
+      syncAlsoTrainerVisibility(form, String(form.role?.value || 'receptionist'))
       if (res?.user) {
         items = [...items.filter((u) => u.id !== res.user.id), res.user]
         pager.reset()
@@ -197,7 +276,6 @@ export function mountStaff(root, user) {
       form.dataset.busy = '0'
       if (submitBtn) submitBtn.disabled = false
     }
-    // Reload outside create catch so list-refresh errors are not shown as «ثبت ناموفق».
     if (createdOk) {
       emitLive(LIVE.STAFF)
       await autoRefresh.refresh()
@@ -211,14 +289,23 @@ export function mountStaff(root, user) {
     if (form.dataset.busy === '1') return
     form.dataset.busy = '1'
     const fd = new FormData(form)
-    const password = String(fd.get('password') || '')
+    const selected = items.find((x) => x.id === selectedId)
     /** @type {Record<string, unknown>} */
-    const body = {
-      full_name: String(fd.get('full_name') || '').trim(),
-      mobile: String(fd.get('mobile') || '').trim(),
-      role: String(fd.get('role') || '').trim(),
+    const body = {}
+    if (selected?.role === 'manager') {
+      body.also_trainer = form.querySelector('input[name=also_trainer]')?.checked === true
+    } else {
+      body.full_name = String(fd.get('full_name') || '').trim()
+      body.mobile = String(fd.get('mobile') || '').trim()
+      body.role = String(fd.get('role') || '').trim()
+      const password = String(fd.get('password') || '')
+      if (password) body.password = password
+      if (isManager && (body.role === 'receptionist' || body.role === 'manager')) {
+        body.also_trainer = form.querySelector('input[name=also_trainer]')?.checked === true
+      } else if (isManager && body.role === 'trainer') {
+        body.also_trainer = false
+      }
     }
-    if (password) body.password = password
     let savedOk = false
     try {
       await apiPatch(`/api/v1/staff/${selectedId}`, body)

@@ -18,6 +18,7 @@ from app.models.session import StaffSession
 from app.models.user import User
 from app.services.athlete_session import athlete_session_is_valid
 from app.services.auth_session import session_is_valid
+from app.services.staff_roles import ALL_STAFF_ROLES, attach_acting_role, effective_role
 
 
 def get_current_user(
@@ -54,14 +55,17 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="حساب غیرفعال یا یافت نشد.",
         )
-    return user
+    acting = staff_session.acting_role or user.role
+    if acting not in ALL_STAFF_ROLES:
+        acting = user.role
+    return attach_acting_role(user, acting)
 
 
 def require_roles(*roles: str) -> Callable[..., User]:
     allowed: Sequence[str] = roles
 
     def _dependency(user: User = Depends(get_current_user)) -> User:
-        if user.role not in allowed:
+        if effective_role(user) not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="دسترسی مجاز نیست.",

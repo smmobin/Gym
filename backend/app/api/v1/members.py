@@ -24,6 +24,7 @@ from app.services.members import (
     serialize_members,
     trainer_can_view_member,
 )
+from app.services.staff_roles import effective_role
 
 router = APIRouter(prefix="/members", tags=["members"])
 
@@ -32,9 +33,9 @@ _STAFF_WRITE = (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value)
 
 
 def _ensure_can_view(db: Session, user: User, member: Member) -> None:
-    if user.role in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         return
-    if user.role == StaffRole.TRAINER.value and trainer_can_view_member(
+    if effective_role(user) == StaffRole.TRAINER.value and trainer_can_view_member(
         db, trainer=user, member_id=member.id
     ):
         return

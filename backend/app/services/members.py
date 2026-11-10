@@ -16,6 +16,7 @@ from app.models.membership import Membership, MembershipPlan
 from app.models.trainer import TrainerMemberAssignment
 from app.models.user import User
 from app.schemas.members import MemberOut
+from app.services.staff_roles import effective_role
 
 _DISPLAY_RE = re.compile(r"^M-(\d+)$", re.IGNORECASE)
 _DISPLAY_START = 1001
@@ -58,7 +59,7 @@ def build_member_list_query(
 ):
     stmt = select(Member)
 
-    if user.role == StaffRole.TRAINER.value:
+    if effective_role(user) == StaffRole.TRAINER.value:
         allowed_ids = active_trainee_member_ids(db, user.id)
         if not allowed_ids:
             stmt = stmt.where(Member.id == -1)  # empty

@@ -50,6 +50,11 @@ from app.services.login_identities import (
     list_identities_for_mobile,
     resolve_identity,
 )
+from app.services.staff_roles import (
+    attach_acting_role,
+    effective_role,
+    staff_can_act_as,
+)
 from app.services.login_otp import (
     LoginOtpError,
     create_and_send_otp,
@@ -120,6 +125,18 @@ def _identity_out(identity: LoginIdentity) -> IdentityOut:
     )
 
 
+def _user_out_session(user: User) -> UserOut:
+    """Me/login: role is the session acting_role so panels redirect correctly."""
+    return UserOut(
+        id=user.id,
+        mobile=user.mobile,
+        full_name=user.full_name,
+        role=effective_role(user),
+        also_trainer=bool(user.also_trainer),
+        is_active=user.is_active,
+    )
+
+
 def _issue_staff_session(
     *,
     db: Session,
@@ -127,22 +144,27 @@ def _issue_staff_session(
     response: Response,
     settings: Settings,
     user: User,
+    acting_role: str,
     method: auth_audit.AuthMethod,
 ) -> LoginResponse:
+    if not staff_can_act_as(user, acting_role):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=GENERIC_BAD)
     _, raw_token = create_session(
         db,
         user=user,
         settings=settings,
+        acting_role=acting_role,
         user_agent=request.headers.get("user-agent"),
     )
-    auth_audit.login_success_staff(db, user=user, method=method)
+    attach_acting_role(user, acting_role)
+    auth_audit.login_success_staff(db, user=user, method=method, acting_role=acting_role)
     db.commit()
     _set_session_cookie(response, token=raw_token, settings=settings)
     _clear_athlete_cookie(response, settings=settings)
     return LoginResponse(
         kind="staff",
-        role=user.role,
-        user=UserOut.model_validate(user),
+        role=acting_role,
+        user=_user_out_session(user),
     )
 
 
@@ -174,7 +196,7 @@ def _issue_athlete_session(
 
 def _load_staff_user(db: Session, *, mobile: str, role: str) -> User:
     user = db.scalar(select(User).where(User.mobile == mobile))
-    if user is None or not user.is_active or user.role != role:
+    if user is None or not user.is_active or not staff_can_act_as(user, role):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=GENERIC_BAD)
     return user
 
@@ -275,6 +297,7 @@ def _password_login(
             response=response,
             settings=settings,
             user=user,
+            acting_role=identity.role,
             method="password",
         )
 
@@ -401,6 +424,7 @@ def otp_verify(
                 response=response,
                 settings=settings,
                 user=user,
+                acting_role=identity.role,
                 method="otp",
             )
 
@@ -462,7 +486,7 @@ def touch_session(
 
 @router.get("/me", response_model=MeResponse)
 def me(user: User = Depends(get_current_user)) -> MeResponse:
-    return MeResponse(user=UserOut.model_validate(user))
+    return MeResponse(user=_user_out_session(user))
 
 
 @router.get("/staff-ping")
@@ -472,7 +496,11 @@ def staff_ping(
     ),
 ) -> dict[str, str]:
     """Sample protected route: manager + receptionist only (trainer → 403)."""
-    return {"status": "ok", "role": user.role, "message": "دسترسی کارکنان اداری تأیید شد."}
+    return {
+        "status": "ok",
+        "role": effective_role(user),
+        "message": "دسترسی کارکنان اداری تأیید شد.",
+    }
 
 
 @router.post(

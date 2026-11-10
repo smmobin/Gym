@@ -13,6 +13,7 @@ from app.models.member import Member
 from app.models.user import User
 from app.models.workout import WorkoutExercise, WorkoutPlan
 from app.services.members import trainer_can_view_member
+from app.services.staff_roles import effective_role
 
 UNIT_FA = {"reps": "تکرار", "seconds": "ثانیه"}
 
@@ -87,9 +88,9 @@ def _get_member_or_404(db: Session, member_id: int) -> Member:
 
 
 def ensure_can_read_plans(db: Session, user: User, member_id: int) -> None:
-    if user.role in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
+    if effective_role(user) in (StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value):
         return
-    if user.role == StaffRole.TRAINER.value and trainer_can_view_member(
+    if effective_role(user) == StaffRole.TRAINER.value and trainer_can_view_member(
         db, trainer=user, member_id=member_id
     ):
         return
@@ -97,9 +98,9 @@ def ensure_can_read_plans(db: Session, user: User, member_id: int) -> None:
 
 
 def ensure_can_write_plans(db: Session, user: User, member_id: int) -> None:
-    if user.role == StaffRole.MANAGER.value:
+    if effective_role(user) == StaffRole.MANAGER.value:
         return
-    if user.role == StaffRole.TRAINER.value and trainer_can_view_member(
+    if effective_role(user) == StaffRole.TRAINER.value and trainer_can_view_member(
         db, trainer=user, member_id=member_id
     ):
         return
@@ -107,7 +108,7 @@ def ensure_can_write_plans(db: Session, user: User, member_id: int) -> None:
 
 
 def ensure_can_manage_exercises(user: User) -> None:
-    if user.role in (StaffRole.MANAGER.value, StaffRole.TRAINER.value):
+    if effective_role(user) in (StaffRole.MANAGER.value, StaffRole.TRAINER.value):
         return
     raise WorkoutPlanError(403, "دسترسی مجاز نیست.")
 
@@ -178,7 +179,7 @@ def get_or_create_exercise(
 
 def list_exercises(db: Session, *, user: User, q: str = "") -> list[WorkoutExercise]:
     # Any staff role that can open workouts may browse the catalog.
-    if user.role not in (
+    if effective_role(user) not in (
         StaffRole.MANAGER.value,
         StaffRole.RECEPTIONIST.value,
         StaffRole.TRAINER.value,

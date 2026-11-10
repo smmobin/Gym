@@ -12,6 +12,7 @@ from app.models.enums import StaffRole
 from app.models.member import Member
 from app.models.user import User
 from app.services.athlete import member_eligible_for_login
+from app.services.staff_roles import DESK_ROLES, TRAINER_ROLE, staff_can_act_as
 
 Kind = Literal["staff", "athlete"]
 
@@ -48,17 +49,27 @@ def member_has_password(member: Member) -> bool:
     return bool(member.password_hash)
 
 
-def _staff_identity(user: User) -> LoginIdentity:
+def _staff_identity_for_role(user: User, role: str) -> LoginIdentity:
     methods: list[str] = ["password"]
-    if user.role in OTP_ELIGIBLE_STAFF_ROLES:
+    if role in OTP_ELIGIBLE_STAFF_ROLES:
         methods = ["otp", "password"]
     return LoginIdentity(
         kind="staff",
-        role=user.role,
-        label=ROLE_LABELS_FA.get(user.role, user.role),
+        role=role,
+        label=ROLE_LABELS_FA.get(role, role),
         auth_methods=tuple(methods),
         has_password=True,
     )
+
+
+def _staff_identities(user: User) -> list[LoginIdentity]:
+    """One identity, or desk + trainer when also_trainer is set on a desk account."""
+    if user.role in DESK_ROLES and bool(user.also_trainer):
+        return [
+            _staff_identity_for_role(user, user.role),
+            _staff_identity_for_role(user, TRAINER_ROLE),
+        ]
+    return [_staff_identity_for_role(user, user.role)]
 
 
 def _athlete_identity(member: Member) -> LoginIdentity:
@@ -81,7 +92,7 @@ def list_identities_for_mobile(db: Session, *, mobile: str) -> list[LoginIdentit
 
     user = db.scalar(select(User).where(User.mobile == mobile))
     if user is not None and user.is_active:
-        out.append(_staff_identity(user))
+        out.extend(_staff_identities(user))
 
     member = db.scalar(select(Member).where(Member.mobile == mobile))
     if member is not None and member_eligible_for_login(member):
@@ -112,10 +123,19 @@ def resolve_identity(
 
     if kind == "staff":
         matches = [i for i in identities if i.kind == "staff"]
+        if role:
+            matches = [i for i in matches if i.role == role]
         if not matches:
             raise LoginIdentityError(401, "اطلاعات ورود نادرست است.")
+        if len(matches) > 1:
+            raise LoginIdentityError(
+                409,
+                "چند هویت برای این موبایل وجود دارد. نقش را انتخاب کنید.",
+            )
         chosen = matches[0]
-        if role and chosen.role != role:
+        # Defense in depth: also_trainer / permanent role must allow this acting role.
+        user = db.scalar(select(User).where(User.mobile == mobile.strip()))
+        if user is None or not staff_can_act_as(user, chosen.role):
             raise LoginIdentityError(401, "اطلاعات ورود نادرست است.")
         return chosen
 

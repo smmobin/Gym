@@ -18,6 +18,7 @@ from app.models.workout import WorkoutPlan
 from app.services.audit import write_audit
 from app.services.debt import member_debt
 from app.services.notifications import KIND_RENEWAL_REQUEST, create_notification
+from app.services.staff_roles import effective_role
 
 MIN_PASSWORD_LEN = 8
 
@@ -70,7 +71,7 @@ def set_athlete_password(
     member_id: int,
     password: str,
 ) -> Member:
-    if user.role not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
+    if effective_role(user) not in {StaffRole.MANAGER.value, StaffRole.RECEPTIONIST.value}:
         raise AthleteError(403, "دسترسی مجاز نیست.")
     if len(password) < MIN_PASSWORD_LEN:
         raise AthleteError(400, "رمز باید حداقل ۸ کاراکتر باشد.")
