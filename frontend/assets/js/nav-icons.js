@@ -64,6 +64,7 @@ export const NAV_ICON_BY_HASH = {
   settings: 'gear',
   notif: 'bell',
   activity: 'pulse',
+  logs: 'layers',
 }
 
 /**

@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from fastapi.responses import Response
+from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
+from app.core.db import get_db
 from app.core.dev_log_gate import dev_log_token_matches, dev_log_viewer_enabled
+from app.services import activity as activity_svc
 from app.services import dev_logs as dev_log_svc
 
 router = APIRouter(prefix="/dev/logs", tags=["dev-logs"])
@@ -87,3 +92,36 @@ def download_file(
             "Cache-Control": "no-store",
         },
     )
+
+
+@router.get("/activity")
+def precise_activity(
+    from_date: date | None = Query(default=None, alias="from"),
+    to_date: date | None = Query(default=None, alias="to"),
+    q: str | None = Query(default=None, max_length=80),
+    category: str | None = Query(default=None, max_length=20),
+    cursor: str | None = Query(default=None, max_length=80),
+    limit: int = Query(default=activity_svc.DEFAULT_LIMIT, ge=1, le=200),
+    db: Session = Depends(get_db),
+    _settings: Settings = Depends(_require_viewer),
+) -> dict:
+    """Same manager activity events, with payload and full request id. Token-gated."""
+    try:
+        page = activity_svc.list_activity_precise(
+            db,
+            from_date=from_date,
+            to_date=to_date,
+            q=q,
+            category=category,
+            cursor=cursor,
+            limit=limit,
+        )
+    except activity_svc.ActivityError as err:
+        raise HTTPException(status_code=err.status_code, detail=err.detail) from err
+    return {
+        "items": [item.as_precise_dict() for item in page.items],
+        "from": page.from_date.isoformat(),
+        "to": page.to_date.isoformat(),
+        "next_cursor": page.next_cursor,
+        "categories": list(activity_svc.CATEGORIES),
+    }

@@ -153,6 +153,42 @@ def test_download_allowlisted_file(client: TestClient, viewer_on: None) -> None:
     assert b"health" not in ranged.content
 
 
+def test_precise_activity_includes_payload(client: TestClient, viewer_on: None) -> None:
+    from app.core.db import SessionLocal
+    from app.models import AuditLog
+
+    db = SessionLocal()
+    try:
+        row = AuditLog(
+            actor_user_id=None,
+            action="staff.update",
+            entity_type="user",
+            entity_id="9",
+            summary="ویرایش کارکنان تست",
+            payload={"role": "receptionist", "also_trainer": True, "password": "SecretPass99"},
+            request_id="rid-precise-test-0001",
+        )
+        db.add(row)
+        db.commit()
+    finally:
+        db.close()
+
+    res = client.get(
+        "/api/v1/dev/logs/activity",
+        params={"q": "rid-precise-test-0001"},
+        headers=_hdr(),
+    )
+    assert res.status_code == 200, res.text
+    items = res.json()["items"]
+    assert items
+    hit = items[0]
+    assert hit["action"] == "staff.update"
+    assert hit["request_id"] == "rid-precise-test-0001"
+    assert hit["entity_type"] == "user"
+    assert hit["payload"]["also_trainer"] is True
+    assert "SecretPass99" not in str(hit["payload"])
+
+
 def test_manager_session_does_not_open_logs(client: TestClient, viewer_on: None) -> None:
     wipe_and_seed()
     login_rate_limiter.reset()

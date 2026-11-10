@@ -7,30 +7,55 @@
   <script>(function(){try{var t=localStorage.getItem('gym-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark';}})();</script>
   <title>لاگ سازنده — GYM CONTROL</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/images/brand/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0a1520" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/components.css" />
   <link rel="stylesheet" href="/assets/css/dev-logs.css" />
 </head>
-<body class="panel-page dev-logs-page">
-  <div class="main dev-logs-main">
-    <header class="topbar">
-      <div class="topbar-title">
-        <div>
-          <h1>لاگ فایل</h1>
-          <p>پنل سازنده · جدا از خلاصهٔ <a href="/manager/#activity">فعالیت مدیر</a></p>
-        </div>
+<body class="panel-page">
+  <div class="api-banner" data-api-banner hidden></div>
+  <input type="checkbox" id="side-toggle" class="side-toggle" />
+  <div class="app">
+    <label for="side-toggle" class="side-backdrop" aria-hidden="true"></label>
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="GYM CONTROL — لاگ سازنده">
+        <span class="brand-mark"><img src="/images/brand/logo-mark.svg" alt="" width="52" height="52" decoding="async" /></span>
+      </a>
+      <nav class="nav">
+        <p class="nav-label">سازنده</p>
+        <a class="nav-item active" href="#logs">فایل‌های لاگ</a>
+        <a class="nav-item" href="#activity">فعالیت دقیق</a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="/manager/#activity">خلاصهٔ مدیر</a>
+        <button type="button" class="btn ghost small" data-lock>قفل بیننده</button>
       </div>
-      <div class="topbar-actions">
-        <div data-theme-mount></div>
-        <span class="tag">سازنده</span>
-      </div>
-    </header>
+    </aside>
 
-    <section class="content">
-      <main class="dev-logs-shell" data-dev-logs>
-        <article class="panel activity-panel dev-logs-gate" data-gate>
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <label for="side-toggle" class="side-burger" aria-label="منوی پنل">
+            <span></span><span></span><span></span>
+          </label>
+          <div>
+            <h1>فایل‌های لاگ</h1>
+            <p>همان پوستهٔ پنل مدیر · جزئیات کامل فقط برای سازنده</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <time class="topbar-today" data-today-date></time>
+          <div data-theme-mount></div>
+          <div class="user-chip"><span class="avatar">سا</span><span>سازنده</span></div>
+        </div>
+      </header>
+
+      <section class="content" data-dev-logs>
+        <article class="panel activity-panel" data-gate>
           <header class="panel-head">
             <div>
               <h2>ورود به بیننده</h2>
@@ -46,60 +71,78 @@
           </form>
         </article>
 
-        <article class="panel activity-panel" data-app hidden>
-          <header class="panel-head">
-            <div>
-              <h2>لاگ‌های فایل</h2>
-              <p class="hint">دم فایل‌های <code class="activity-rid en" dir="ltr">backend/logs</code> — نه خلاصهٔ آدیت مدیر.</p>
+        <div data-section="logs" data-title="فایل‌های لاگ" hidden>
+          <article class="panel activity-panel" data-app>
+            <header class="panel-head">
+              <div>
+                <h2>لاگ‌های فایل</h2>
+                <p class="hint">access / app / error / sensitive از پوشهٔ logs. این‌ها در پنل مدیر نیستند.</p>
+              </div>
+              <div class="inline-actions">
+                <button type="button" class="btn ghost small" data-download-view>خروجی بازه (.log)</button>
+                <button type="button" class="btn ghost small" data-download-file>دانلود فایل</button>
+              </div>
+            </header>
+            <div class="activity-chips" data-tabs role="group" aria-label="فایل لاگ"></div>
+            <form data-filters class="form-grid activity-filters">
+              <label class="activity-search">جستجو
+                <input name="q" type="search" maxlength="200" placeholder="متن خط…" autocomplete="off" />
+              </label>
+              <label>سطح
+                <select name="level">
+                  <option value="">همه</option>
+                  <option>DEBUG</option>
+                  <option>INFO</option>
+                  <option>WARNING</option>
+                  <option>ERROR</option>
+                  <option>CRITICAL</option>
+                </select>
+              </label>
+              <label>request id
+                <input name="rid" dir="ltr" maxlength="80" placeholder="شناسهٔ کامل" autocomplete="off" />
+              </label>
+              <button class="btn" type="submit">اعمال</button>
+            </form>
+            <div class="activity-stats" data-meta></div>
+            <div class="dev-logs-view" data-view></div>
+            <div class="inline-actions activity-more">
+              <button type="button" class="btn ghost small" data-older>خطوط قدیمی‌تر</button>
+              <button type="button" class="btn ghost small" data-tail>انتها</button>
+              <button type="button" class="btn ghost small" data-refresh>تازه‌سازی</button>
+              <label class="check"><input type="checkbox" data-auto /> به‌روز خودکار</label>
             </div>
-            <div class="inline-actions">
-              <button type="button" class="btn ghost small" data-download-view>خروجی بازه (.log)</button>
-              <button type="button" class="btn ghost small" data-download-file>دانلود فایل</button>
-              <button type="button" class="btn ghost small" data-lock>خروج توکن</button>
+          </article>
+        </div>
+
+        <div data-section="activity" data-title="فعالیت دقیق" hidden>
+          <article class="panel activity-panel" data-precise>
+            <header class="panel-head">
+              <div>
+                <h2>فعالیت سامانه — نسخهٔ دقیق</h2>
+                <p class="hint">همان رویدادهای <a href="/manager/#activity">خلاصهٔ مدیر</a>، به‌علاوهٔ action، payload و request id کامل. رمزها دوباره پوشانده می‌شوند.</p>
+              </div>
+            </header>
+            <form data-precise-filters class="form-grid activity-filters">
+              <label>از<input type="date" name="from" /></label>
+              <label>تا<input type="date" name="to" /></label>
+              <label class="activity-search">جستجو
+                <input type="search" name="q" maxlength="80" placeholder="نام، رویداد، شناسهٔ درخواست…" autocomplete="off" />
+              </label>
+              <button class="btn" type="submit">اعمال بازه</button>
+            </form>
+            <div class="activity-chips" data-precise-chips role="group" aria-label="دستهٔ فعالیت"></div>
+            <div class="activity-stats" data-precise-stats></div>
+            <div class="status-msg" data-precise-status hidden></div>
+            <div class="activity-list" data-precise-list></div>
+            <div class="inline-actions activity-more" data-precise-more hidden>
+              <button type="button" class="btn ghost small" data-precise-older>رویدادهای قدیمی‌تر</button>
             </div>
-          </header>
-
-          <div class="activity-chips" data-tabs role="group" aria-label="فایل لاگ"></div>
-
-          <form data-filters class="form-grid activity-filters">
-            <label class="activity-search">جستجو
-              <input name="q" type="search" maxlength="200" placeholder="متن خط…" autocomplete="off" />
-            </label>
-            <label>سطح
-              <select name="level">
-                <option value="">همه</option>
-                <option>DEBUG</option>
-                <option>INFO</option>
-                <option>WARNING</option>
-                <option>ERROR</option>
-                <option>CRITICAL</option>
-              </select>
-            </label>
-            <label>request id
-              <input name="rid" dir="ltr" maxlength="80" placeholder="rid" autocomplete="off" />
-            </label>
-            <button class="btn" type="submit">اعمال</button>
-          </form>
-
-          <div class="activity-stats" data-meta></div>
-          <div class="status-msg" data-status hidden></div>
-
-          <div class="dev-logs-view" data-view></div>
-
-          <div class="inline-actions activity-more">
-            <button type="button" class="btn ghost small" data-older>خطوط قدیمی‌تر</button>
-            <button type="button" class="btn ghost small" data-tail>انتها</button>
-            <button type="button" class="btn ghost small" data-refresh>تازه‌سازی</button>
-            <label class="check">
-              <input type="checkbox" data-auto />
-              به‌روز خودکار
-            </label>
-          </div>
-          <p class="hint activity-foot">این صفحه در منوی باشگاه نیست. در production خاموش می‌ماند.</p>
-        </article>
-      </main>
-    </section>
+          </article>
+        </div>
+      </section>
+    </div>
   </div>
   <script type="module" src="/assets/js/panels/dev-logs.js"></script>
+  <script src="/js/date-picker.js"></script>
 </body>
 </html>

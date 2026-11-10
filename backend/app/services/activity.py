@@ -14,7 +14,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.jalali import TEHRAN, gregorian_to_jalali
-from app.core.redaction import redact_text
+from app.core.redaction import redact_mapping, redact_text
 from app.models.audit import AuditLog
 from app.models.enums import StaffRole
 from app.models.system_event import SystemErrorEvent
@@ -84,6 +84,11 @@ class ActivityItem:
     method: str | None = None
     path: str | None = None
     status_code: int | None = None
+    # Detail fields stay off the manager API (as_dict). Builder viewer uses as_precise_dict.
+    payload: dict[str, Any] | None = None
+    entity_type: str | None = None
+    entity_id: str | None = None
+    error_type: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -101,6 +106,14 @@ class ActivityItem:
             "path": self.path,
             "status_code": self.status_code,
         }
+
+    def as_precise_dict(self) -> dict[str, Any]:
+        data = self.as_dict()
+        data["entity_type"] = self.entity_type
+        data["entity_id"] = self.entity_id
+        data["error_type"] = self.error_type
+        data["payload"] = redact_mapping(self.payload) if isinstance(self.payload, dict) else None
+        return data
 
 
 @dataclass(frozen=True)
@@ -195,6 +208,9 @@ def _audit_items(
                 actor_role=actor_role,
                 summary=redact_text(row.summary or row.action),
                 request_id=row.request_id,
+                payload=payload,
+                entity_type=row.entity_type,
+                entity_id=row.entity_id,
             )
         )
     return out
@@ -234,9 +250,32 @@ def _error_items(
             method=row.method,
             path=row.path,
             status_code=row.status_code,
+            error_type=row.error_type,
         )
         for row in db.scalars(stmt).all()
     ]
+
+
+def list_activity_precise(
+    db: Session,
+    *,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    q: str | None = None,
+    category: str | None = None,
+    cursor: str | None = None,
+    limit: int = DEFAULT_LIMIT,
+) -> ActivityPage:
+    """Same events as the manager feed, including stored payload. Caller must be the dev viewer."""
+    return _list_activity_page(
+        db,
+        from_date=from_date,
+        to_date=to_date,
+        q=q,
+        category=category,
+        cursor=cursor,
+        limit=limit,
+    )
 
 
 def list_activity(
@@ -251,6 +290,27 @@ def list_activity(
     limit: int = DEFAULT_LIMIT,
 ) -> ActivityPage:
     ensure_manager(user)
+    return _list_activity_page(
+        db,
+        from_date=from_date,
+        to_date=to_date,
+        q=q,
+        category=category,
+        cursor=cursor,
+        limit=limit,
+    )
+
+
+def _list_activity_page(
+    db: Session,
+    *,
+    from_date: date | None,
+    to_date: date | None,
+    q: str | None,
+    category: str | None,
+    cursor: str | None,
+    limit: int,
+) -> ActivityPage:
     start_d, end_d = resolve_activity_range(from_date, to_date)
     if category and category not in CATEGORIES:
         raise ActivityError(422, "دستهٔ فعالیت نامعتبر است.")

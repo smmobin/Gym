@@ -1,79 +1,7 @@
-/* Builder log viewer — same Ocean Dark panel language as /manager/#activity */
+/* Extra bits on top of the manager panel shell. Layout comes from ocean.css. */
 
-.dev-logs-page [hidden] {
+.panel-page [hidden] {
   display: none !important;
-}
-
-.dev-logs-page {
-  min-height: 100vh;
-}
-
-.dev-logs-main {
-  width: min(1120px, 100%);
-  margin: 0 auto;
-  padding: 0 0.75rem 2rem;
-}
-
-.dev-logs-shell {
-  display: grid;
-  gap: 1rem;
-}
-
-.dev-logs-page .topbar {
-  margin-block: 0.85rem 0.35rem;
-  padding-inline: 0.15rem;
-}
-
-.dev-logs-page .topbar-title h1 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.dev-logs-page .topbar-title p {
-  margin: 0.2rem 0 0;
-  color: var(--muted);
-  font-size: 0.86rem;
-}
-
-.dev-logs-page .topbar-title a {
-  color: var(--accent);
-}
-
-.dev-logs-gate .activity-filters {
-  grid-template-columns: minmax(0, 1.6fr) auto;
-  margin-top: 0.35rem;
-}
-
-.dev-logs-page .activity-filters {
-  margin-top: 0.15rem;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.85fr) minmax(0, 1fr) auto;
-}
-
-.dev-logs-page .activity-filters > button[type="submit"] {
-  grid-column: auto;
-  width: auto;
-  white-space: nowrap;
-}
-
-.dev-logs-page .activity-chips {
-  margin-top: 0;
-  margin-bottom: 0.85rem;
-}
-
-.dev-logs-page .activity-more {
-  margin-top: 0.85rem;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  align-items: center;
-}
-
-.dev-logs-page .activity-more .check {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: var(--muted);
-  font-size: 0.86rem;
 }
 
 .dev-logs-view {
@@ -85,7 +13,7 @@
   background: color-mix(in srgb, var(--panel-2) 78%, #050b12);
   direction: ltr;
   text-align: left;
-  padding: 0.25rem 0.55rem;
+  padding: 0.2rem 0.55rem;
 }
 
 .dev-logs-view .activity-empty {
@@ -98,84 +26,65 @@
   grid-template-columns: 3.6rem minmax(0, 1fr) auto;
   gap: 0.65rem;
   align-items: start;
-  padding: 0.55rem 0.2rem;
+  padding: 0.55rem 0.15rem;
   border-bottom: 1px solid var(--line);
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   font-size: 0.78rem;
   line-height: 1.55;
 }
 
-.dev-log-line:last-child {
-  border-bottom: none;
-}
-
-.dev-log-line:hover {
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
-}
-
-.dev-log-n {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  padding-top: 0.1rem;
-}
-
+.dev-log-line:last-child { border-bottom: none; }
+.dev-log-line:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.dev-log-n { color: var(--muted); font-variant-numeric: tabular-nums; }
 .dev-log-text {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
   color: var(--text);
-  overflow-wrap: anywhere;
 }
-
 .dev-log-line.is-ERROR .dev-log-text,
-.dev-log-line.is-CRITICAL .dev-log-text {
-  color: color-mix(in srgb, var(--danger) 82%, #fff);
-}
-
-.dev-log-line.is-WARNING .dev-log-text {
-  color: color-mix(in srgb, var(--warn) 78%, #fff);
-}
-
-.dev-log-line.is-DEBUG .dev-log-text {
-  color: var(--muted);
-}
+.dev-log-line.is-CRITICAL .dev-log-text { color: var(--danger); }
+.dev-log-line.is-WARNING .dev-log-text { color: var(--warn); }
+.dev-log-line.is-DEBUG .dev-log-text { color: var(--muted); }
 
 .dev-log-copy {
   border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  background: transparent;
   color: var(--accent);
   cursor: pointer;
   font: inherit;
   font-size: 0.72rem;
   border-radius: 6px;
   padding: 0.12rem 0.4rem;
-  white-space: nowrap;
 }
 
-.dev-log-copy:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+.dev-precise-payload {
+  margin: 0.45rem 0 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-2) 80%, transparent);
+  color: var(--text);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  direction: ltr;
+  text-align: left;
+  max-height: 240px;
+  overflow: auto;
 }
 
-@media (max-width: 900px) {
-  .dev-logs-page .activity-filters {
-    grid-template-columns: 1fr;
-  }
+.activity-more .check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
 
-  .dev-logs-page .activity-filters > button[type="submit"] {
-    width: 100%;
-  }
-
-  .dev-logs-page .panel-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .dev-log-line {
-    grid-template-columns: 2.8rem minmax(0, 1fr);
-  }
-
-  .dev-log-copy {
-    grid-column: 2;
-    justify-self: start;
-  }
+@media (max-width: 760px) {
+  .dev-log-line { grid-template-columns: 2.6rem minmax(0, 1fr); }
+  .dev-log-copy { grid-column: 2; justify-self: start; }
 }
