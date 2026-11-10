@@ -1,3 +1,4 @@
+import { mountActivity } from '../activity.js'
 import { requireStaff } from '../auth-staff.js'
 import { mountAttendance } from '../attendance.js'
 import { mountBilling } from '../billing.js'
@@ -40,6 +41,7 @@ async function main() {
     finance: () => mountReports(el('mount-reports'), user),
     settings: () => mountSettings(el('mount-settings'), user),
     sms: () => mountSmsTemplates(el('mount-sms')),
+    activity: () => mountActivity(el('mount-activity'), user),
   }
 
   const loaded = new Set()

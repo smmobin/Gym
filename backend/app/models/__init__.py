@@ -29,6 +29,7 @@ from app.models.membership import Membership, MembershipPlan
 from app.models.notification import StaffNotification, StaffNotificationRead
 from app.models.payment import Payment
 from app.models.session import StaffSession
+from app.models.system_event import SystemErrorEvent
 from app.models.testimonial import MemberTestimonial
 from app.models.trainer import TrainerMemberAssignment
 from app.models.trial_lead import TrialLead
@@ -67,6 +68,7 @@ __all__ = [
     "StaffNotificationRead",
     "StaffRole",
     "StaffSession",
+    "SystemErrorEvent",
     "TrainerMemberAssignment",
     "TrialLead",
     "TrialLeadStatus",

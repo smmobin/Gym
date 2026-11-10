@@ -9,6 +9,9 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.core.logging_setup import setup_logging
+from app.core.request_context import REQUEST_ID_HEADER
+from app.core.request_middleware import RequestContextMiddleware
 
 settings = get_settings()
 logger = logging.getLogger("gym.startup")
@@ -63,6 +66,9 @@ def _warn_insecure_production() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    paths = setup_logging(settings)
+    if paths:
+        logger.info("File logs in %s", paths["app"].parent)
     _warn_insecure_production()
     if _should_serve_frontend():
         logger.info("Serving frontend from %s", FRONTEND_DIST)
@@ -83,7 +89,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[REQUEST_ID_HEADER, "Content-Disposition"],
 )
+# Added last → outermost: every response (incl. CORS preflight) gets X-Request-ID.
+app.add_middleware(RequestContextMiddleware)
 
 app.include_router(api_router, prefix=settings.api_prefix)
 

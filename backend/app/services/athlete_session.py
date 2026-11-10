@@ -82,6 +82,16 @@ def touch_athlete_session_by_token(db: Session, *, token: str, settings: Setting
     return True
 
 
+def athlete_session_member_id_for_token(db: Session, *, token: str) -> int | None:
+    """Member id of an unrevoked athlete session (for logout audit)."""
+    return db.scalar(
+        select(AthleteSession.member_id).where(
+            AthleteSession.token_hash == hash_session_token(token),
+            AthleteSession.revoked_at.is_(None),
+        )
+    )
+
+
 def revoke_athlete_session_by_token(db: Session, *, token: str) -> bool:
     token_hash = hash_session_token(token)
     row = db.scalar(

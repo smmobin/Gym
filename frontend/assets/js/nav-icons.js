@@ -36,6 +36,8 @@ const PATHS = {
     '<circle cx="12" cy="12" r="2.6"/><path d="M12 4.2v2.1M12 17.7v2.1M4.2 12h2.1M17.7 12h2.1M6.4 6.4l1.5 1.5M16.1 16.1l1.5 1.5M17.6 6.4l-1.5 1.5M7.9 16.1l-1.5 1.5"/>',
   bell:
     '<path d="M6.5 16.5h11"/><path d="M8 16.5V11a4 4 0 1 1 8 0v5.5"/><path d="M10.2 16.5a1.8 1.8 0 0 0 3.6 0"/>',
+  pulse:
+    '<path d="M3.5 12h3.6l2.2-5 3.6 10 2.4-6.2 1.2 1.2h4"/>',
 }
 
 /** Hash (without #) → icon key */
@@ -61,6 +63,7 @@ export const NAV_ICON_BY_HASH = {
   testimonials: 'chat',
   settings: 'gear',
   notif: 'bell',
+  activity: 'pulse',
 }
 
 /**

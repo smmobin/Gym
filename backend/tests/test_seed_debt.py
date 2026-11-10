@@ -63,9 +63,10 @@ def test_ali_has_partial_pt_debt(db: Session) -> None:
     memberships = db.scalars(select(Membership).where(Membership.member_id == ali.id)).all()
     payments = db.scalars(select(Payment).where(Payment.member_id == ali.id)).all()
     summary = member_debt(memberships, payments)
-    # 1_500_000 + 3_600_000 agreed, 1_500_000 + 1_000_000 paid → 2_600_000 debt
-    assert summary.agreed_total_toman == 5_100_000
-    assert summary.paid_total_toman == 2_500_000
+    # Agreed: month 1_500_000 + PT 3_600_000 + future renewal 1_500_000.
+    # Paid:   1_500_000 + 1_000_000 + 1_500_000 (future renewal fully paid) → debt only on PT.
+    assert summary.agreed_total_toman == 6_600_000
+    assert summary.paid_total_toman == 4_000_000
     assert summary.debt_toman == 2_600_000
 
 

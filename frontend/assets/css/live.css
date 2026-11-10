@@ -1821,3 +1821,164 @@ button:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     grid-column: auto;
   }
 }
+
+/* —— Manager «فعالیت سامانه» —— */
+.activity-panel .panel-head {
+  gap: 1rem;
+  align-items: flex-start;
+}
+.activity-panel .panel-head .hint {
+  margin: 0.25rem 0 0;
+}
+.activity-filters {
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr) auto;
+}
+.activity-filters > button[type="submit"] {
+  grid-column: auto;
+  width: auto;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .activity-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .activity-search { grid-column: 1 / -1; order: 1; }
+}
+.activity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+.activity-chip {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.84rem;
+  padding: 0.38rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.activity-chip:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+.activity-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.activity-chip.is-active {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  font-weight: 600;
+}
+.activity-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0.95rem 0 0.35rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.activity-stat strong {
+  color: var(--text);
+  font-size: 1rem;
+  margin-inline-end: 0.2rem;
+}
+.activity-stat.warn strong { color: var(--warn); }
+.activity-stat.danger strong { color: var(--danger); }
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+.activity-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.activity-row:last-child { border-bottom: none; }
+.activity-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.45rem;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 14%, transparent);
+}
+.activity-row.is-fail .activity-dot {
+  background: var(--warn);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 14%, transparent);
+}
+.activity-row.is-error .activity-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 14%, transparent);
+}
+.activity-main { min-width: 0; }
+.activity-summary {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.activity-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.activity-rid,
+.activity-path {
+  font-size: 0.76rem;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.05rem 0.35rem;
+  unicode-bidi: isolate;
+}
+.activity-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  text-align: left;
+}
+.activity-time {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.activity-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+.activity-empty {
+  padding: 1.25rem 0;
+  text-align: center;
+}
+.activity-foot {
+  margin-top: 0.85rem;
+  font-size: 0.78rem;
+}
+@media (max-width: 760px) {
+  .activity-filters { grid-template-columns: 1fr; }
+  .activity-search { order: 0; }
+  .activity-filters > button[type="submit"] { width: 100%; }
+  .activity-panel .panel-head { flex-direction: column; }
+  .activity-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .activity-side {
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+}

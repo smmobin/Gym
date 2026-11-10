@@ -19,6 +19,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.db import SessionLocal, engine
+from app.core.jalali import TEHRAN
 from app.core.security import hash_password
 from app.models import (
     AthleteNotification,
@@ -50,6 +51,7 @@ from app.models import (
     StaffNotificationRead,
     StaffRole,
     StaffSession,
+    SystemErrorEvent,
     TrainerMemberAssignment,
     TrialLead,
     TrialLeadStatus,
@@ -91,6 +93,7 @@ def clear_domain_data(session: Session) -> None:
         AthleteNotification,
         AthleteSession,
         AuditLog,
+        SystemErrorEvent,
         StaffSession,
         LoginOtp,
         MemberFileLock,
@@ -424,6 +427,109 @@ def _ensure_staff_notification(
             entity_id=None,
             is_derived=False,
         )
+    )
+
+
+_SEED_ACTIVITY_MARK = "seed-act-0001"
+
+
+def _ensure_activity_samples(
+    session: Session,
+    *,
+    manager: User,
+    receptionist: User,
+    trainer: User,
+    now: datetime,
+) -> None:
+    """Fake «فعالیت سامانه» rows (masked fake mobiles only) spread over recent days."""
+    if session.scalar(
+        select(AuditLog.id).where(AuditLog.request_id == _SEED_ACTIVITY_MARK).limit(1)
+    ):
+        return
+
+    def at(days_ago: int, hour: int, minute: int) -> datetime:
+        base = (now - timedelta(days=days_ago)).astimezone(TEHRAN)
+        value = base.replace(hour=hour, minute=minute, second=0, microsecond=0).astimezone(UTC)
+        # Early-morning seed runs: keep «today» samples in the past.
+        return min(value, now - timedelta(minutes=5))
+
+    samples: list[dict[str, object]] = [
+        dict(at=at(0, 8, 5), actor=manager, action="auth.login.success", entity_type="user",
+             summary=f"ورود موفق {manager.full_name} با رمز",
+             payload={"kind": "staff", "role": "manager", "method": "password"}),
+        dict(at=at(0, 8, 31), actor=receptionist, action="auth.login.success", entity_type="user",
+             summary=f"ورود موفق {receptionist.full_name} با رمز",
+             payload={"kind": "staff", "role": "receptionist", "method": "password"}),
+        dict(at=at(0, 10, 12), actor=None, action="auth.otp.verify.failure", entity_type="auth",
+             summary="کد ورود نادرست یا منقضی (0912***0003)",
+             payload={"kind": "staff", "role": "trainer", "reason": "bad_credentials",
+                      "status_code": 401, "mobile_masked": "0912***0003"}),
+        dict(at=at(1, 17, 0), actor=None, action="auth.otp.send", entity_type="auth",
+             summary="ارسال کد ورود به 0912***0003",
+             payload={"ok": True, "kind": "staff", "role": "trainer", "mode": "dev_fixed",
+                      "mobile_masked": "0912***0003"}),
+        dict(at=at(1, 17, 1), actor=trainer, action="auth.login.success", entity_type="user",
+             summary=f"ورود موفق {trainer.full_name} با کد پیامک",
+             payload={"kind": "staff", "role": "trainer", "method": "otp"}),
+        dict(at=at(1, 21, 0), actor=manager, action="auth.logout", entity_type="user",
+             summary=f"خروج {manager.full_name}", payload={"kind": "staff", "role": "manager"}),
+        dict(at=at(1, 22, 40), actor=None, action="auth.login.failure", entity_type="auth",
+             summary="ورود ناموفق (0912***9876) با رمز",
+             payload={"method": "password", "reason": "bad_credentials", "status_code": 401,
+                      "mobile_masked": "0912***9876"}),
+        dict(at=at(1, 22, 41), actor=None, action="auth.login.failure", entity_type="auth",
+             summary="ورود ناموفق (0912***9876) با رمز",
+             payload={"method": "password", "reason": "bad_credentials", "status_code": 401,
+                      "mobile_masked": "0912***9876"}),
+        dict(at=at(2, 11, 20), actor=manager, action="gym_settings.patch", entity_type="gym_settings",
+             summary="ویرایش تنظیمات باشگاه",
+             payload={"before": {"expiry_warning_days": 5}, "after": {"expiry_warning_days": 7}}),
+        dict(at=at(2, 18, 5), actor=receptionist, action="payment.refund", entity_type="payment",
+             summary="برگشت پرداخت نمونه ۵۰۰٬۰۰۰ تومان (ساختگی)",
+             payload={"amount_toman": 500_000}),
+        dict(at=at(3, 9, 45), actor=manager, action="plan.update", entity_type="membership_plan",
+             summary="تغییر قیمت طرح ماهانه سالن: 1,400,000 ← 1,500,000 تومان",
+             payload={"base_price_toman": 1_500_000, "before": {"base_price_toman": 1_400_000}}),
+        dict(at=at(4, 16, 30), actor=receptionist, action="membership.freeze", entity_type="membership",
+             summary="توقف موقت اشتراک عضو نمونه (ساختگی)", payload={"days": 5}),
+        dict(at=at(5, 12, 0), actor=manager, action="staff.create", entity_type="user",
+             summary="ساخت کارکنان مربی دو با نقش trainer",
+             payload={"role": "trainer"}),
+    ]
+    for index, sample in enumerate(samples, start=1):
+        actor = sample["actor"]
+        session.add(
+            AuditLog(
+                actor_user_id=actor.id if isinstance(actor, User) else None,
+                action=str(sample["action"]),
+                entity_type=str(sample["entity_type"]),
+                summary=str(sample["summary"]),
+                payload=sample["payload"],
+                request_id=f"seed-act-{index:04d}",
+                created_at=sample["at"],
+            )
+        )
+    session.add_all(
+        [
+            SystemErrorEvent(
+                request_id="seed-err-0001",
+                method="GET",
+                path="/api/v1/reports/profit",
+                status_code=500,
+                error_type="OperationalError",
+                summary="خطای داخلی سرور (OperationalError)",
+                created_at=at(2, 13, 7),
+            ),
+            SystemErrorEvent(
+                request_id="seed-err-0002",
+                method="POST",
+                path="/api/v1/auth/login",
+                status_code=429,
+                error_type=None,
+                summary="تلاش‌های زیاد روی ورود (محدودیت نرخ)",
+                created_at=at(1, 22, 42),
+            ),
+        ]
     )
 
 
@@ -1134,6 +1240,13 @@ def seed(session: Session | None = None) -> dict[str, int]:
                     payload={"source": "app.db.seed"},
                 )
             )
+        _ensure_activity_samples(
+            session,
+            manager=manager,
+            receptionist=receptionist,
+            trainer=trainer1,
+            now=now,
+        )
 
         _get_or_create_testimonial(
             session,

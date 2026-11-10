@@ -14,7 +14,7 @@ from app.core.config import Settings
 from app.core.security import hash_session_token
 from app.models.login_otp import LoginOtp
 from app.services.login_identities import LoginIdentity, identity_allows_otp
-from app.services.sms.base import SmsError, SmsGateway
+from app.services.sms.base import SmsError, SmsGateway, log_sms_failure
 from app.services.sms.factory import get_sms_gateway
 
 DEV_FIXED_OTP = "123456"
@@ -146,6 +146,13 @@ def create_and_send_otp(
                 sender=(settings.sms_sender or "").strip() or None,
             )
         except SmsError as err:
+            log_sms_failure(
+                context="login_otp",
+                provider=(settings.sms_provider or "").strip().lower(),
+                mobile=mobile,
+                error_code=err.code,
+                status_code=err.status_code,
+            )
             raise LoginOtpError(err.status_code, err.detail) from err
         detail = "کد ورود پیامک شد."
     else:

@@ -20,6 +20,8 @@ class AuditLog(Base):
     entity_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     payload: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    # Same id as X-Request-ID / log lines for cross-referencing (null for seed / CLI).
+    request_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )

@@ -35,6 +35,8 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 چک: http://127.0.0.1:8000/api/v1/health و `/api/v1/health/db`
 
+**لاگ فایل (فقط سازنده):** بعد از بالا آمدن uvicorn، فایل‌ها در `backend\logs\` ساخته می‌شوند — `access.log` (هر درخواست + `rid`)، `app.log`، `error.log` (stack کامل)، `sensitive.log` (فقط موبایل کامل هنگام شکست SMS). هر پاسخ هدر `X-Request-ID` دارد؛ همان را در فایل‌ها جستجو کن. این پوشه در گیت نیست و از وب سرو نمی‌شود؛ مدیر خلاصهٔ خوانا را در http://127.0.0.1:5173/manager/#activity می‌بیند. جزئیات: [logging.md](logging.md).
+
 ### پری‌ویو تک‌هاست (API + فرانت روی :8000)
 
 برای تونل Cloudflare روی بک‌اند، اول فرانت را بیلد کن؛ اگر `frontend/dist` باشد، FastAPI خودش UI را از `/` سرو می‌کند (`SERVE_FRONTEND=auto`):

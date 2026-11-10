@@ -69,6 +69,13 @@ class Settings(BaseSettings):
     sms_api_key: str = ""
     sms_sender: str = ""
 
+    # File logging (backend/logs by default; never committed). Empty LOG_DIR = default.
+    log_level: str = "INFO"
+    log_dir: str = ""
+    log_to_files: bool = True
+    log_max_bytes: int = 5 * 1024 * 1024
+    log_backup_count: int = 5
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

@@ -38,8 +38,10 @@ from app.schemas.athlete import (
 )
 from app.services import athlete as athlete_svc
 from app.services import athlete_classes as athlete_class_svc
+from app.services import auth_audit
 from app.services import workout_plans as plan_svc
 from app.services.athlete_session import (
+    athlete_session_member_id_for_token,
     create_athlete_session,
     revoke_athlete_session_by_token,
     touch_athlete_session_by_token,
@@ -92,6 +94,13 @@ def athlete_login(
             db, mobile=body.mobile, password=body.password
         )
     except athlete_svc.AthleteError as err:
+        auth_audit.login_failure(
+            mobile=body.mobile,
+            method="password",
+            status_code=err.status_code,
+            kind="athlete",
+            role="athlete",
+        )
         _raise(err)
         raise  # pragma: no cover
 
@@ -101,6 +110,7 @@ def athlete_login(
         settings=settings,
         user_agent=request.headers.get("user-agent"),
     )
+    auth_audit.login_success_athlete(db, member=member, method="password")
     db.commit()
     _set_athlete_cookie(response, token=raw_token, settings=settings)
     return AthleteLoginResponse(member=AthleteOut.model_validate(member))
@@ -115,7 +125,11 @@ def athlete_logout(
 ) -> MessageResponse:
     token = request.cookies.get(settings.athlete_session_cookie_name)
     if token:
-        revoke_athlete_session_by_token(db, token=token)
+        member_id = athlete_session_member_id_for_token(db, token=token)
+        if revoke_athlete_session_by_token(db, token=token):
+            auth_audit.logout_athlete(
+                db, member=db.get(Member, member_id) if member_id else None
+            )
         db.commit()
     _clear_athlete_cookie(response, settings=settings)
     return MessageResponse(detail="خروج انجام شد.")

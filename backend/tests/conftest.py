@@ -80,6 +80,16 @@ _TEST_DB_URL = _resolve_test_database_url()
 _assert_safe_test_url(_TEST_DB_URL)
 os.environ["DATABASE_URL"] = _TEST_DB_URL
 
+# File logs from any app startup during tests go to a temp dir, never backend/logs/.
+import tempfile  # noqa: E402
+
+os.environ["LOG_DIR"] = tempfile.mkdtemp(prefix="gym-test-logs-")
+
+# A local .env may hold a real SMS provider + key; tests must never send real SMS.
+# Tests that need a provider set it explicitly with monkeypatch.setenv.
+os.environ["SMS_PROVIDER"] = "none"
+os.environ["SMS_API_KEY"] = ""
+
 # ---------------------------------------------------------------------------
 # 2) Clear settings cache + rebind engine if anything imported early
 # ---------------------------------------------------------------------------

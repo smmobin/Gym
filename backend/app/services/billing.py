@@ -195,6 +195,7 @@ def update_plan(
     plan = db.get(MembershipPlan, plan_id)
     if plan is None:
         raise BillingError(404, "طرح یافت نشد.")
+    before = _plan_audit_snapshot(plan)
 
     if name is not None:
         plan.name = name
@@ -233,24 +234,39 @@ def update_plan(
         plan.is_active = is_active
 
     db.flush()
+    after = _plan_audit_snapshot(plan)
+    changed_before = {k: v for k, v in before.items() if after.get(k) != v}
+    summary = f"ویرایش طرح {plan.name}"
+    if "base_price_toman" in changed_before:
+        summary = (
+            f"تغییر قیمت طرح {plan.name}: "
+            f"{changed_before['base_price_toman']:,} ← {plan.base_price_toman:,} تومان"
+        )
     write_audit(
         db,
         actor_user_id=user.id,
         action="plan.deactivate" if is_active is False else "plan.update",
         entity_type="membership_plan",
         entity_id=plan.id,
-        summary=f"ویرایش طرح {plan.name}",
+        summary=summary,
         payload={
-            "name": plan.name,
-            "duration_days": plan.duration_days,
-            "session_count": plan.session_count,
-            "session_pack_kind": plan.session_pack_kind,
-            "base_price_toman": plan.base_price_toman,
-            "includes_locker": plan.includes_locker,
-            "is_active": plan.is_active,
+            **after,
+            "before": changed_before,
         },
     )
     return plan
+
+
+def _plan_audit_snapshot(plan: MembershipPlan) -> dict[str, object]:
+    return {
+        "name": plan.name,
+        "duration_days": plan.duration_days,
+        "session_count": plan.session_count,
+        "session_pack_kind": plan.session_pack_kind,
+        "base_price_toman": plan.base_price_toman,
+        "includes_locker": plan.includes_locker,
+        "is_active": plan.is_active,
+    }
 
 
 def sync_membership_window(

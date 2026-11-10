@@ -35,8 +35,15 @@ from app.schemas.auth import (
     UserOut,
 )
 from app.services import athlete as athlete_svc
+from app.services import auth_audit
 from app.services.athlete_session import create_athlete_session
-from app.services.auth_session import create_session, revoke_session_by_token, touch_session_by_token
+from app.services.audit import write_audit
+from app.services.auth_session import (
+    create_session,
+    revoke_session_by_token,
+    session_user_id_for_token,
+    touch_session_by_token,
+)
 from app.services.login_identities import (
     LoginIdentity,
     LoginIdentityError,
@@ -120,6 +127,7 @@ def _issue_staff_session(
     response: Response,
     settings: Settings,
     user: User,
+    method: auth_audit.AuthMethod,
 ) -> LoginResponse:
     _, raw_token = create_session(
         db,
@@ -127,6 +135,7 @@ def _issue_staff_session(
         settings=settings,
         user_agent=request.headers.get("user-agent"),
     )
+    auth_audit.login_success_staff(db, user=user, method=method)
     db.commit()
     _set_session_cookie(response, token=raw_token, settings=settings)
     _clear_athlete_cookie(response, settings=settings)
@@ -144,6 +153,7 @@ def _issue_athlete_session(
     response: Response,
     settings: Settings,
     member: Member,
+    method: auth_audit.AuthMethod,
 ) -> LoginResponse:
     _, raw_token = create_athlete_session(
         db,
@@ -151,6 +161,7 @@ def _issue_athlete_session(
         settings=settings,
         user_agent=request.headers.get("user-agent"),
     )
+    auth_audit.login_success_athlete(db, member=member, method=method)
     db.commit()
     _set_athlete_cookie(response, token=raw_token, settings=settings)
     _clear_session_cookie(response, settings=settings)
@@ -208,6 +219,29 @@ def login(
     settings: Settings = Depends(get_settings),
 ) -> LoginResponse:
     """Password login for a resolved identity (kind/role when ambiguous)."""
+    try:
+        return _password_login(
+            body=body, request=request, response=response, db=db, settings=settings
+        )
+    except HTTPException as err:
+        auth_audit.login_failure(
+            mobile=body.mobile,
+            method="password",
+            status_code=err.status_code,
+            kind=body.kind,
+            role=body.role,
+        )
+        raise
+
+
+def _password_login(
+    *,
+    body: LoginRequest,
+    request: Request,
+    response: Response,
+    db: Session,
+    settings: Settings,
+) -> LoginResponse:
     if len(body.password) < MIN_PASSWORD_LEN:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -236,7 +270,12 @@ def login(
                 detail=GENERIC_BAD,
             )
         return _issue_staff_session(
-            db=db, request=request, response=response, settings=settings, user=user
+            db=db,
+            request=request,
+            response=response,
+            settings=settings,
+            user=user,
+            method="password",
         )
 
     member = _load_athlete_member(db, mobile=body.mobile)
@@ -251,7 +290,12 @@ def login(
             detail=GENERIC_BAD,
         )
     return _issue_athlete_session(
-        db=db, request=request, response=response, settings=settings, member=member
+        db=db,
+        request=request,
+        response=response,
+        settings=settings,
+        member=member,
+        method="password",
     )
 
 
@@ -275,11 +319,25 @@ def otp_send(
         outcome = create_and_send_otp(
             db, settings=settings, identity=identity, mobile=body.mobile
         )
+        auth_audit.otp_send(
+            db=db,
+            mobile=body.mobile,
+            ok=True,
+            kind=identity.kind,
+            role=identity.role,
+            mode=outcome.mode,
+        )
         db.commit()
-    except LoginIdentityError as err:
-        raise HTTPException(status_code=err.status_code, detail=err.detail) from err
-    except LoginOtpError as err:
+    except (LoginIdentityError, LoginOtpError) as err:
         db.rollback()
+        auth_audit.otp_send(
+            db=None,
+            mobile=body.mobile,
+            ok=False,
+            kind=body.kind,
+            role=body.role,
+            status_code=err.status_code,
+        )
         raise HTTPException(status_code=err.status_code, detail=err.detail) from err
 
     # Never include the OTP code in the response body.
@@ -317,21 +375,53 @@ def otp_verify(
             code=body.code,
         )
     except LoginIdentityError as err:
+        auth_audit.otp_verify_failure(
+            mobile=body.mobile, status_code=err.status_code, kind=body.kind, role=body.role
+        )
         raise HTTPException(status_code=err.status_code, detail=err.detail) from err
     except LoginOtpError as err:
         db.commit()  # persist attempt counters / consumed flags
+        auth_audit.otp_verify_failure(
+            mobile=body.mobile,
+            status_code=err.status_code,
+            kind=identity.kind,
+            role=identity.role,
+        )
         raise HTTPException(status_code=err.status_code, detail=err.detail) from err
 
-    if identity.kind == "staff":
-        user = _load_staff_user(db, mobile=body.mobile, role=identity.role)
-        return _issue_staff_session(
-            db=db, request=request, response=response, settings=settings, user=user
-        )
-
-    member = _load_athlete_member(db, mobile=body.mobile)
-    return _issue_athlete_session(
-        db=db, request=request, response=response, settings=settings, member=member
+    auth_audit.otp_verify_success(
+        db, mobile=body.mobile, kind=identity.kind, role=identity.role
     )
+    try:
+        if identity.kind == "staff":
+            user = _load_staff_user(db, mobile=body.mobile, role=identity.role)
+            return _issue_staff_session(
+                db=db,
+                request=request,
+                response=response,
+                settings=settings,
+                user=user,
+                method="otp",
+            )
+
+        member = _load_athlete_member(db, mobile=body.mobile)
+        return _issue_athlete_session(
+            db=db,
+            request=request,
+            response=response,
+            settings=settings,
+            member=member,
+            method="otp",
+        )
+    except HTTPException as err:
+        auth_audit.login_failure(
+            mobile=body.mobile,
+            method="otp",
+            status_code=err.status_code,
+            kind=identity.kind,
+            role=identity.role,
+        )
+        raise
 
 
 @router.post("/logout", response_model=MessageResponse)
@@ -343,7 +433,9 @@ def logout(
 ) -> MessageResponse:
     token = request.cookies.get(settings.session_cookie_name)
     if token:
-        revoke_session_by_token(db, token=token)
+        user_id = session_user_id_for_token(db, token=token)
+        if revoke_session_by_token(db, token=token):
+            auth_audit.logout_staff(db, user=db.get(User, user_id) if user_id else None)
         db.commit()
     _clear_session_cookie(response, settings=settings)
     return MessageResponse(detail="خروج انجام شد.")
@@ -391,7 +483,7 @@ def change_user_password(
     user_id: int,
     body: ChangePasswordRequest,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(StaffRole.MANAGER.value)),
+    actor: User = Depends(require_roles(StaffRole.MANAGER.value)),
 ) -> MessageResponse:
     target = db.get(User, user_id)
     if target is None:
@@ -402,5 +494,14 @@ def change_user_password(
             detail="رمز باید حداقل ۸ کاراکتر باشد.",
         )
     target.password_hash = hash_password(body.new_password)
+    write_audit(
+        db,
+        actor_user_id=actor.id,
+        action="staff.password_reset",
+        entity_type="user",
+        entity_id=target.id,
+        summary=f"تغییر رمز {target.full_name}",
+        payload={"role": target.role, "password_changed": True},
+    )
     db.commit()
     return MessageResponse(detail="رمز کاربر به‌روز شد.")

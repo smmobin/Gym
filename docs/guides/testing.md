@@ -72,6 +72,8 @@ TEST_DATABASE_URL=postgresql+psycopg://postgres:YOUR_POSTGRES_PASSWORD@localhost
 
 اگر `TEST_DATABASE_URL` به نام `gym_control` اشاره کند، pytest عمداً **قطع** می‌شود تا دادهٔ کار روزمره خراب نشود.
 
+`conftest.py` همچنین `LOG_DIR` را به یک پوشهٔ temp می‌برد (pytest در `backend/logs/` نمی‌نویسد) و `SMS_PROVIDER=none` را اجباری می‌کند تا کلید واقعی داخل `.env` هرگز در تست پیامک واقعی نفرستد؛ تستی که provider لازم دارد با `monkeypatch.setenv` تنظیم کند. تست‌های لاگ/آدیت/فعالیت: `test_logging.py` و `test_activity.py`.
+
 ### Seed در تست در برابر seed در توسعه
 
 | کجا | چه می‌کند |
@@ -102,6 +104,7 @@ npm run build
 - `live-search.test.js` / `members-live-search.test.js` — جستجوی زنده (debounce) بدون دکمهٔ جستجو/بازخوانی
 - `trainers-roster.test.js` — با انتخاب مربی، لیست شاگردان همان مربی (`GET /trainers/{id}/members`)
 - `classes-save.test.js` / `pagination.test.js` — بعد از mutation کلاس: `emitLive` + `focusId` تا pager روی صفحهٔ همان ردیف بماند (BUG-007/008)
+- `activity.test.js` — فعالیت سامانهٔ مدیر: query بازه/جستجو/دسته، رندر جلالی + escape، گارد نقش، نام فایل خروجی `.log`
 
 ### قرارداد live بعد از mutation (لیست‌های صفحه‌بندی‌شده)
 

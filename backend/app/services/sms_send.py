@@ -15,7 +15,7 @@ from app.models.membership import Membership
 from app.models.user import User
 from app.services.audit import write_audit
 from app.services.billing import member_debt_toman
-from app.services.sms.base import SmsError, SmsGateway, SmsSendResult
+from app.services.sms.base import SmsError, SmsGateway, SmsSendResult, log_sms_failure
 from app.services.sms.factory import get_sms_gateway, public_sms_status
 from app.services.sms.templates import get_template, list_templates
 
@@ -129,6 +129,13 @@ def _deliver_to_member(
             sender=(settings.sms_sender or "").strip() or None,
         )
     except SmsError as err:
+        log_sms_failure(
+            context="member_send",
+            provider=provider,
+            mobile=mobile,
+            error_code=err.code,
+            status_code=err.status_code,
+        )
         write_audit(
             db,
             actor_user_id=actor.id,

@@ -14,6 +14,11 @@ from app.services.auth_session import revoke_all_sessions_for_user
 
 _CREATABLE = {StaffRole.RECEPTIONIST.value, StaffRole.TRAINER.value}
 MIN_PASSWORD_LEN = 8
+_ROLE_FA = {
+    StaffRole.MANAGER.value: "مدیر",
+    StaffRole.RECEPTIONIST.value: "منشی",
+    StaffRole.TRAINER.value: "مربی",
+}
 
 
 class StaffError(Exception):
@@ -119,6 +124,8 @@ def update_staff(
     if target is None:
         raise StaffError(404, "کاربر یافت نشد.")
     _assert_actor_can_touch_user(actor, target)
+    role_before = target.role
+    active_before = target.is_active
 
     if role is not None and role != target.role:
         _assert_actor_can_manage_role(actor, role)
@@ -155,12 +162,18 @@ def update_staff(
         action="staff.deactivate" if deactivated else "staff.update",
         entity_type="user",
         entity_id=target.id,
-        summary=f"ویرایش کارکنان {target.full_name}",
+        summary=(
+            f"تغییر نقش {target.full_name}: "
+            f"{_ROLE_FA.get(role_before, role_before)} ← {_ROLE_FA.get(target.role, target.role)}"
+            if role_before != target.role
+            else f"ویرایش کارکنان {target.full_name}"
+        ),
         payload={
             "mobile": target.mobile,
             "role": target.role,
             "is_active": target.is_active,
             "password_changed": password is not None,
+            "before": {"role": role_before, "is_active": active_before},
         },
     )
     return target

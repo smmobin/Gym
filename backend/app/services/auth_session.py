@@ -79,6 +79,16 @@ def touch_session_by_token(db: Session, *, token: str, settings: Settings) -> bo
     return True
 
 
+def session_user_id_for_token(db: Session, *, token: str) -> int | None:
+    """User id of an unrevoked session (for logout audit), without validating expiry."""
+    return db.scalar(
+        select(StaffSession.user_id).where(
+            StaffSession.token_hash == hash_session_token(token),
+            StaffSession.revoked_at.is_(None),
+        )
+    )
+
+
 def revoke_session_by_token(db: Session, *, token: str) -> bool:
     token_hash = hash_session_token(token)
     row = db.scalar(
