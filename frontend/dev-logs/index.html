@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <script>(function(){try{var t=localStorage.getItem('gym-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark';}})();</script>
+  <title>لاگ سازنده — GYM CONTROL</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/dev-logs.css" />
+</head>
+<body class="panel-page dev-logs-page">
+  <main class="dev-logs-shell" data-dev-logs>
+    <header class="dev-logs-head">
+      <div>
+        <p class="dev-logs-kicker">GYM CONTROL · سازنده</p>
+        <h1>لاگ فایل</h1>
+        <p class="hint">جدا از خلاصهٔ مدیر در <a href="/manager/#activity">/manager/#activity</a>. این صفحه در منوی باشگاه نیست.</p>
+      </div>
+    </header>
+    <section class="dev-logs-card dev-logs-gate" data-gate>
+      <p data-gate-msg class="hint">توکن بیننده را وارد کنید. مقدار فقط در sessionStorage همین زبانه می‌ماند.</p>
+      <form class="form-grid" data-token-form>
+        <label>توکن
+          <input name="token" type="password" autocomplete="off" minlength="24" required />
+        </label>
+        <button class="btn" type="submit">باز کردن</button>
+      </form>
+    </section>
+    <section class="dev-logs-card" data-app hidden>
+      <div class="dev-logs-tabs" data-tabs></div>
+      <form class="dev-logs-filters" data-filters style="margin-top:0.9rem">
+        <label>جستجو<input name="q" type="search" placeholder="متن خط" /></label>
+        <label>سطح
+          <select name="level">
+            <option value="">همه</option>
+            <option>DEBUG</option>
+            <option>INFO</option>
+            <option>WARNING</option>
+            <option>ERROR</option>
+            <option>CRITICAL</option>
+          </select>
+        </label>
+        <label>request id<input name="rid" dir="ltr" placeholder="rid" /></label>
+        <button class="btn" type="submit">اعمال</button>
+      </form>
+      <div class="dev-logs-toolbar" style="margin-top:0.8rem">
+        <p class="dev-logs-meta" data-meta></p>
+        <div class="inline-actions">
+          <button type="button" class="btn ghost small" data-older>خطوط قدیمی‌تر</button>
+          <button type="button" class="btn ghost small" data-tail>انتها</button>
+          <button type="button" class="btn ghost small" data-refresh>تازه‌سازی</button>
+          <button type="button" class="btn ghost small" data-download-view>دانلود همین بازه</button>
+          <button type="button" class="btn ghost small" data-download-file>دانلود فایل</button>
+          <label class="inline-check"><input type="checkbox" data-auto /> به‌روز خودکار</label>
+          <button type="button" class="btn ghost small" data-lock>خروج توکن</button>
+        </div>
+      </div>
+      <pre class="dev-logs-view" data-view></pre>
+    </section>
+  </main>
+  <script type="module" src="/assets/js/panels/dev-logs.js"></script>
+</body>
+</html>

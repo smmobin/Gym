@@ -35,7 +35,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 چک: http://127.0.0.1:8000/api/v1/health و `/api/v1/health/db`
 
-**لاگ فایل (فقط سازنده):** بعد از بالا آمدن uvicorn، فایل‌ها در `backend\logs\` ساخته می‌شوند — `access.log` (هر درخواست + `rid`)، `app.log`، `error.log` (stack کامل)، `sensitive.log` (فقط موبایل کامل هنگام شکست SMS). هر پاسخ هدر `X-Request-ID` دارد؛ همان را در فایل‌ها جستجو کن. این پوشه در گیت نیست و از وب سرو نمی‌شود؛ مدیر خلاصهٔ خوانا را در http://127.0.0.1:5173/manager/#activity می‌بیند. جزئیات: [logging.md](logging.md).
+**لاگ فایل (فقط سازنده):** بعد از بالا آمدن uvicorn، فایل‌ها در `backend\logs\` ساخته می‌شوند — `access.log`، `app.log`، `error.log`، `sensitive.log`. مدیر باشگاه فقط خلاصه را در http://127.0.0.1:5173/manager/#activity می‌بیند. برای دم کامل فایل در مرورگر: در `.env` مقدار `DEV_LOG_VIEWER=true` و `DEV_LOG_VIEWER_TOKEN` (حداقل ۲۴ کاراکتر؛ `python -c "import secrets; print(secrets.token_urlsafe(32))"`) بگذارید، uvicorn را ری‌استارت کنید، بعد http://127.0.0.1:5173/dev-logs/ . در production این صفحه ۴۰۴ است — روی سرور از فایل/SSH. جزئیات: [logging.md](logging.md).
 
 ### پری‌ویو تک‌هاست (API + فرانت روی :8000)
 

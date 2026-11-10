@@ -132,6 +132,7 @@ export default defineConfig({
         trainer: path.resolve(rootDir, 'trainer/index.html'),
         athlete: path.resolve(rootDir, 'athlete/index.html'),
         athleteLogin: path.resolve(rootDir, 'athlete/login.html'),
+        devLogs: path.resolve(rootDir, 'dev-logs/index.html'),
       },
     },
   },

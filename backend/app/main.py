@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.core.dev_log_gate import dev_log_viewer_enabled
 from app.core.logging_setup import setup_logging
 from app.core.request_context import REQUEST_ID_HEADER
 from app.core.request_middleware import RequestContextMiddleware
@@ -70,6 +71,12 @@ async def lifespan(_app: FastAPI):
     if paths:
         logger.info("File logs in %s", paths["app"].parent)
     _warn_insecure_production()
+    if settings.is_production_like and settings.dev_log_viewer:
+        logger.warning(
+            "DEV_LOG_VIEWER is set but ignored because APP_ENV is production-like. Read logs via SSH."
+        )
+    elif dev_log_viewer_enabled(settings):
+        logger.info("Dev log viewer enabled (token required) at /dev-logs/")
     if _should_serve_frontend():
         logger.info("Serving frontend from %s", FRONTEND_DIST)
     yield

@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     log_max_bytes: int = 5 * 1024 * 1024
     log_backup_count: int = 5
 
+    # Builder-only web tail of log files. Off unless explicitly enabled AND a long token
+    # is set. Ignored entirely when APP_ENV is production-like (see dev_log_gate).
+    dev_log_viewer: bool = False
+    dev_log_viewer_token: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

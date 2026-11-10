@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     activity,
     athlete,
+    dev_logs,
     attendances,
     auth,
     billing,
@@ -47,3 +48,4 @@ api_router.include_router(staff.router)
 api_router.include_router(trainers.router)
 api_router.include_router(workout_plans.router)
 api_router.include_router(activity.router)
+api_router.include_router(dev_logs.router)

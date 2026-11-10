@@ -36,8 +36,39 @@
 - چرخش: `RotatingFileHandler` (پیش‌فرض ۵MB × ۵ نسخه) — `LOG_MAX_BYTES` / `LOG_BACKUP_COUNT`.
 - `LOG_LEVEL` (پیش‌فرض `INFO`)، `LOG_TO_FILES=false` برای خاموش کردن فایل‌ها.
 - همان خط access در ترمینال PowerShell هم چاپ می‌شود؛ خط تکراری `uvicorn.access` خاموش است تا یک منبع واحد بماند.
-- **آدرس وب برای لاگ کامل تا این لحظه وجود ندارد** (عمدی بوده). صاحب درخواست پنل وب سازنده با قفل توکن داده — صف ساخت در `docs/prompts/next-coding-prompt.md` (مسیر پیشنهادی بعد از ساخت: `/dev-logs/`).
-- پنل مدیر `/manager/#activity` عمداً **خلاصه** است و قرار نیست ریز همهٔ لاگ‌ها را نشان دهد.
+- پنل مدیر `/manager/#activity` عمداً **خلاصه** است و لاگ خام/stack را نشان نمی‌دهد.
+- لاگ کامل فایل فقط در پنل سازنده (بخش بعد) و فقط وقتی env اجازه بدهد.
+
+## پنل سازنده — `/dev-logs/`
+
+آدرس UI: `http://127.0.0.1:5173/dev-logs/` (با `SERVE_FRONTEND` همان مسیر روی :8000). در منوی مدیر/منشی نیست.
+
+روشن شدن **فقط لوکال**، هر دو شرط:
+
+1. `DEV_LOG_VIEWER=true`
+2. `DEV_LOG_VIEWER_TOKEN` یک رشتهٔ تصادفی **حداقل ۲۴ کاراکتر** (در گیت نگذارید).
+
+تولید توکن:
+
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+UI توکن را یک‌بار می‌گیرد و در `sessionStorage` همان زبانه می‌گذارد؛ هر درخواست API هدر `X-Dev-Log-Token` دارد.
+
+| وضعیت | پاسخ |
+|--------|------|
+| flag خاموش، یا توکن کوتاه، یا `APP_ENV` برابر production/staging | **۴۰۴** (وجود پنل لو نمی‌رود) |
+| توکن غلط یا خالی وقتی viewer روشن است | **۴۰۱** |
+| توکن درست | خواندن دم فایل |
+
+API (allowlist فقط `access` / `app` / `error` / `sensitive`؛ `../` رد می‌شود):
+
+- `GET /api/v1/dev/logs/files`
+- `GET /api/v1/dev/logs/read?file=access&limit=&offset=&q=&level=&rid=` — حداکثر ۲۰۰۰ خط
+- `GET /api/v1/dev/logs/download?file=access` یا `start_line`/`end_line` برای بازهٔ دیده‌شده
+
+**روی سرور واقعی از فایل یا SSH بخوانید.** حتی اگر flag اشتباه ست شود، در production-like پنل ۴۰۴ می‌ماند. نشست مدیر باشگاه این API را باز نمی‌کند.
 
 ## Request ID
 
