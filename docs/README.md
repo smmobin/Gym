@@ -13,6 +13,7 @@
 | [prompts/next-coding-prompt.md](prompts/next-coding-prompt.md) | پرامپت سازنده؛ فعلاً پیامک واقعی = کار دستی صاحب روی کاوه‌نگار |
 | [prompts/security-auditor-prompt.md](prompts/security-auditor-prompt.md) | پرامپت چت بازرس امنیت (کپی در چت جدید) |
 | [guides/sms-real-setup.md](guides/sms-real-setup.md) | پیامک واقعی: کاوه‌نگار + معرفی پنل‌های ایرانی |
+| [guides/logging.md](guides/logging.md) | سه لایهٔ لاگ: فایل سازنده، آدیت DB، فعالیت پنل مدیر |
 | [guides/product-manager.md](guides/product-manager.md) | چطور چت مدیر محصول را راه بیندازی |
 | [guides/qa.md](guides/qa.md) | چطور چت کنترل کیفیت (QA) را راه بیندازی |
 | [qa/bug-log.md](qa/bug-log.md) | دفتر باگ زندهٔ QA |
