@@ -4,6 +4,8 @@
   display: none !important;
 }
 
+.dev-logs-follow { margin-top: 1rem; }
+
 .dev-logs-view {
   margin-top: 0.35rem;
   max-height: min(62vh, 720px);

@@ -37,7 +37,7 @@ export function mountDevLogs(host) {
   initThemeToggle(document)
   applyNavIcons(document)
   bindSidebarClose()
-  bindHashNav('logs')
+  bindHashNav('activity')
   mountTodayDate()
 
   const gate = host.querySelector('[data-gate]')

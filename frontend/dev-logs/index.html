@@ -27,8 +27,7 @@
       </a>
       <nav class="nav">
         <p class="nav-label">سازنده</p>
-        <a class="nav-item active" href="#logs">فایل‌های لاگ</a>
-        <a class="nav-item" href="#activity">فعالیت دقیق</a>
+        <a class="nav-item active" href="#activity">فعالیت دقیق</a>
       </nav>
       <div class="sidebar-foot">
         <a href="/manager/#activity">خلاصهٔ مدیر</a>
@@ -43,8 +42,8 @@
             <span></span><span></span><span></span>
           </label>
           <div>
-            <h1>فایل‌های لاگ</h1>
-            <p>همان پوستهٔ پنل مدیر · جزئیات کامل فقط برای سازنده</p>
+            <h1>فعالیت دقیق</h1>
+            <p>ریز لاگ فایل و رویدادها · فقط سازنده، نه پنل مدیر</p>
           </div>
         </div>
         <div class="topbar-actions">
@@ -71,12 +70,12 @@
           </form>
         </article>
 
-        <div data-section="logs" data-title="فایل‌های لاگ" hidden>
+        <div data-section="activity" data-title="فعالیت دقیق" hidden>
           <article class="panel activity-panel" data-app>
             <header class="panel-head">
               <div>
-                <h2>لاگ‌های فایل</h2>
-                <p class="hint">access / app / error / sensitive از پوشهٔ logs. این‌ها در پنل مدیر نیستند.</p>
+                <h2>خطوط خام فایل</h2>
+                <p class="hint">access، app، error و sensitive. این متن در پنل مدیر نیست.</p>
               </div>
               <div class="inline-actions">
                 <button type="button" class="btn ghost small" data-download-view>خروجی بازه (.log)</button>
@@ -112,10 +111,8 @@
               <label class="check"><input type="checkbox" data-auto /> به‌روز خودکار</label>
             </div>
           </article>
-        </div>
 
-        <div data-section="activity" data-title="فعالیت دقیق" hidden>
-          <article class="panel activity-panel" data-precise>
+          <article class="panel activity-panel dev-logs-follow" data-precise>
             <header class="panel-head">
               <div>
                 <h2>فعالیت سامانه — نسخهٔ دقیق</h2>
