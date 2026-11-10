@@ -7,59 +7,99 @@
   <script>(function(){try{var t=localStorage.getItem('gym-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark';}})();</script>
   <title>لاگ سازنده — GYM CONTROL</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/components.css" />
   <link rel="stylesheet" href="/assets/css/dev-logs.css" />
 </head>
 <body class="panel-page dev-logs-page">
-  <main class="dev-logs-shell" data-dev-logs>
-    <header class="dev-logs-head">
-      <div>
-        <p class="dev-logs-kicker">GYM CONTROL · سازنده</p>
-        <h1>لاگ فایل</h1>
-        <p class="hint">جدا از خلاصهٔ مدیر در <a href="/manager/#activity">/manager/#activity</a>. این صفحه در منوی باشگاه نیست.</p>
-      </div>
-    </header>
-    <section class="dev-logs-card dev-logs-gate" data-gate>
-      <p data-gate-msg class="hint">توکن بیننده را وارد کنید. مقدار فقط در sessionStorage همین زبانه می‌ماند.</p>
-      <form class="form-grid" data-token-form>
-        <label>توکن
-          <input name="token" type="password" autocomplete="off" minlength="24" required />
-        </label>
-        <button class="btn" type="submit">باز کردن</button>
-      </form>
-    </section>
-    <section class="dev-logs-card" data-app hidden>
-      <div class="dev-logs-tabs" data-tabs></div>
-      <form class="dev-logs-filters" data-filters style="margin-top:0.9rem">
-        <label>جستجو<input name="q" type="search" placeholder="متن خط" /></label>
-        <label>سطح
-          <select name="level">
-            <option value="">همه</option>
-            <option>DEBUG</option>
-            <option>INFO</option>
-            <option>WARNING</option>
-            <option>ERROR</option>
-            <option>CRITICAL</option>
-          </select>
-        </label>
-        <label>request id<input name="rid" dir="ltr" placeholder="rid" /></label>
-        <button class="btn" type="submit">اعمال</button>
-      </form>
-      <div class="dev-logs-toolbar" style="margin-top:0.8rem">
-        <p class="dev-logs-meta" data-meta></p>
-        <div class="inline-actions">
-          <button type="button" class="btn ghost small" data-older>خطوط قدیمی‌تر</button>
-          <button type="button" class="btn ghost small" data-tail>انتها</button>
-          <button type="button" class="btn ghost small" data-refresh>تازه‌سازی</button>
-          <button type="button" class="btn ghost small" data-download-view>دانلود همین بازه</button>
-          <button type="button" class="btn ghost small" data-download-file>دانلود فایل</button>
-          <label class="inline-check"><input type="checkbox" data-auto /> به‌روز خودکار</label>
-          <button type="button" class="btn ghost small" data-lock>خروج توکن</button>
+  <div class="main dev-logs-main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <div>
+          <h1>لاگ فایل</h1>
+          <p>پنل سازنده · جدا از خلاصهٔ <a href="/manager/#activity">فعالیت مدیر</a></p>
         </div>
       </div>
-      <pre class="dev-logs-view" data-view></pre>
+      <div class="topbar-actions">
+        <div data-theme-mount></div>
+        <span class="tag">سازنده</span>
+      </div>
+    </header>
+
+    <section class="content">
+      <main class="dev-logs-shell" data-dev-logs>
+        <article class="panel activity-panel dev-logs-gate" data-gate>
+          <header class="panel-head">
+            <div>
+              <h2>ورود به بیننده</h2>
+              <p class="hint">توکن فقط در sessionStorage همین زبانه می‌ماند. روی سرور واقعی از فایل یا SSH استفاده کنید.</p>
+            </div>
+          </header>
+          <p data-gate-msg class="hint">توکن بیننده را وارد کنید.</p>
+          <form class="form-grid activity-filters" data-token-form>
+            <label class="activity-search">توکن
+              <input name="token" type="password" autocomplete="off" minlength="24" required dir="ltr" />
+            </label>
+            <button class="btn" type="submit">باز کردن</button>
+          </form>
+        </article>
+
+        <article class="panel activity-panel" data-app hidden>
+          <header class="panel-head">
+            <div>
+              <h2>لاگ‌های فایل</h2>
+              <p class="hint">دم فایل‌های <code class="activity-rid en" dir="ltr">backend/logs</code> — نه خلاصهٔ آدیت مدیر.</p>
+            </div>
+            <div class="inline-actions">
+              <button type="button" class="btn ghost small" data-download-view>خروجی بازه (.log)</button>
+              <button type="button" class="btn ghost small" data-download-file>دانلود فایل</button>
+              <button type="button" class="btn ghost small" data-lock>خروج توکن</button>
+            </div>
+          </header>
+
+          <div class="activity-chips" data-tabs role="group" aria-label="فایل لاگ"></div>
+
+          <form data-filters class="form-grid activity-filters">
+            <label class="activity-search">جستجو
+              <input name="q" type="search" maxlength="200" placeholder="متن خط…" autocomplete="off" />
+            </label>
+            <label>سطح
+              <select name="level">
+                <option value="">همه</option>
+                <option>DEBUG</option>
+                <option>INFO</option>
+                <option>WARNING</option>
+                <option>ERROR</option>
+                <option>CRITICAL</option>
+              </select>
+            </label>
+            <label>request id
+              <input name="rid" dir="ltr" maxlength="80" placeholder="rid" autocomplete="off" />
+            </label>
+            <button class="btn" type="submit">اعمال</button>
+          </form>
+
+          <div class="activity-stats" data-meta></div>
+          <div class="status-msg" data-status hidden></div>
+
+          <div class="dev-logs-view" data-view></div>
+
+          <div class="inline-actions activity-more">
+            <button type="button" class="btn ghost small" data-older>خطوط قدیمی‌تر</button>
+            <button type="button" class="btn ghost small" data-tail>انتها</button>
+            <button type="button" class="btn ghost small" data-refresh>تازه‌سازی</button>
+            <label class="check">
+              <input type="checkbox" data-auto />
+              به‌روز خودکار
+            </label>
+          </div>
+          <p class="hint activity-foot">این صفحه در منوی باشگاه نیست. در production خاموش می‌ماند.</p>
+        </article>
+      </main>
     </section>
-  </main>
+  </div>
   <script type="module" src="/assets/js/panels/dev-logs.js"></script>
 </body>
 </html>

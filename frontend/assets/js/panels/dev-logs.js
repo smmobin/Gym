@@ -11,9 +11,11 @@ import {
   viewerMessage,
   viewerStateFromStatus,
 } from '../dev-logs-logic.js'
+import { initThemeToggle } from '../theme.js'
 
 const root = document.querySelector('[data-dev-logs]')
 if (root) mountDevLogs(root)
+initThemeToggle(document)
 
 /**
  * @param {HTMLElement} host
@@ -62,18 +64,17 @@ export function mountDevLogs(host) {
     if (params) {
       Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
     }
-    const response = await fetch(url.pathname + url.search, {
+    return fetch(url.pathname + url.search, {
       headers: { 'X-Dev-Log-Token': token() },
       cache: 'no-store',
     })
-    return response
   }
 
   function renderTabs() {
     if (!tabs) return
     tabs.innerHTML = LOG_FILES.map(
       (name) =>
-        `<button type="button" class="dev-logs-tab${name === file ? ' is-active' : ''}" data-file="${name}">${name}</button>`,
+        `<button type="button" class="activity-chip${name === file ? ' is-active' : ''}" data-file="${name}" aria-pressed="${name === file ? 'true' : 'false'}" dir="ltr">${name}</button>`,
     ).join('')
     tabs.querySelectorAll('[data-file]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -85,11 +86,32 @@ export function mountDevLogs(host) {
     })
   }
 
+  function renderMeta() {
+    if (!meta || !page) return
+    const lines = page.lines || []
+    const from = lines[0]?.line
+    const to = lines[lines.length - 1]?.line
+    const range =
+      from != null && to != null
+        ? `<span class="activity-stat"><strong>${String(from)}–${String(to)}</strong> نمایش</span>`
+        : ''
+    const trunc = page.truncated_to_tail
+      ? `<span class="activity-stat warn"><strong>دم فایل</strong> برش‌خورده</span>`
+      : ''
+    meta.innerHTML = `
+      <span class="activity-stat"><strong dir="ltr">${escapeHtml(file)}.log</strong></span>
+      <span class="activity-stat"><strong>${Number(page.total_matched || 0).toLocaleString('fa-IR')}</strong> خط مطابق</span>
+      ${range}
+      ${trunc}
+    `
+  }
+
   function renderLines() {
     if (!view || !page) return
     const lines = page.lines || []
     if (!lines.length) {
-      view.textContent = 'خطی نیست.'
+      view.innerHTML = '<p class="hint activity-empty">در این فیلتر خطی نیست.</p>'
+      renderMeta()
       return
     }
     view.innerHTML = lines
@@ -98,8 +120,12 @@ export function mountDevLogs(host) {
         const ids = extractRequestIds(row.text)
         const copy = ids.length
           ? `<button type="button" class="dev-log-copy" data-rid="${escapeAttr(ids[0])}">کپی rid</button>`
-          : ''
-        return `<div class="dev-log-line is-${level || 'INFO'}"><span class="dev-log-n">${row.line}</span><span class="dev-log-text">${escapeHtml(row.text)}</span>${copy}</div>`
+          : '<span></span>'
+        return `<div class="dev-log-line is-${level || 'INFO'}">
+          <span class="dev-log-n">${row.line}</span>
+          <p class="dev-log-text">${escapeHtml(row.text)}</p>
+          ${copy}
+        </div>`
       })
       .join('')
     view.querySelectorAll('[data-rid]').forEach((btn) => {
@@ -112,11 +138,7 @@ export function mountDevLogs(host) {
         }
       })
     })
-    if (meta) {
-      const from = lines[0]?.line ?? '—'
-      const to = lines[lines.length - 1]?.line ?? '—'
-      meta.textContent = `${file}.log · ${page.total_matched} خط مطابق · نمایش ${from}–${to}${page.truncated_to_tail ? ' · فقط دم فایل (حجم زیاد)' : ''}`
-    }
+    renderMeta()
   }
 
   async function load() {
@@ -207,6 +229,7 @@ export function mountDevLogs(host) {
 
   async function download(full) {
     if (!token()) return
+    /** @type {Record<string, string>} */
     const params = { file }
     if (!full && page?.lines?.length) {
       params.start_line = String(page.lines[0].line)
