@@ -2,6 +2,7 @@ import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { emitLive, LIVE } from './live-data.js'
 import { ROLE_LABEL } from './format.js'
+import { escapeHtml } from './html.js'
 import { createListPager } from './pagination.js'
 import { enhanceMobileInputs, sanitizeMobileInput } from './mobile-input.js'
 import { enhancePasswordFields } from './password-toggle.js'
@@ -155,7 +156,7 @@ export function mountStaff(root, user) {
             ? '<span class="badge">فعال</span>'
             : '<span class="badge">غیرفعال</span>'
           const action = editable
-            ? `<button type="button" class="btn small ghost" data-pick="${u.id}">انتخاب</button>`
+            ? `<button type="button" class="btn small ghost" data-pick="${escapeHtml(u.id)}">انتخاب</button>`
             : '<span class="hint">فقط‌خواندنی</span>'
           return `<tr>
           <td data-label="نام">${escapeHtml(u.full_name)}</td>
@@ -324,13 +325,4 @@ export function mountStaff(root, user) {
   })
 
   enhancePasswordFields(root)
-}
-
-/** @param {string} s */
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }

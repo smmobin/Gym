@@ -2,7 +2,8 @@
 Create the first manager when none exist (empty / real-data start).
 
 Usage (from backend/):
-  .\\.venv\\Scripts\\python.exe -m app.db.bootstrap_manager --mobile 09... --password ... --name "..."
+  .\\.venv\\Scripts\\python.exe -m app.db.bootstrap_manager --mobile 09... --name "..."
+  (password is prompted without echo; --password exists for automation only)
 
 Refuses if any User with role=manager already exists. Never commit passwords to git.
 """
@@ -10,6 +11,7 @@ Refuses if any User with role=manager already exists. Never commit passwords to 
 from __future__ import annotations
 
 import argparse
+import getpass
 import sys
 
 from sqlalchemy import func, select
@@ -100,14 +102,25 @@ def main(argv: list[str] | None = None) -> int:
         description="ساخت اولین مدیر وقتی هیچ مدیری در دیتابیس نیست."
     )
     parser.add_argument("--mobile", required=True, help="موبایل مدیر")
-    parser.add_argument("--password", required=True, help="رمز (حداقل ۸؛ در گیت نگذار)")
+    parser.add_argument(
+        "--password",
+        default=None,
+        help="رمز (حداقل ۸). بهتر است ندهید تا مخفی پرسیده شود و در history شل نماند.",
+    )
     parser.add_argument("--name", required=True, help="نام کامل")
     args = parser.parse_args(argv)
+
+    password = args.password
+    if password is None:
+        password = getpass.getpass("رمز مدیر: ")
+        if password != getpass.getpass("تکرار رمز: "):
+            print("دو رمز یکسان نیستند.", file=sys.stderr)
+            return 1
 
     try:
         row = bootstrap_manager(
             mobile=args.mobile,
-            password=args.password,
+            password=password,
             full_name=args.name,
         )
     except BootstrapError as err:

@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     sms_api_key: str = ""
     sms_sender: str = ""
 
+    # Fixed login OTP 123456 without SMS: explicit local opt-in only, never production-like.
+    # Off by default so a server started without APP_ENV (or a dev tunnel) is not open.
+    otp_dev_fixed: bool = False
+
     # File logging (backend/logs by default; never committed). Empty LOG_DIR = default.
     log_level: str = "INFO"
     log_dir: str = ""
@@ -108,6 +112,39 @@ class Settings(BaseSettings):
         if provider in {"", "none", "off", "disabled"}:
             return False
         return bool((self.payment_gateway_merchant_id or "").strip())
+
+    def production_config_errors(self) -> list[str]:
+        """Misconfigurations that must stop a production-like server from starting."""
+        if not self.is_production_like:
+            return []
+        errors: list[str] = []
+        if self.secret_key_is_weak:
+            errors.append("SECRET_KEY is weak/default (need a random string of 32+ chars).")
+        if "CHANGE_ME" in (self.database_url or ""):
+            errors.append("DATABASE_URL still contains the CHANGE_ME placeholder password.")
+        origins = self.cors_origin_list
+        if not origins:
+            errors.append("CORS_ORIGINS is empty.")
+        for origin in origins:
+            low = origin.lower()
+            if origin == "*":
+                errors.append("CORS_ORIGINS must not be '*' (cookies are sent cross-origin).")
+            elif "localhost" in low or "127.0.0.1" in low:
+                errors.append(f"CORS_ORIGINS lists a local origin: {origin}")
+            elif not low.startswith("https://"):
+                errors.append(f"CORS_ORIGINS must use https:// in production: {origin}")
+        if self.payment_gateway_enabled:
+            callback = (self.payment_gateway_callback_url or "").strip().lower()
+            if not callback.startswith("https://"):
+                errors.append("PAYMENT_GATEWAY_CALLBACK_URL must be https:// in production.")
+            if self.payment_gateway_sandbox and self.app_env.lower() in {"production", "prod"}:
+                errors.append(
+                    "PAYMENT_GATEWAY_SANDBOX=true in production would renew memberships "
+                    "for sandbox (fake) payments."
+                )
+        if self.allow_destructive_seed and self.app_env.lower() in {"production", "prod"}:
+            errors.append("ALLOW_DESTRUCTIVE_SEED must be false in production.")
+        return errors
 
     @property
     def sms_enabled(self) -> bool:

@@ -1,5 +1,6 @@
 import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { escapeHtml } from './html.js'
 import { emitLive, LIVE } from './live-data.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -84,10 +85,10 @@ export function mountTestimonials(root, user) {
             ? '<span class="badge">فعال</span>'
             : '<span class="badge">غیرفعال</span>'
           const action = canWrite
-            ? `<button type="button" class="btn small ghost" data-pick="${row.id}">انتخاب</button>`
+            ? `<button type="button" class="btn small ghost" data-pick="${escapeHtml(row.id)}">انتخاب</button>`
             : ''
           return `<tr>
-          <td data-label="ترتیب">${Number(row.sort_order || 0).toLocaleString('fa-IR')}</td>
+          <td data-label="ترتیب">${escapeHtml(Number(row.sort_order || 0).toLocaleString('fa-IR'))}</td>
           <td data-label="نام">${escapeHtml(row.author_name)}</td>
           <td data-label="برچسب">${escapeHtml(row.author_meta || '—')}</td>
           <td data-label="متن">${escapeHtml(previewBody(row.body))}</td>
@@ -281,13 +282,4 @@ export function mountTestimonials(root, user) {
     await autoRefresh.refresh()
     select(selectedId)
   })
-}
-
-/** @param {string} s */
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }

@@ -8,6 +8,8 @@ import {
   genderLabelFa,
   mountTodayDate,
 } from '../format.js'
+import { escapeHtml, safeHttpUrl } from '../html.js'
+import { payReturnMessage } from '../pay-return.js'
 import { enhanceMoneyInputs, parseMoneyInput, setMoneyInput } from '../money-input.js'
 import { startSessionActivityGuard } from '../session-activity.js'
 import { applyNavIcons } from '../nav-icons.js'
@@ -31,24 +33,11 @@ let athleteClassItems = []
 /** @type {any[]} */
 let athleteNotifItems = []
 
-function payResultMessage() {
-  const params = new URLSearchParams(location.search)
-  const pay = params.get('pay')
-  if (!pay) return null
-  const receipt = params.get('receipt')
-  const map = {
-    ok: receipt ? `پرداخت موفق — رسید ${receipt}` : 'پرداخت موفق ثبت شد.',
-    cancelled: 'پرداخت لغو شد یا ناتمام ماند.',
-    failed: 'تأیید پرداخت ناموفق بود.',
-    error: params.get('detail') || 'خطا در بازگشت از درگاه.',
-  }
-  return { text: map[pay] || null, ok: pay === 'ok' }
-}
-
 async function startOnlinePayment(body) {
   const res = await apiPost('/api/v1/athlete/payments/online/start', body)
-  if (res.payment_url) {
-    location.href = res.payment_url
+  const target = safeHttpUrl(res.payment_url)
+  if (target) {
+    location.href = target
     return
   }
   throw new Error('آدرس درگاه دریافت نشد.')
@@ -81,10 +70,10 @@ function paintAthleteNotificationRows(root, rows, status) {
     ? rows
         .map(
           (n) => `<div class="row-item ${n.is_read ? '' : 'unread'}"><div>
-          <h3>${n.title}</h3>
-          <p>${n.body || ''}</p>
-          <p class="hint">${formatDateTime(n.created_at)}</p></div>
-          ${n.is_read ? '' : `<button type="button" class="btn small ghost" data-read="${n.id}">خواندم</button>`}
+          <h3>${escapeHtml(n.title)}</h3>
+          <p>${escapeHtml(n.body || '')}</p>
+          <p class="hint">${escapeHtml(formatDateTime(n.created_at))}</p></div>
+          ${n.is_read ? '' : `<button type="button" class="btn small ghost" data-read="${escapeHtml(n.id)}">خواندم</button>`}
         </div>`,
         )
         .join('')
@@ -185,7 +174,7 @@ async function main() {
     logoutPath: '/api/v1/athlete/auth/logout',
   })
 
-  const payFlash = payResultMessage()
+  const payFlash = payReturnMessage(location.search)
   if (payFlash?.text) {
     setStatus(/** @type {HTMLElement} */ (status), payFlash.text, payFlash.ok ? 'ok' : 'error')
     const clean = location.pathname + (location.hash || '')
@@ -278,15 +267,15 @@ async function main() {
             .map((c) => {
               const canBook = !c.booked_by_me && (c.remaining ?? 0) > 0
               return `<div class="row-item"><div>
-              <h3>${c.title}</h3>
-              <p>${formatDateTimeShort(c.starts_at)} · ${c.trainer_full_name || '—'}
-              · باقی ${(c.remaining ?? 0).toLocaleString('fa-IR')} از ${(c.capacity ?? 0).toLocaleString('fa-IR')}
-              ${c.gender_label ? ' · ' + genderLabelFa(c.gender_label) : ''}</p></div>
+              <h3>${escapeHtml(c.title)}</h3>
+              <p>${escapeHtml(formatDateTimeShort(c.starts_at))} · ${escapeHtml(c.trainer_full_name || '—')}
+              · باقی ${escapeHtml((c.remaining ?? 0).toLocaleString('fa-IR'))} از ${escapeHtml((c.capacity ?? 0).toLocaleString('fa-IR'))}
+              ${c.gender_label ? ' · ' + escapeHtml(genderLabelFa(c.gender_label)) : ''}</p></div>
               ${
                 c.booked_by_me && c.my_booking_id
-                  ? `<button type="button" class="btn small ghost" data-cancel="${c.my_booking_id}">لغو رزرو</button>`
+                  ? `<button type="button" class="btn small ghost" data-cancel="${escapeHtml(c.my_booking_id)}">لغو رزرو</button>`
                   : canBook
-                    ? `<button type="button" class="btn small" data-book="${c.id}">رزرو</button>`
+                    ? `<button type="button" class="btn small" data-book="${escapeHtml(c.id)}">رزرو</button>`
                     : '<em>—</em>'
               }</div>`
             })
@@ -368,7 +357,7 @@ async function main() {
         renewPlanSel.innerHTML = planOpts
           .map(
             (p) =>
-              `<option value="${p.id}" data-price="${p.base_price_toman}">${p.name} (${formatToman(p.base_price_toman)})</option>`,
+              `<option value="${escapeHtml(p.id)}" data-price="${escapeHtml(p.base_price_toman)}">${escapeHtml(p.name)} (${escapeHtml(formatToman(p.base_price_toman))})</option>`,
           )
           .join('')
         const syncAmount = () => {

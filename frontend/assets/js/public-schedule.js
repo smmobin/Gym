@@ -1,14 +1,6 @@
 import { ApiError, apiGet } from './api.js'
 import { formatJalaliWeekday, formatTimeFa } from './format.js'
-
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
+import { escapeHtml } from './html.js'
 
 /**
  * @typedef {{
@@ -36,7 +28,7 @@ export function capacityBadgeHtml(row) {
   }
   const label = `${remaining.toLocaleString('fa-IR')} از ${capacity.toLocaleString('fa-IR')}`
   const kind = remaining <= 2 ? 'warn' : 'ok'
-  return `<span class="badge ${kind}">${label}</span>`
+  return `<span class="badge ${kind}">${escapeHtml(label)}</span>`
 }
 
 /**
@@ -63,7 +55,7 @@ export function renderPublicScheduleRows(items) {
       const day = escapeHtml(formatJalaliWeekday(row.starts_at))
       const time = escapeHtml(formatTimeFa(row.starts_at))
       const trainer = escapeHtml(String(row.trainer_full_name || '—').trim() || '—')
-      return `<tr data-class-id="${row.id}">
+      return `<tr data-class-id="${escapeHtml(row.id)}">
           <td data-label="کلاس">${title}</td>
           <td data-label="روز">${day}</td>
           <td data-label="ساعت">${time}</td>

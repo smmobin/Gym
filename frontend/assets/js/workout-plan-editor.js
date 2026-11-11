@@ -2,14 +2,7 @@
  * Structured workout plan editor (trainer) + read-only table (athlete).
  */
 
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
+import { escapeHtml } from './html.js'
 
 /** @param {string} unit */
 export function workoutUnitLabel(unit) {

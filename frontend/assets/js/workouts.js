@@ -1,17 +1,9 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
+import { escapeHtml } from './html.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { setStatus } from './ui.js'
 import { mountWorkoutPlanEditor, workoutPlanPreviewHtml } from './workout-plan-editor.js'
-
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 /**
  * @param {any[]} items

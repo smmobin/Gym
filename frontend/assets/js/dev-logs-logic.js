@@ -1,5 +1,7 @@
 /** Pure helpers for the builder log viewer (no DOM). */
 
+import { escapeHtml } from './html.js'
+
 export const TOKEN_STORAGE_KEY = 'gym-dev-log-token'
 export const LOG_FILES = ['access', 'app', 'error', 'sensitive']
 export const DEFAULT_LIMIT = 400
@@ -130,14 +132,6 @@ export function preciseDetail(item) {
 export function precisePayloadMarkup(item) {
   const json = JSON.stringify(preciseDetail(item), null, 2)
   return `<pre class="dev-precise-payload">${escapeHtml(json)}</pre>`
-}
-
-/** @param {unknown} value */
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
 }
 
 /**

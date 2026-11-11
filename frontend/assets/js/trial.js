@@ -1,5 +1,6 @@
 import { ApiError, apiGet, apiPatch, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
+import { escapeHtml } from './html.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
 
@@ -77,12 +78,12 @@ export function mountTrialLeads(root, user) {
             const statusKey = String(t.status || 'new')
             return `<div class="row-item trial-row">
           <div class="trial-row-main">
-            <h3>${t.full_name} <span class="trial-mobile" dir="ltr">${t.mobile}</span></h3>
-            <p>${t.preferred_time_note || '—'}${t.message ? ` · ${t.message}` : ''}</p>
-            <p class="hint">${formatDateTime(t.created_at)} · ${STATUS_LABEL[statusKey] || statusKey}</p>
+            <h3>${escapeHtml(t.full_name)} <span class="trial-mobile" dir="ltr">${escapeHtml(t.mobile)}</span></h3>
+            <p>${escapeHtml(t.preferred_time_note || '—')}${t.message ? ` · ${escapeHtml(t.message)}` : ''}</p>
+            <p class="hint">${escapeHtml(formatDateTime(t.created_at))} · ${escapeHtml(STATUS_LABEL[statusKey] || statusKey)}</p>
           </div>
           <div class="trial-row-action">
-            <select data-id="${t.id}" class="select-compact" data-compact aria-label="وضعیت ${t.full_name}">
+            <select data-id="${escapeHtml(t.id)}" class="select-compact" data-compact aria-label="وضعیت ${escapeHtml(t.full_name)}">
               <option value="new" ${statusKey === 'new' ? 'selected' : ''}>جدید</option>
               <option value="contacted" ${statusKey === 'contacted' ? 'selected' : ''}>تماس</option>
               <option value="converted" ${statusKey === 'converted' ? 'selected' : ''}>تبدیل</option>
@@ -112,7 +113,7 @@ export function mountTrialLeads(root, user) {
   async function load() {
     setStatus(status, 'بارگذاری…', 'loading')
     try {
-      const qs = filter.value ? `?status=${filter.value}` : ''
+      const qs = filter.value ? `?status=${encodeURIComponent(filter.value)}` : ''
       const data = await apiGet(`/api/v1/trial-leads${qs}`)
       const items = data.items || []
       pager.reset()

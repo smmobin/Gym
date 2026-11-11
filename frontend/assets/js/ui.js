@@ -1,4 +1,5 @@
 import { ROLE_LABEL } from './format.js'
+import { escapeHtml } from './html.js'
 
 const TOAST_MS = {
   ok: 4200,
@@ -336,7 +337,10 @@ export function bindHashNav(defaultHash = 'dash') {
   const items = [...document.querySelectorAll('.sidebar .nav-item[href^="#"]')]
   function resolveHash() {
     const raw = (location.hash || `#${defaultHash}`).slice(1) || defaultHash
-    if (document.querySelector(`[data-section="${raw}"]`)) return raw
+    const known = [...document.querySelectorAll('[data-section]')].some(
+      (sec) => sec.getAttribute('data-section') === raw,
+    )
+    if (known) return raw
     return defaultHash
   }
   function activate() {
@@ -438,15 +442,6 @@ export function renderMemberPick(root, items, onPick, opts = {}) {
     list.appendChild(btn)
   })
   root.appendChild(list)
-}
-
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 /** @param {HTMLElement | null} banner */

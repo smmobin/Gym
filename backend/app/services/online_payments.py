@@ -92,7 +92,9 @@ def start_athlete_online_payment(
     base_membership_id: int | None = None,
     note: str | None = None,
     http_client=None,
+    allow_custom_renew_amount: bool = False,
 ) -> StartOnlineResult:
+    """Athlete path must keep allow_custom_renew_amount=False: price comes from the plan."""
     status = public_gateway_status(settings)
     if not status["enabled"]:
         raise OnlinePaymentError(
@@ -123,7 +125,10 @@ def start_athlete_online_payment(
             if base.status == MembershipStatus.CANCELLED.value:
                 raise OnlinePaymentError(409, "اشتراک لغوشده نمی‌تواند مبنای تمدید باشد.")
             renew_base_id = base_membership_id
-        agreed = amount_toman if amount_toman is not None else plan.base_price_toman
+        if allow_custom_renew_amount and amount_toman is not None:
+            agreed = amount_toman
+        else:
+            agreed = plan.base_price_toman
         if agreed < _MIN_ONLINE_TOMAN:
             raise OnlinePaymentError(
                 422,
@@ -219,7 +224,9 @@ def handle_gateway_callback(
     if not authority:
         raise OnlinePaymentError(400, "شناسهٔ تراکنش (Authority) نامعتبر است.")
 
-    payment = db.scalar(select(Payment).where(Payment.gateway_authority == authority))
+    payment = db.scalar(
+        select(Payment).where(Payment.gateway_authority == authority).with_for_update()
+    )
     if payment is None:
         raise OnlinePaymentError(404, "پرداخت متناظر یافت نشد.")
 

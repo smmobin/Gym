@@ -1,13 +1,5 @@
 import { ApiError, apiGet } from './api.js'
-
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
+import { escapeHtml } from './html.js'
 
 /**
  * @typedef {{
@@ -80,10 +72,10 @@ export function renderPublicPlanCards(plans, featuredId) {
         bullets.length > 0
           ? `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('')}</ul>`
           : ''
-      return `<article class="plan${featured ? ' featured' : ''}" data-plan-id="${plan.id}">
+      return `<article class="plan${featured ? ' featured' : ''}" data-plan-id="${escapeHtml(plan.id)}">
         ${tag}
         <h3>${escapeHtml(plan.name)}</h3>
-        <p class="price">${price} <small>تومان</small></p>
+        <p class="price">${escapeHtml(price)} <small>تومان</small></p>
         ${list}
         <a class="${ctaClass}" href="#trial">${ctaLabel}</a>
       </article>`

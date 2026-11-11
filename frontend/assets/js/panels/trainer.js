@@ -2,6 +2,7 @@ import { apiErrorMessage, apiGet } from '../api.js'
 import { createAutoRefresh } from '../auto-refresh.js'
 import { requireStaff } from '../auth-staff.js'
 import { mountAttendance } from '../attendance.js'
+import { escapeHtml } from '../html.js'
 import { createListPager } from '../pagination.js'
 import { mountWorkouts } from '../workouts.js'
 import { setStatus } from '../ui.js'
@@ -80,8 +81,8 @@ function mountTrainees(root) {
           ? rows
               .map(
                 (m) => `<div class="row-item"><div>
-            <h3>${m.first_name} ${m.last_name}</h3>
-            <p class="hint">${m.display_id} · <span dir="ltr">${m.mobile}</span> · ${m.status}</p>
+            <h3>${escapeHtml(m.first_name)} ${escapeHtml(m.last_name)}</h3>
+            <p class="hint">${escapeHtml(m.display_id)} · <span dir="ltr">${escapeHtml(m.mobile)}</span> · ${escapeHtml(m.status)}</p>
           </div>
           <a class="btn small ghost" href="#workouts">برنامه</a>
           </div>`,

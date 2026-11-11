@@ -255,28 +255,6 @@
     </div>
     <p class="hint pwa-install-hint">نصب اپ: از منوی مرورگر گزینهٔ Install یا Add to Home Screen را بزنید. در آیفون: Share → Add to Home Screen.</p>
   </footer>
-  <script>
-    (function () {
-      var toggle = document.getElementById("nav-toggle");
-      var nav = document.querySelector(".site-links");
-      if (!toggle || !nav) return;
-      function isMobileNav() {
-        return window.matchMedia("(max-width: 1100px)").matches;
-      }
-      document.querySelectorAll(".site-links a").forEach(function (link) {
-        link.addEventListener("click", function () {
-          if (isMobileNav()) toggle.checked = false;
-        });
-      });
-      document.addEventListener("click", function (event) {
-        if (!toggle.checked || !isMobileNav()) return;
-        if (event.target.closest(".site-links, .nav-burger, .nav-toggle, label[for='nav-toggle']")) {
-          return;
-        }
-        toggle.checked = false;
-      });
-    })();
-  </script>
   <script type="module" src="/assets/js/panels/landing.js"></script>
   <script type="module" src="/assets/js/pwa-register.js"></script>
   <script src="/js/custom-select.js"></script>

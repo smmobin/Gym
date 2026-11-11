@@ -2,6 +2,7 @@ import { ApiError, apiGet } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { expenseCategoryLabel } from './expense-categories.js'
 import { formatJalaliDate, formatToman, jalaliMonthRangeLocal } from './format.js'
+import { escapeHtml } from './html.js'
 import { LIVE } from './live-data.js'
 import { setStatus } from './ui.js'
 
@@ -12,10 +13,10 @@ import { setStatus } from './ui.js'
  */
 export function buildDashboardStatsHtml(profit, todayCount, membersCount) {
   return `
-    <article class="stat accent"><span class="stat-label">درآمد ماه (paid)</span><strong>${formatToman(profit.income_paid_toman)}</strong><em>فقط پرداخت‌شده</em></article>
-    <article class="stat"><span class="stat-label">هزینهٔ ماه</span><strong>${formatToman(profit.expenses_toman)}</strong></article>
-    <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${formatToman(profit.profit_toman)}</strong><em>درآمد − هزینه</em></article>
-    <article class="stat"><span class="stat-label">حاضر امروز</span><strong>${Number(todayCount || 0).toLocaleString('fa-IR')}</strong><em>عضویت فعال: ${Number(membersCount || 0).toLocaleString('fa-IR')}</em></article>
+    <article class="stat accent"><span class="stat-label">درآمد ماه (paid)</span><strong>${escapeHtml(formatToman(profit.income_paid_toman))}</strong><em>فقط پرداخت‌شده</em></article>
+    <article class="stat"><span class="stat-label">هزینهٔ ماه</span><strong>${escapeHtml(formatToman(profit.expenses_toman))}</strong></article>
+    <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${escapeHtml(formatToman(profit.profit_toman))}</strong><em>درآمد − هزینه</em></article>
+    <article class="stat"><span class="stat-label">حاضر امروز</span><strong>${escapeHtml(Number(todayCount || 0).toLocaleString('fa-IR'))}</strong><em>عضویت فعال: ${escapeHtml(Number(membersCount || 0).toLocaleString('fa-IR'))}</em></article>
   `
 }
 
@@ -31,11 +32,11 @@ export function buildRecentExpensesHtml(items, limit = 5) {
   return rows
     .map((r) => {
       const label = expenseCategoryLabel(r.category)
-      const note = r.note ? ` · ${r.note}` : ''
+      const note = r.note ? ` · ${escapeHtml(r.note)}` : ''
       return `<div class="row-item"><div>
-        <h3>${label}</h3>
-        <p>${formatJalaliDate(r.expense_date)}${note}</p></div>
-        <em>${formatToman(r.amount_toman)}</em></div>`
+        <h3>${escapeHtml(label)}</h3>
+        <p>${escapeHtml(formatJalaliDate(r.expense_date))}${note}</p></div>
+        <em>${escapeHtml(formatToman(r.amount_toman))}</em></div>`
     })
     .join('')
 }

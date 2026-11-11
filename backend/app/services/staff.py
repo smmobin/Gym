@@ -104,9 +104,14 @@ def create_staff(
     if effective_role(actor) == StaffRole.RECEPTIONIST.value:
         flag = False
 
+    try:
+        password_hash = hash_password(password)
+    except ValueError as err:
+        raise StaffError(400, "رمز بیش از حد طولانی است.") from err
+
     row = User(
         mobile=mobile,
-        password_hash=hash_password(password),
+        password_hash=password_hash,
         full_name=full_name,
         role=role,
         also_trainer=flag,
@@ -186,7 +191,10 @@ def update_staff(
     if password is not None:
         if len(password) < MIN_PASSWORD_LEN:
             raise StaffError(400, "رمز باید حداقل ۸ کاراکتر باشد.")
-        target.password_hash = hash_password(password)
+        try:
+            target.password_hash = hash_password(password)
+        except ValueError as err:
+            raise StaffError(400, "رمز بیش از حد طولانی است.") from err
 
     if also_trainer is not None:
         if effective_role(actor) != StaffRole.MANAGER.value:
@@ -203,6 +211,10 @@ def update_staff(
         if not is_active:
             revoke_all_sessions_for_user(db, user_id=target.id)
             deactivated = True
+
+    credentials_changed = password is not None or target.role != role_before
+    if credentials_changed and target.id != actor.id and not deactivated:
+        revoke_all_sessions_for_user(db, user_id=target.id)
 
     db.flush()
     also_after = bool(target.also_trainer)

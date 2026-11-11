@@ -89,6 +89,8 @@ os.environ["LOG_DIR"] = tempfile.mkdtemp(prefix="gym-test-logs-")
 # Tests that need a provider set it explicitly with monkeypatch.setenv.
 os.environ["SMS_PROVIDER"] = "none"
 os.environ["SMS_API_KEY"] = ""
+# Fixed OTP 123456 is opt-in; the suite exercises that local path explicitly.
+os.environ["OTP_DEV_FIXED"] = "true"
 
 # ---------------------------------------------------------------------------
 # 2) Clear settings cache + rebind engine if anything imported early
@@ -197,6 +199,14 @@ def _prepare_test_database() -> None:
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _reset_auth_rate_limits() -> None:
+    """Every test client shares one peer IP; per-IP auth limits must not leak across tests."""
+    from app.core.rate_limit import reset_auth_limiters
+
+    reset_auth_limiters()
 
 
 @pytest.fixture

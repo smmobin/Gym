@@ -1,5 +1,6 @@
 import { apiErrorMessage, apiPost } from './api.js'
 import { formatJalaliDate, formatToman, PAYMENT_METHOD_LABEL } from './format.js'
+import { escapeHtml } from './html.js'
 import { enhanceMobileInputs } from './mobile-input.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { setStatus } from './ui.js'
@@ -62,13 +63,13 @@ export function mountGuests(root, user) {
       if (result) {
         result.hidden = false
         result.innerHTML = `
-          <p>عضو: ${data.member.display_id} — ${data.member.first_name} ${data.member.last_name}
+          <p>عضو: ${escapeHtml(data.member.display_id)} — ${escapeHtml(data.member.first_name)} ${escapeHtml(data.member.last_name)}
           ${data.reused_existing_member ? ' (عضو موجود)' : ''}</p>
-          <p>عضویت: ${data.membership.plan_name || data.membership.plan_id} · ${formatToman(data.membership.agreed_amount_toman)}
-          · ${formatJalaliDate(data.membership.start_date)}</p>
+          <p>عضویت: ${escapeHtml(data.membership.plan_name || data.membership.plan_id)} · ${escapeHtml(formatToman(data.membership.agreed_amount_toman))}
+          · ${escapeHtml(formatJalaliDate(data.membership.start_date))}</p>
           ${
             data.payment
-              ? `<p>رسید ${data.payment.receipt_number}: ${formatToman(data.payment.amount_toman)} · ${PAYMENT_METHOD_LABEL[data.payment.method] || data.payment.method}</p>`
+              ? `<p>رسید ${escapeHtml(data.payment.receipt_number)}: ${escapeHtml(formatToman(data.payment.amount_toman))} · ${escapeHtml(PAYMENT_METHOD_LABEL[data.payment.method] || data.payment.method)}</p>`
               : '<p>پرداخت ثبت نشد.</p>'
           }`
       }

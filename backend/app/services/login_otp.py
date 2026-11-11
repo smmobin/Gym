@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -45,7 +46,7 @@ class OtpSendOutcome:
 def otp_mode(settings: Settings) -> OtpMode:
     if settings.sms_enabled:
         return "live"
-    if settings.is_production_like:
+    if settings.is_production_like or not settings.otp_dev_fixed:
         return "unavailable"
     return "dev_fixed"
 
@@ -226,7 +227,7 @@ def verify_otp_code(
     expected_ok = False
     if mode == "dev_fixed" and code == DEV_FIXED_OTP:
         expected_ok = True
-    elif row.code_hash == _hash_code(code):
+    elif hmac.compare_digest(row.code_hash, _hash_code(code)):
         expected_ok = True
 
     if not expected_ok:

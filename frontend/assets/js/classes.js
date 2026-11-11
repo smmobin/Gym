@@ -1,6 +1,7 @@
 import { ApiError, apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { formatDateTimeShort, genderLabelFa } from './format.js'
+import { escapeHtml } from './html.js'
 import { emitLive, LIVE } from './live-data.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { createListPager } from './pagination.js'
@@ -82,15 +83,15 @@ export function mountClasses(root, user) {
     tbody.innerHTML = rows
       .map(
         (c) => `<tr>
-          <td data-label="عنوان">${c.title}${c.trainer_schedule_conflict ? ' ⚠' : ''}</td>
-          <td data-label="زمان">${formatDateTimeShort(c.starts_at)}</td>
-          <td data-label="ظرفیت">${(c.booked_count ?? 0).toLocaleString('fa-IR')} / ${(c.capacity ?? 0).toLocaleString('fa-IR')} (باقی ${c.remaining})</td>
-          <td data-label="جنسیت">${genderLabelFa(c.gender_label)}</td>
-          <td><button type="button" class="btn small" data-id="${c.id}">انتخاب</button>
-          ${canWrite ? `<button type="button" class="btn small ghost" data-edit="${c.id}">ویرایش</button>` : ''}
+          <td data-label="عنوان">${escapeHtml(c.title)}${c.trainer_schedule_conflict ? ' ⚠' : ''}</td>
+          <td data-label="زمان">${escapeHtml(formatDateTimeShort(c.starts_at))}</td>
+          <td data-label="ظرفیت">${escapeHtml((c.booked_count ?? 0).toLocaleString('fa-IR'))} / ${escapeHtml((c.capacity ?? 0).toLocaleString('fa-IR'))} (باقی ${escapeHtml(c.remaining)})</td>
+          <td data-label="جنسیت">${escapeHtml(genderLabelFa(c.gender_label))}</td>
+          <td><button type="button" class="btn small" data-id="${escapeHtml(c.id)}">انتخاب</button>
+          ${canWrite ? `<button type="button" class="btn small ghost" data-edit="${escapeHtml(c.id)}">ویرایش</button>` : ''}
           ${
             canWrite && c.is_active !== false && !(c.booked_count > 0)
-              ? `<button type="button" class="btn small ghost" data-deactivate="${c.id}">غیرفعال‌سازی</button>`
+              ? `<button type="button" class="btn small ghost" data-deactivate="${escapeHtml(c.id)}">غیرفعال‌سازی</button>`
               : ''
           }</td>
         </tr>`,
@@ -210,15 +211,15 @@ export function mountClasses(root, user) {
     host.innerHTML = rows
       .map(
         (b) => `<div class="row-item"><div>
-            <h3>${b.member_name || b.member_display_id}</h3>
-            <p>${bookingStatusFa(b.status)}</p></div>
+            <h3>${escapeHtml(b.member_name || b.member_display_id)}</h3>
+            <p>${escapeHtml(bookingStatusFa(b.status))}</p></div>
             <div class="inline-actions">
-              ${canWrite && b.status === 'booked' ? `<button type="button" class="btn small ghost" data-cancel="${b.id}">لغو</button>` : ''}
+              ${canWrite && b.status === 'booked' ? `<button type="button" class="btn small ghost" data-cancel="${escapeHtml(b.id)}">لغو</button>` : ''}
               ${
                 canWrite && b.status === 'booked' && started
                   ? `
-                <button type="button" class="btn small" data-att="${b.id}">حاضر</button>
-                <button type="button" class="btn small ghost" data-ns="${b.id}">غیبت</button>`
+                <button type="button" class="btn small" data-att="${escapeHtml(b.id)}">حاضر</button>
+                <button type="button" class="btn small ghost" data-ns="${escapeHtml(b.id)}">غیبت</button>`
                   : ''
               }
             </div></div>`,

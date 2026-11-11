@@ -2,6 +2,7 @@ import { ApiError, apiErrorMessage, apiGet, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { LIVE } from './live-data.js'
 import { formatJalaliDate } from './format.js'
+import { escapeHtml } from './html.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -49,20 +50,11 @@ export function membershipEligibilityHtml(memberships, lockerPlanIds) {
         ? '<span class="badge ok">شامل کمد</span>'
         : '<span class="badge warn">بدون طرح کمد</span>'
       return `<div class="row-item"><div>
-        <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
-        <p>${m.status} · ${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)}</p>
+        <h3>${escapeHtml(m.plan_name || 'طرح ' + m.plan_id)} · #${escapeHtml(m.id)}</h3>
+        <p>${escapeHtml(m.status)} · ${escapeHtml(formatJalaliDate(m.start_date))} تا ${escapeHtml(formatJalaliDate(m.end_date))}</p>
       </div>${badge}</div>`
     })
     .join('')
-}
-
-/** @param {string} s */
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 const LOCKER_MARK_SVG =
@@ -111,12 +103,12 @@ export function lockersTableRowsHtml(lockers, selectedId = null) {
       const a = l.current_assignment
       const sel = selectedId != null && l.id === selectedId
       return `<tr class="${sel ? 'is-locker-selected' : ''}">
-            <td data-label="کد">${l.code}</td>
+            <td data-label="کد">${escapeHtml(l.code)}</td>
             <td data-label="وضعیت"><span class="badge ${l.is_free ? 'ok' : 'warn'}">${l.is_free ? 'آزاد' : 'اشغال'}${!l.is_active ? ' · غیرفعال' : ''}</span></td>
-            <td data-label="عضو">${a ? `${a.member_name || a.member_display_id}` : '—'}</td>
+            <td data-label="عضو">${a ? escapeHtml(a.member_name || a.member_display_id) : '—'}</td>
             <td>
-              <button type="button" class="btn small ghost" data-sel="${l.id}">انتخاب</button>
-              ${!l.is_free ? `<button type="button" class="btn small" data-rel="${l.id}">آزادسازی</button>` : ''}
+              <button type="button" class="btn small ghost" data-sel="${escapeHtml(l.id)}">انتخاب</button>
+              ${!l.is_free ? `<button type="button" class="btn small" data-rel="${escapeHtml(l.id)}">آزادسازی</button>` : ''}
             </td>
           </tr>`
     })

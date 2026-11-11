@@ -111,9 +111,9 @@ def payment_gateway_callback(
         db.rollback()
         if err.status_code >= 500:
             _raise_online(err)
-        url = online_svc.front_return_url(
-            settings, query={"pay": "error", "detail": err.detail[:120]}
-        )
+        # Do not put free-text detail in the browser URL. The athlete page
+        # shows a fixed message; the real reason stays in the server log/audit.
+        url = online_svc.front_return_url(settings, query={"pay": "error"})
         if url:
             return RedirectResponse(url=url, status_code=302)
         _raise_online(err)
@@ -153,6 +153,7 @@ def desk_start_online_payment(
             plan_id=body.plan_id,
             base_membership_id=body.base_membership_id,
             note=body.note,
+            allow_custom_renew_amount=True,
         )
         db.commit()
         db.refresh(result.payment)

@@ -1,17 +1,9 @@
 import { ApiError, apiGet } from './api.js'
+import { escapeHtml } from './html.js'
 import { slicePage } from './pagination.js'
 
 /** Landing shows three quotes per page (matches desktop 3-column grid). */
 export const TESTIMONIALS_PAGE_SIZE = 3
-
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 /**
  * @typedef {{
@@ -52,7 +44,7 @@ export function renderPublicTestimonialCards(items) {
   }
   return items
     .map((row) => {
-      return `<blockquote data-testimonial-id="${row.id}">
+      return `<blockquote data-testimonial-id="${escapeHtml(row.id)}">
           <p>${escapeHtml(formatQuoteBody(row.body))}</p>
           <cite>${escapeHtml(formatCite(row))}</cite>
         </blockquote>`

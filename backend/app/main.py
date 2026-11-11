@@ -13,6 +13,7 @@ from app.core.dev_log_gate import dev_log_viewer_enabled
 from app.core.logging_setup import setup_logging
 from app.core.request_context import REQUEST_ID_HEADER
 from app.core.request_middleware import RequestContextMiddleware
+from app.core.security_middleware import OriginCheckMiddleware, SecurityHeadersMiddleware
 
 settings = get_settings()
 logger = logging.getLogger("gym.startup")
@@ -49,20 +50,16 @@ def _should_serve_frontend() -> bool:
     return ready
 
 
-def _warn_insecure_production() -> None:
-    if not settings.is_production_like:
+def _refuse_insecure_production() -> None:
+    errors = settings.production_config_errors()
+    if not errors:
         return
-    if settings.secret_key_is_weak:
-        logger.warning(
-            "APP_ENV=%s but SECRET_KEY is weak/default — set a long random SECRET_KEY.",
-            settings.app_env,
-        )
-    if not settings.cors_origin_list:
-        logger.warning("CORS_ORIGINS is empty in production-like env.")
-    if any("localhost" in o or "127.0.0.1" in o for o in settings.cors_origin_list):
-        logger.warning(
-            "CORS_ORIGINS still lists localhost — use your real HTTPS domain in production."
-        )
+    for err in errors:
+        logger.error("Insecure production config: %s", err)
+    raise RuntimeError(
+        f"APP_ENV={settings.app_env} refuses to start with insecure settings: "
+        + " | ".join(errors)
+    )
 
 
 @asynccontextmanager
@@ -70,7 +67,7 @@ async def lifespan(_app: FastAPI):
     paths = setup_logging(settings)
     if paths:
         logger.info("File logs in %s", paths["app"].parent)
-    _warn_insecure_production()
+    _refuse_insecure_production()
     if settings.is_production_like and settings.dev_log_viewer:
         logger.warning(
             "DEV_LOG_VIEWER is set but ignored because APP_ENV is production-like. Read logs via SSH."
@@ -87,17 +84,20 @@ app = FastAPI(
     version="0.1.0",
     docs_url=None if settings.is_production_like else "/docs",
     redoc_url=None if settings.is_production_like else "/redoc",
+    openapi_url=None if settings.is_production_like else "/openapi.json",
     lifespan=lifespan,
 )
 
+app.add_middleware(OriginCheckMiddleware, settings=settings)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", REQUEST_ID_HEADER, "X-Dev-Log-Token"],
     expose_headers=[REQUEST_ID_HEADER, "Content-Disposition"],
 )
+app.add_middleware(SecurityHeadersMiddleware, settings=settings)
 # Added last → outermost: every response (incl. CORS preflight) gets X-Request-ID.
 app.add_middleware(RequestContextMiddleware)
 
@@ -112,9 +112,9 @@ if not _SERVE_FRONTEND:
         payload: dict[str, str] = {
             "name": settings.app_name,
             "health": f"{settings.api_prefix}/health",
-            "env": settings.app_env,
         }
         if not settings.is_production_like:
+            payload["env"] = settings.app_env
             payload["docs"] = "/docs"
         return payload
 

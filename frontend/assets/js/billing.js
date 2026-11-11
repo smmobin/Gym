@@ -8,6 +8,7 @@ import {
   PAYMENT_METHOD_LABEL,
   paymentStatusLabelFa,
 } from './format.js'
+import { escapeHtml } from './html.js'
 import { LIVE } from './live-data.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
@@ -122,7 +123,9 @@ export function mountBilling(root, user) {
     const sel = /** @type {HTMLSelectElement | null} */ (root.querySelector('[data-plans]'))
     if (!sel) return
     const prev = sel.value
-    sel.innerHTML = plans.map((p) => `<option value="${p.id}">${planOptionLabel(p)}</option>`).join('')
+    sel.innerHTML = plans
+      .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(planOptionLabel(p))}</option>`)
+      .join('')
     if (prev && [...sel.options].some((o) => o.value === prev)) {
       sel.value = prev
     }
@@ -156,11 +159,11 @@ export function mountBilling(root, user) {
               ? '<span class="badge ok">شامل کمد</span>'
               : ''
             return `<div class="row-item"><div>
-          <h3>${m.plan_name || 'طرح ' + m.plan_id} · #${m.id}</h3>
-          <p>${formatJalaliDate(m.start_date)} تا ${formatJalaliDate(m.end_date)} · مبلغ توافقی ${formatToman(m.agreed_amount_toman)} · ${membershipStatusLabelFa(m.status)}
-          ${m.sessions_remaining != null ? ` · جلسه باقی‌مانده: ${Number(m.sessions_remaining).toLocaleString('fa-IR')}` : ''}
-          ${m.freeze_ends_at ? ` · توقف تا ${formatJalaliDate(m.freeze_ends_at)}` : ''}</p></div>
-          <span class="badge">${membershipStatusLabelFa(m.status)}</span>${lockerBadge}</div>`
+          <h3>${escapeHtml(m.plan_name || 'طرح ' + m.plan_id)} · #${escapeHtml(m.id)}</h3>
+          <p>${escapeHtml(formatJalaliDate(m.start_date))} تا ${escapeHtml(formatJalaliDate(m.end_date))} · مبلغ توافقی ${escapeHtml(formatToman(m.agreed_amount_toman))} · ${escapeHtml(membershipStatusLabelFa(m.status))}
+          ${m.sessions_remaining != null ? ` · جلسه باقی‌مانده: ${escapeHtml(Number(m.sessions_remaining).toLocaleString('fa-IR'))}` : ''}
+          ${m.freeze_ends_at ? ` · توقف تا ${escapeHtml(formatJalaliDate(m.freeze_ends_at))}` : ''}</p></div>
+          <span class="badge">${escapeHtml(membershipStatusLabelFa(m.status))}</span>${lockerBadge}</div>`
           })
           .join('')
       : '<p class="hint">عضویت ندارد.</p>'
@@ -184,10 +187,10 @@ export function mountBilling(root, user) {
       ? rows
           .map(
             (p) => `<div class="row-item"><div>
-          <h3>${p.receipt_number}</h3>
-          <p>${formatToman(p.amount_toman)} · ${PAYMENT_METHOD_LABEL[p.method] || p.method} · ${paymentStatusLabelFa(p.status)}</p>
-          <p class="hint">${paymentMembershipLine(p)}</p></div>
-          ${p.status === 'paid' ? `<button type="button" class="btn small ghost" data-refund="${p.id}">برگشت</button>` : '<em>—</em>'}
+          <h3>${escapeHtml(p.receipt_number)}</h3>
+          <p>${escapeHtml(formatToman(p.amount_toman))} · ${escapeHtml(PAYMENT_METHOD_LABEL[p.method] || p.method)} · ${escapeHtml(paymentStatusLabelFa(p.status))}</p>
+          <p class="hint">${escapeHtml(paymentMembershipLine(p))}</p></div>
+          ${p.status === 'paid' ? `<button type="button" class="btn small ghost" data-refund="${escapeHtml(p.id)}">برگشت</button>` : '<em>—</em>'}
         </div>`,
           )
           .join('')
@@ -231,7 +234,7 @@ export function mountBilling(root, user) {
           .filter((m) => allowed.has(m.status))
           .map(
             (m) =>
-              `<option value="${m.id}">#${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}</option>`,
+              `<option value="${escapeHtml(m.id)}">#${escapeHtml(m.id)} · ${escapeHtml(m.plan_name || m.plan_id)} · ${escapeHtml(membershipStatusLabelFa(m.status))}</option>`,
           )
           .join('')
       if ([...sel.options].some((o) => o.value === cur)) sel.value = cur
@@ -250,7 +253,7 @@ export function mountBilling(root, user) {
           .filter((m) => payAllowed.has(m.status))
           .map(
             (m) =>
-              `<option value="${m.id}">#${m.id} · ${m.plan_name || m.plan_id} · ${membershipStatusLabelFa(m.status)}</option>`,
+              `<option value="${escapeHtml(m.id)}">#${escapeHtml(m.id)} · ${escapeHtml(m.plan_name || m.plan_id)} · ${escapeHtml(membershipStatusLabelFa(m.status))}</option>`,
           )
           .join('')
       if ([...paySel.options].some((o) => o.value === cur)) paySel.value = cur
@@ -404,11 +407,14 @@ export function mountBilling(root, user) {
           const m = memberships.find((x) => x.id === Number(membershipChoice))
           mLine = m ? `#${m.id} · ${m.plan_name || m.plan_id}` : `#${membershipChoice}`
         }
-        receipt.innerHTML = `<h3>رسید ${data.payment.receipt_number}</h3>
-          <p>مبلغ: ${formatToman(data.payment.amount_toman)}</p>
-          <p>روش: ${PAYMENT_METHOD_LABEL[data.payment.method] || data.payment.method}</p>
-          <p>مقصد: ${mLine}</p>
-          <button type="button" class="btn small" onclick="window.print()">چاپ</button>`
+        receipt.innerHTML = `<h3>رسید ${escapeHtml(data.payment.receipt_number)}</h3>
+          <p>مبلغ: ${escapeHtml(formatToman(data.payment.amount_toman))}</p>
+          <p>روش: ${escapeHtml(PAYMENT_METHOD_LABEL[data.payment.method] || data.payment.method)}</p>
+          <p>مقصد: ${escapeHtml(mLine)}</p>
+          <button type="button" class="btn small" data-print-receipt>چاپ</button>`
+        receipt.querySelector('[data-print-receipt]')?.addEventListener('click', () => {
+          window.print()
+        })
       }
       await loadMember(selected.id)
       void autoRefresh.refresh()

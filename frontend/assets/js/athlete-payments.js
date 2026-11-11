@@ -4,15 +4,7 @@ import {
   paymentMethodLabelFa,
   paymentStatusLabelFa,
 } from './format.js'
-
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
+import { escapeHtml } from './html.js'
 
 /**
  * Receipt cards for athlete «پرداخت‌های من».

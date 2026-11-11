@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_athlete
 from app.core.config import Settings, get_settings
 from app.core.db import get_db
-from app.core.rate_limit import login_rate_limiter
+from app.core.rate_limit import auth_ip_rate_limiter, client_ip, login_rate_limiter
 from app.models.member import Member
 from app.schemas.athlete import (
     AthleteBookClassResponse,
@@ -84,7 +84,9 @@ def athlete_login(
     settings: Settings = Depends(get_settings),
 ) -> AthleteLoginResponse:
     rate_key = f"athlete-login:{body.mobile}"
-    if not login_rate_limiter.is_allowed(rate_key):
+    if not auth_ip_rate_limiter.is_allowed(
+        f"auth-ip:{client_ip(request)}"
+    ) or not login_rate_limiter.is_allowed(rate_key):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="تلاش‌های ورود زیاد است. کمی بعد دوباره امتحان کنید.",

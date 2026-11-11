@@ -105,3 +105,20 @@ def revoke_athlete_session_by_token(db: Session, *, token: str) -> bool:
     row.revoked_at = datetime.now(tz=timezone.utc)
     db.flush()
     return True
+
+
+def revoke_all_athlete_sessions(db: Session, *, member_id: int) -> int:
+    now = datetime.now(tz=timezone.utc)
+    rows = list(
+        db.scalars(
+            select(AthleteSession).where(
+                AthleteSession.member_id == member_id,
+                AthleteSession.revoked_at.is_(None),
+            )
+        ).all()
+    )
+    for row in rows:
+        row.revoked_at = now
+    if rows:
+        db.flush()
+    return len(rows)

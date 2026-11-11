@@ -6,6 +6,7 @@
 import { API_BASE, ApiError, apiErrorMessage, apiGet } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { formatDateTime, formatJalaliDate, isoDateLocal, ROLE_LABEL } from './format.js'
+import { escapeHtml } from './html.js'
 import { bindLiveSearch } from './live-search.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -27,15 +28,6 @@ export const ACTIVITY_CATEGORY_LABEL = {
 export function activityCategoryLabel(cat) {
   if (!cat) return '—'
   return ACTIVITY_CATEGORY_LABEL[/** @type {keyof typeof ACTIVITY_CATEGORY_LABEL} */ (cat)] ?? cat
-}
-
-/** @param {string} value */
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 /**
@@ -115,7 +107,7 @@ export function buildActivityRowsHtml(items) {
           <p class="activity-meta hint">${meta.join(' · ')}${rid ? `${meta.length ? ' · ' : ''}${rid}` : ''}</p>
         </div>
         <div class="activity-side">
-          <time class="activity-time" datetime="${escapeHtml(item.created_at)}">${formatDateTime(item.created_at)}</time>
+          <time class="activity-time" datetime="${escapeHtml(item.created_at)}">${escapeHtml(formatDateTime(item.created_at))}</time>
           <span class="activity-badges">
             <span class="badge">${escapeHtml(activityCategoryLabel(item.category))}</span>
             <span class="badge ${fail ? 'danger' : 'ok'}">${fail ? 'ناموفق' : 'موفق'}</span>

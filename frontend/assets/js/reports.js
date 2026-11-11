@@ -12,6 +12,7 @@ import {
   jalaliMonthRangeLocal,
   todayRangeLocal,
 } from './format.js'
+import { escapeHtml } from './html.js'
 import { emitLive, LIVE } from './live-data.js'
 import { enhanceMoneyInputs, moneyFromForm } from './money-input.js'
 import { createListPager } from './pagination.js'
@@ -142,9 +143,9 @@ export function mountReports(root, user) {
       const fromShown = profit.from || profit.from_date || from
       const toShown = profit.to || profit.to_date || to
       root.querySelector('[data-summary]').innerHTML = `
-        <article class="stat accent"><span class="stat-label">درآمد (paid)</span><strong>${formatToman(profit.income_paid_toman)}</strong><em>${formatJalaliDate(fromShown)} تا ${formatJalaliDate(toShown)}</em></article>
-        <article class="stat"><span class="stat-label">هزینه‌ها</span><strong>${formatToman(profit.expenses_toman)}</strong></article>
-        <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${formatToman(profit.profit_toman)}</strong><em>درآمد − هزینه</em></article>
+        <article class="stat accent"><span class="stat-label">درآمد (paid)</span><strong>${escapeHtml(formatToman(profit.income_paid_toman))}</strong><em>${escapeHtml(formatJalaliDate(fromShown))} تا ${escapeHtml(formatJalaliDate(toShown))}</em></article>
+        <article class="stat"><span class="stat-label">هزینه‌ها</span><strong>${escapeHtml(formatToman(profit.expenses_toman))}</strong></article>
+        <article class="stat"><span class="stat-label">سود نمایشی</span><strong>${escapeHtml(formatToman(profit.profit_toman))}</strong><em>درآمد − هزینه</em></article>
       `
       expenseItems = expenses.items || []
       if (!silent) expensesPager.reset()
@@ -155,9 +156,9 @@ export function mountReports(root, user) {
           ? rows
               .map(
                 (r) => `<div class="row-item"><div>
-            <h3>${expenseCategoryLabel(r.category)}</h3>
-            <p>${formatJalaliDate(r.expense_date)}${r.note ? ' · ' + r.note : ''}</p></div>
-            <em>${formatToman(r.amount_toman)}</em></div>`,
+            <h3>${escapeHtml(expenseCategoryLabel(r.category))}</h3>
+            <p>${escapeHtml(formatJalaliDate(r.expense_date))}${r.note ? ' · ' + escapeHtml(r.note) : ''}</p></div>
+            <em>${escapeHtml(formatToman(r.amount_toman))}</em></div>`,
               )
               .join('')
           : '<p class="hint">هزینه‌ای در این بازه نیست. تاریخ ثبت‌شدهٔ هزینه باید داخل همین بازه باشد.</p>'

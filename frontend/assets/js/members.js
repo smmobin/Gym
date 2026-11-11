@@ -2,6 +2,7 @@ import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { emitLive, LIVE } from './live-data.js'
 import { formatDateTime, MEMBER_STATUS } from './format.js'
+import { escapeAttr, escapeHtml } from './html.js'
 import { bindLiveSearch } from './live-search.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { createListPager } from './pagination.js'
@@ -136,11 +137,11 @@ export function mountMembers(root, user) {
       tbody.innerHTML = rows
         .map(
           (m) => `<tr>
-        <td data-label="شناسه">${m.display_id}</td>
-        <td data-label="نام">${m.first_name} ${m.last_name}</td>
-        <td data-label="موبایل">${m.mobile}</td>
-        <td data-label="وضعیت"><span class="badge">${MEMBER_STATUS[m.status] || m.status}</span></td>
-        <td data-label="اقدام"><button type="button" class="btn small ghost" data-pick="${m.id}">انتخاب</button></td>
+        <td data-label="شناسه">${escapeHtml(m.display_id)}</td>
+        <td data-label="نام">${escapeHtml(m.first_name)} ${escapeHtml(m.last_name)}</td>
+        <td data-label="موبایل">${escapeHtml(m.mobile)}</td>
+        <td data-label="وضعیت"><span class="badge">${escapeHtml(MEMBER_STATUS[m.status] || m.status)}</span></td>
+        <td data-label="اقدام"><button type="button" class="btn small ghost" data-pick="${escapeHtml(m.id)}">انتخاب</button></td>
       </tr>`,
         )
         .join('')
@@ -348,14 +349,6 @@ export function setPersonChip(el, person, opts = {}) {
     metaEl.textContent = meta
     metaEl.hidden = !meta
   }
-}
-
-/** @param {string} value */
-function escapeAttr(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
 }
 
 /**

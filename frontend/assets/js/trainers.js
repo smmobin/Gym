@@ -1,19 +1,8 @@
 import { apiErrorMessage, apiGet, apiPost } from './api.js'
+import { escapeHtml } from './html.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
-
-/**
- * Escape text for HTML text nodes.
- * @param {unknown} s
- */
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 /**
  * @param {Array<{
@@ -36,7 +25,7 @@ export function trainerRosterHtml(items, opts = {}) {
       const name = `${a.member_first_name || ''} ${a.member_last_name || ''}`.trim() || '—'
       const meta = [a.member_display_id, a.member_mobile].filter(Boolean).join(' · ')
       const endBtn = allowEnd
-        ? `<button type="button" class="btn small ghost" data-roster-end="${a.id}" data-member-id="${a.member_id}">قطع</button>`
+        ? `<button type="button" class="btn small ghost" data-roster-end="${escapeHtml(a.id)}" data-member-id="${escapeHtml(a.member_id)}">قطع</button>`
         : '<em>—</em>'
       return `<div class="row-item"><div>
         <h3>${escapeHtml(name)}</h3>
@@ -99,7 +88,7 @@ export function mountTrainers(root, user) {
     const sel = root.querySelector('[data-trainers]')
     if (!sel) return
     sel.innerHTML = trainers
-      .map((t) => `<option value="${t.id}">${escapeHtml(t.full_name)} — ${escapeHtml(t.mobile)}</option>`)
+      .map((t) => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.full_name)} — ${escapeHtml(t.mobile)}</option>`)
       .join('')
     globalThis.GymCustomSelect?.sync?.(sel)
     await loadTrainerRoster()
@@ -149,7 +138,7 @@ export function mountTrainers(root, user) {
       rosterPager.reset()
       rosterPager.paint(rosterItems, paintRoster)
     } catch (err) {
-      rosterEl.innerHTML = `<p class="hint">${apiErrorMessage(err, 'بارگذاری شاگردان ناموفق')}</p>`
+      rosterEl.innerHTML = `<p class="hint">${escapeHtml(apiErrorMessage(err, 'بارگذاری شاگردان ناموفق'))}</p>`
     }
   }
 
@@ -163,7 +152,7 @@ export function mountTrainers(root, user) {
             (a) => `<div class="row-item"><div>
           <h3>${escapeHtml(a.trainer_full_name)}</h3>
           <p>${escapeHtml(a.trainer_mobile)}</p></div>
-          <button type="button" class="btn small ghost" data-end="${a.id}">قطع</button></div>`,
+          <button type="button" class="btn small ghost" data-end="${escapeHtml(a.id)}">قطع</button></div>`,
           )
           .join('')
       : '<p class="hint">مربی فعالی وصل نیست.</p>'

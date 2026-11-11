@@ -1,5 +1,6 @@
 import { ApiError, apiGet } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
+import { escapeAttr, escapeHtml, safeHttpUrl } from './html.js'
 import { LIVE } from './live-data.js'
 import { setStatus } from './ui.js'
 
@@ -19,7 +20,7 @@ const TRIAL_STATUS_FA = {
  * }} summary
  */
 export function buildDeskStatsHtml(summary) {
-  const n = (v) => Number(v || 0).toLocaleString('fa-IR')
+  const n = (v) => escapeHtml(Number(v || 0).toLocaleString('fa-IR'))
   return `
     <article class="stat accent"><span class="stat-label">حاضر امروز</span><strong>${n(summary.today_attendance_total)}</strong><em>ثبت ورود</em></article>
     <article class="stat"><span class="stat-label">باز بدون خروج</span><strong>${n(summary.today_open_count)}</strong><em>هنوز در سالن</em></article>
@@ -42,7 +43,7 @@ export function buildDeskActionPanelHtml(title, emptyText, items, moreHref, more
     ? rows
         .map((item) => {
           const body = item.body ? `<p>${escapeHtml(formatTrialBody(item.body))}</p>` : ''
-          return `<a class="row-item" href="${escapeAttr(item.href)}"><div>
+          return `<a class="row-item" href="${escapeAttr(safeHref(item.href))}"><div>
             <h3>${escapeHtml(item.title)}</h3>${body}</div></a>`
         })
         .join('')
@@ -51,7 +52,7 @@ export function buildDeskActionPanelHtml(title, emptyText, items, moreHref, more
     <article class="panel">
       <header class="panel-head">
         <h2>${escapeHtml(title)}</h2>
-        <a class="btn ghost small" href="${escapeAttr(moreHref)}">${escapeHtml(moreLabel)}</a>
+        <a class="btn ghost small" href="${escapeAttr(safeHref(moreHref))}">${escapeHtml(moreLabel)}</a>
       </header>
       <div class="list">${list}</div>
     </article>
@@ -63,16 +64,22 @@ function formatTrialBody(body) {
   return String(body).replace(/\b(new|contacted|converted|closed)\b/g, (m) => TRIAL_STATUS_FA[m] || m)
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
-function escapeAttr(s) {
-  return escapeHtml(s).replace(/'/g, '&#39;')
+/** @param {unknown} href */
+function safeHref(href) {
+  const value = String(href ?? '').trim()
+  if (!value || /[\u0000-\u001f\u007f\\<>"'`]/.test(value)) return '#'
+  if (value.startsWith('#') || (value.startsWith('/') && !value.startsWith('//'))) {
+    return value
+  }
+  const abs = safeHttpUrl(value)
+  if (!abs || typeof location === 'undefined') return '#'
+  try {
+    const url = new URL(abs)
+    if (url.origin !== location.origin) return '#'
+    return `${url.pathname}${url.search}${url.hash}` || '#'
+  } catch {
+    return '#'
+  }
 }
 
 /** @param {HTMLElement} root @param {{ role: string }} user */

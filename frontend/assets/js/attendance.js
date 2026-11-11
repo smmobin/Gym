@@ -2,6 +2,7 @@ import { ApiError, apiGet, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { emitLive, LIVE } from './live-data.js'
 import { ATTENDANCE_TYPE_LABEL, formatDateTime, formatToman } from './format.js'
+import { escapeHtml } from './html.js'
 import { createMemberLock, lockErrorMessage } from './lock.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 import { createListPager } from './pagination.js'
@@ -76,11 +77,11 @@ export function mountAttendance(root, user) {
       ? rows
           .map(
             (a) => `<div class="row-item">
-            <div><h3>عضو #${a.member_id}</h3>
-            <p>${ATTENDANCE_TYPE_LABEL[a.attendance_type] || a.attendance_type}
-             · ورود: ${formatDateTime(a.check_in_at)}
-             ${a.is_open ? ' · باز' : ` · خروج: ${formatDateTime(a.check_out_at)}`}</p></div>
-            ${a.is_open ? `<button type="button" class="btn small" data-out="${a.id}">خروج</button>` : '<em>—</em>'}
+            <div><h3>عضو #${escapeHtml(a.member_id)}</h3>
+            <p>${escapeHtml(ATTENDANCE_TYPE_LABEL[a.attendance_type] || a.attendance_type)}
+             · ورود: ${escapeHtml(formatDateTime(a.check_in_at))}
+             ${a.is_open ? ' · باز' : ` · خروج: ${escapeHtml(formatDateTime(a.check_out_at))}`}</p></div>
+            ${a.is_open ? `<button type="button" class="btn small" data-out="${escapeHtml(a.id)}">خروج</button>` : '<em>—</em>'}
           </div>`,
           )
           .join('')
@@ -105,7 +106,7 @@ export function mountAttendance(root, user) {
       if (!_ctx.silent) todayPager.reset()
       todayPager.paint(todayItems, paintToday)
     } catch (err) {
-      todayEl.innerHTML = `<p class="hint">${err instanceof ApiError ? err.message : 'خطا'}</p>`
+      todayEl.innerHTML = `<p class="hint">${escapeHtml(err instanceof ApiError ? err.message : 'خطا')}</p>`
       throw err
     }
   }

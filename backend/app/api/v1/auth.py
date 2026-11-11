@@ -10,9 +10,14 @@ from app.api.deps import get_current_user, require_roles
 from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.core.rate_limit import (
+    auth_ip_rate_limiter,
+    client_ip,
     login_rate_limiter,
     lookup_rate_limiter,
+    otp_send_hourly_limiter,
+    otp_send_ip_hourly_limiter,
     otp_send_rate_limiter,
+    otp_verify_hourly_limiter,
     otp_verify_rate_limiter,
 )
 from app.core.security import hash_password, verify_password
@@ -40,6 +45,7 @@ from app.services.athlete_session import create_athlete_session
 from app.services.audit import write_audit
 from app.services.auth_session import (
     create_session,
+    revoke_all_sessions_for_user,
     revoke_session_by_token,
     session_user_id_for_token,
     touch_session_by_token,
@@ -67,6 +73,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 MIN_PASSWORD_LEN = 8
 ATHLETE_ROLE = "athlete"
 GENERIC_BAD = "اطلاعات ورود نادرست است."
+TOO_MANY = "تلاش‌های زیاد است. کمی بعد دوباره امتحان کنید."
+
+
+def _enforce_ip_limit(request: Request) -> None:
+    if not auth_ip_rate_limiter.is_allowed(f"auth-ip:{client_ip(request)}"):
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=TOO_MANY)
 
 
 def _cookie_max_age_seconds(settings: Settings) -> int:
@@ -211,10 +223,12 @@ def _load_athlete_member(db: Session, *, mobile: str) -> Member:
 @router.post("/lookup", response_model=LookupResponse)
 def lookup_mobile(
     body: LookupRequest,
+    request: Request,
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> LookupResponse:
     """Resolve active identities for a mobile. Client must not invent roles."""
+    _enforce_ip_limit(request)
     rate_key = f"lookup:{body.mobile}"
     if not lookup_rate_limiter.is_allowed(rate_key):
         raise HTTPException(
@@ -270,6 +284,7 @@ def _password_login(
             detail="رمز باید حداقل ۸ کاراکتر باشد.",
         )
 
+    _enforce_ip_limit(request)
     rate_key = f"login:{body.mobile}"
     if not login_rate_limiter.is_allowed(rate_key):
         raise HTTPException(
@@ -325,11 +340,17 @@ def _password_login(
 @router.post("/otp/send", response_model=OtpSendResponse)
 def otp_send(
     body: OtpSendRequest,
+    request: Request,
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> OtpSendResponse:
+    _enforce_ip_limit(request)
     rate_key = f"otp-send:{body.mobile}"
-    if not otp_send_rate_limiter.is_allowed(rate_key):
+    if (
+        not otp_send_rate_limiter.is_allowed(rate_key)
+        or not otp_send_hourly_limiter.is_allowed(rate_key)
+        or not otp_send_ip_hourly_limiter.is_allowed(f"otp-send-ip:{client_ip(request)}")
+    ):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="درخواست کد زیاد است. کمی بعد دوباره امتحان کنید.",
@@ -379,8 +400,11 @@ def otp_verify(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> LoginResponse:
+    _enforce_ip_limit(request)
     rate_key = f"otp-verify:{body.mobile}"
-    if not otp_verify_rate_limiter.is_allowed(rate_key):
+    if not otp_verify_rate_limiter.is_allowed(
+        rate_key
+    ) or not otp_verify_hourly_limiter.is_allowed(rate_key):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="تلاش‌های تأیید کد زیاد است. کمی بعد دوباره امتحان کنید.",
@@ -516,12 +540,25 @@ def change_user_password(
     target = db.get(User, user_id)
     if target is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="کاربر یافت نشد.")
+    if target.role == StaffRole.MANAGER.value and target.id != actor.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="رمز مدیر دیگر از پنل قابل تغییر نیست.",
+        )
     if len(body.new_password) < MIN_PASSWORD_LEN:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="رمز باید حداقل ۸ کاراکتر باشد.",
         )
-    target.password_hash = hash_password(body.new_password)
+    try:
+        target.password_hash = hash_password(body.new_password)
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="رمز بیش از حد طولانی است.",
+        ) from err
+    if target.id != actor.id:
+        revoke_all_sessions_for_user(db, user_id=target.id)
     write_audit(
         db,
         actor_user_id=actor.id,

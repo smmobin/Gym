@@ -1,5 +1,6 @@
 import { apiGet, apiPost } from './api.js'
 import { formatDateTime } from './format.js'
+import { escapeHtml } from './html.js'
 
 /**
  * Mount staff notification bell into a container.
@@ -63,10 +64,10 @@ export function mountNotificationBell(root) {
       list.innerHTML = rows
         .map(
           (n) => `
-        <div class="notif-item ${n.is_read ? '' : 'unread'}" data-id="${n.id}">
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" data-id="${escapeHtml(n.id)}">
           <strong>${escapeHtml(n.title)}</strong>
           <p class="hint">${escapeHtml(n.body || '')}</p>
-          <p class="hint">${formatDateTime(n.created_at)}</p>
+          <p class="hint">${escapeHtml(formatDateTime(n.created_at))}</p>
           ${n.is_read ? '' : '<button type="button" class="btn ghost small" data-read>خواندم</button>'}
         </div>`,
         )
@@ -110,12 +111,4 @@ export function mountNotificationBell(root) {
   })
   void load()
   return { reload: load }
-}
-
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }

@@ -2,6 +2,7 @@ import { apiErrorMessage, apiGet, apiPatch, apiPost } from './api.js'
 import { createAutoRefresh } from './auto-refresh.js'
 import { emitLive, LIVE } from './live-data.js'
 import { formatToman } from './format.js'
+import { escapeHtml } from './html.js'
 import { enhanceMoneyInputs, moneyFromForm, setMoneyInput } from './money-input.js'
 import { createListPager } from './pagination.js'
 import { setStatus } from './ui.js'
@@ -92,12 +93,12 @@ export function mountPlans(root, user) {
             ? '<span class="badge">فعال</span>'
             : '<span class="badge">غیرفعال</span>'
           const action = canWrite
-            ? `<button type="button" class="btn small ghost" data-pick="${p.id}">انتخاب</button>`
+            ? `<button type="button" class="btn small ghost" data-pick="${escapeHtml(p.id)}">انتخاب</button>`
             : ''
           return `<tr>
           <td data-label="نام">${escapeHtml(p.name)}</td>
-          <td data-label="مدت / جلسه">${durationLabel(p)}</td>
-          <td data-label="قیمت پایه">${formatToman(p.base_price_toman)}</td>
+          <td data-label="مدت / جلسه">${escapeHtml(durationLabel(p))}</td>
+          <td data-label="قیمت پایه">${escapeHtml(formatToman(p.base_price_toman))}</td>
           <td data-label="کمد">${p.includes_locker ? 'بله' : '—'}</td>
           <td data-label="وضعیت">${badge}</td>
           <td data-label="اقدام">${action}</td>
@@ -303,13 +304,4 @@ export function mountPlans(root, user) {
     await autoRefresh.refresh()
     select(selectedId)
   })
-}
-
-/** @param {string} s */
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }

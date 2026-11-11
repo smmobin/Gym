@@ -13,6 +13,7 @@ import {
   viewerStateFromStatus,
 } from '../dev-logs-logic.js'
 import { formatDateTime, isoDateLocal, mountTodayDate, ROLE_LABEL } from '../format.js'
+import { escapeAttr, escapeHtml } from '../html.js'
 import { createListPager } from '../pagination.js'
 import { applyNavIcons } from '../nav-icons.js'
 import { initThemeToggle } from '../theme.js'
@@ -115,7 +116,7 @@ export function mountDevLogs(host) {
     meta.innerHTML = `
       <span class="activity-stat"><strong dir="ltr">${escapeHtml(file)}.log</strong></span>
       <span class="activity-stat"><strong>${Number(page.total_matched || 0).toLocaleString('fa-IR')}</strong> خط مطابق</span>
-      ${from != null ? `<span class="activity-stat"><strong>${from}–${to}</strong> نمایش</span>` : ''}
+      ${from != null ? `<span class="activity-stat"><strong>${escapeHtml(from)}–${escapeHtml(to)}</strong> نمایش</span>` : ''}
       ${page.truncated_to_tail ? '<span class="activity-stat warn"><strong>دم</strong> برش‌خورده</span>' : ''}
     `
   }
@@ -135,8 +136,8 @@ export function mountDevLogs(host) {
         const copy = ids.length
           ? `<button type="button" class="dev-log-copy" data-rid="${escapeAttr(ids[0])}">کپی rid</button>`
           : '<span></span>'
-        return `<div class="dev-log-line is-${level || 'INFO'}">
-          <span class="dev-log-n">${row.line}</span>
+        return `<div class="dev-log-line is-${escapeHtml(level || 'INFO')}">
+          <span class="dev-log-n">${escapeHtml(row.line)}</span>
           <p class="dev-log-text">${escapeHtml(row.text)}</p>
           ${copy}
         </div>`
@@ -433,16 +434,4 @@ function preciseRow(item) {
       </span>
     </div>
   </article>`
-}
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value).replace(/"/g, '&quot;')
 }

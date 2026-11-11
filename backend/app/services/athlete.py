@@ -15,6 +15,7 @@ from app.models.membership import Membership, MembershipPlan
 from app.models.payment import Payment
 from app.models.user import User
 from app.models.workout import WorkoutPlan
+from app.services.athlete_session import revoke_all_athlete_sessions
 from app.services.audit import write_audit
 from app.services.debt import member_debt
 from app.services.notifications import KIND_RENEWAL_REQUEST, create_notification
@@ -80,7 +81,11 @@ def set_athlete_password(
         raise AthleteError(404, "عضو یافت نشد.")
     if member.status == MemberStatus.ARCHIVED.value:
         raise AthleteError(400, "عضو آرشیو شده رمز نمی‌گیرد.")
-    member.password_hash = hash_password(password)
+    try:
+        member.password_hash = hash_password(password)
+    except ValueError as err:
+        raise AthleteError(400, "رمز بیش از حد طولانی است.") from err
+    revoke_all_athlete_sessions(db, member_id=member.id)
     write_audit(
         db,
         actor_user_id=user.id,

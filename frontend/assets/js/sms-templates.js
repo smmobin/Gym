@@ -2,6 +2,7 @@
 
 import { apiGet, apiPost, ApiError } from './api.js'
 import { formatJalaliDate } from './format.js'
+import { escapeHtml } from './html.js'
 import { bindMemberSearch, personSelectRowHtml, setPersonChip } from './members.js'
 
 const FALLBACK_TEMPLATES = [
@@ -51,15 +52,6 @@ export function smsCharStats(text) {
 /** @param {number} n */
 function faNum(n) {
   return Number(n || 0).toLocaleString('fa-IR')
-}
-
-/** @param {string} s */
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 /**
