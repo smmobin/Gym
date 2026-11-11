@@ -1,40 +1,40 @@
 # پرامپت مرحلهٔ بعد — برای چت سازنده (Agent)
 
 آخرین به‌روزرسانی: ۱۴۰۴-۰۸-۲۱ (2026-11-11)  
-**وضعیت صف:** فیکس UI پنل سازنده — **بلوک JSON جزئیات (`pre.dev-precise-payload`) برای همهٔ ردیف‌های «فعالیت دقیق»**  
-**خارج از این برش:** شلوغ کردن `/manager/#activity` با payload — ممنوع
+**وضعیت صف:** فیکس سریع UI — حذف راهنمای نصب PWA از کارت لاگین
 
 ---
 
 ## پرامپت کامل — کپی در چت سازنده
 
 ```text
-تو Agent توسعهٔ GYM CONTROL هستی. docs را خودت پیدا کن (guides/logging.md، product/roadmap-status.md). لیست URL نخواه.
+تو Agent توسعهٔ GYM CONTROL هستی. docs را خودت پیدا کن. لیست URL نخواه.
 
-## مشکل
-در `/dev-logs/#activity` بخش «فعالیت سامانه — نسخهٔ دقیق»، بلوک `<pre class="dev-precise-payload">` فقط وقتی نشان داده می‌شود که `item.payload` در DB یک dict باشد. خیلی از رویدادهای آدیت/خطا payload خالی دارند → ردیف بدون آن JSON لیست می‌آید. صاحب می‌خواهد **برای تمامی لاگ‌های این لیست** همان بلوک جزئیات JSON دیده شود (مثل نمونهٔ login failure با kind/role/method/reason/…).
+## هدف
+از صفحهٔ ورود، پاراگراف راهنمای نصب اپ را کامل حذف کن.
 
-پنل مدیر `/manager/#activity` باید بدون payload خام بماند (همان as_dict فعلی).
+عنصر:
+- فایل: `frontend/login/index.html`
+- تگ: `<p class="hint pwa-install-hint">…نصب اپ: از منوی مرورگر Install…</p>` داخل `.login-card`
 
 ## کار
-1. در مسیر precise (ترجیحاً بک‌اند `ActivityItem.as_precise_dict` یا هلپر مشترک + فرانت به‌عنوان پشتیبان):
-   - همیشه یک شیء `detail` / `payload` غیرخالی برای UI برگردان.
-   - اگر `audit_logs.payload` dict دارد → همان را بعد از `redact_mapping` بگذار.
-   - اگر ندارد یا خالی است → از فیلدهای موجود بساز، مثلاً:
-     `action`, `source`, `category`, `outcome`, `entity_type`, `entity_id`, `request_id`, `actor_name`, `actor_role`, `method`, `path`, `status_code`, `error_type`, و در صورت نیاز خلاصهٔ کوتاه.
-   - برای رویدادهای `system_error_events` هم همین: حداقل method/path/status_code/error_type/request_id.
-2. فرانت `preciseRow` در `panels/dev-logs.js`: همیشه `<pre class="dev-precise-payload">` رندر کند (هرگز رشتهٔ خالی به‌خاطر نبود payload). اگر API هنوز null داد، از همین فیلدهای ردیف شیء بساز تا UI نشکند.
-3. `/manager/#activity` و API مدیر را عوض نکن — payload به کلاینت مدیر نرود.
-4. تست:
-   - pytest: precise activity حداقل یک ردیف بدون payload ذخیره‌شده هم در پاسخ `payload` یا `detail` object غیرnull دارد.
-   - vitest: ردیف بدون payload خام هم بلوک pre را نشان می‌دهد.
-5. docs/logging یک خط: در بینندهٔ سازنده هر ردیف فعالیت دقیق همیشه JSON جزئیات دارد؛ مدیر خلاصه است.
+1. همان `<p class="hint pwa-install-hint">` را از `login/index.html` پاک کن.
+2. بنر/دکمهٔ نصب PWA جدا (اگر از `pwa-install.js` می‌آید) را دست نزن مگر فقط به این hint وابسته باشد.
+3. تست `frontend/tests/pwa.test.js` را هم‌خوان کن: دیگر انتظار `pwa-install-hint` داخل `login/index.html` نباشد. اگر تست لندینگ را هم چک می‌کند، hint فوتر `index.html` را مگر صاحب نگفت دست نزن — فقط لاگین.
+4. vitest مرتبط سبز → commit/push.
 
 ## خارج محدوده
-- نشان دادن این JSON در پنل مدیر
-- بازنویسی همهٔ write_auditهای تاریخچه (اختیاری: فقط اگر راحت بود برای رویدادهای جدید payload غنی‌تر بنویس؛ الزامی نیست اگر synthetic detail کافی است)
-- تغییر توکن/گیت DEV_LOG_VIEWER
+- حذف PWA / manifest / service worker
+- حذف hint از لندینگ مگر در همین پیام صاحب صریح بگوید
+- تغییر لاگ / SMS / Slice J
 
 ## تحویل
-تست سبز → commit/push → بگو کاملاً OK؛ یک اسکرین/توضیح که همهٔ ردیف‌ها pre دارند.
+گزارش: کاملاً OK؛ لاگین دیگر آن متن را ندارد.
 ```
+
+---
+
+## صف بعدی (بعد از این فیکس)
+
+- JSON جزئیات برای همهٔ ردیف‌های `/dev-logs` فعالیت دقیق (اگر هنوز باز است)
+- یا دیپلوی HTTPS
