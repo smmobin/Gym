@@ -13,6 +13,7 @@ import {
   viewerStateFromStatus,
 } from '../dev-logs-logic.js'
 import { formatDateTime, isoDateLocal, mountTodayDate, ROLE_LABEL } from '../format.js'
+import { createListPager } from '../pagination.js'
 import { applyNavIcons } from '../nav-icons.js'
 import { initThemeToggle } from '../theme.js'
 import { bindHashNav, bindSidebarClose, setStatus } from '../ui.js'
@@ -270,6 +271,8 @@ export function mountDevLogs(host) {
     const statsEl = root.querySelector('[data-precise-stats]')
     const status = root.querySelector('[data-precise-status]')
     const moreEl = root.querySelector('[data-precise-more]')
+    const pager = createListPager(root.querySelector('[data-precise-pager]'), { pageSize: 5 })
+    let paintedPage = 0
     const today = new Date()
     const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)
     if (form.from) form.from.value = isoDateLocal(start)
@@ -309,20 +312,27 @@ export function mountDevLogs(host) {
         `
       }
       if (!listEl) return
-      if (!items.length) {
-        listEl.innerHTML = '<p class="hint activity-empty">در این بازه رویدادی ثبت نشده است.</p>'
-      } else {
-        listEl.innerHTML = items.map(preciseRow).join('')
-        listEl.querySelectorAll('[data-copy-rid]').forEach((btn) => {
-          btn.addEventListener('click', async () => {
-            try {
-              await navigator.clipboard.writeText(btn.getAttribute('data-copy-rid') || '')
-            } catch {
-              /* ignore */
-            }
+      const paintRows = (rows) => {
+        if (!rows.length) {
+          listEl.innerHTML = '<p class="hint activity-empty">در این بازه رویدادی ثبت نشده است.</p>'
+        } else {
+          listEl.innerHTML = rows.map(preciseRow).join('')
+          listEl.querySelectorAll('[data-copy-rid]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+              try {
+                await navigator.clipboard.writeText(btn.getAttribute('data-copy-rid') || '')
+              } catch {
+                /* ignore */
+              }
+            })
           })
-        })
+        }
+        if (paintedPage && pager.page !== paintedPage) {
+          listEl.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        }
+        paintedPage = pager.page
       }
+      pager.paint(items, paintRows)
       if (moreEl instanceof HTMLElement) moreEl.hidden = !nextCursor
     }
 
@@ -347,6 +357,7 @@ export function mountDevLogs(host) {
       const fresh = Array.isArray(data.items) ? data.items : []
       items = append ? [...items, ...fresh] : fresh
       nextCursor = data.next_cursor || null
+      if (!append) pager.reset()
       paint()
       if (status instanceof HTMLElement) setStatus(status, '')
     }
