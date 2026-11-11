@@ -53,8 +53,14 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 2. دستور اجرا (نمونه):
 
 ```bash
+python -m app.db.serve
+```
+
+این دستور فقط `alembic upgrade head` می‌زند و بعد uvicorn را با یک worker بالا می‌آورد. seed و wipe داخلش نیست. اگر خودت دستور استارت را جدا می‌نویسی، همان دو قدم را بگذار و چیزی به تهش اضافه نکن:
+
+```bash
 alembic upgrade head
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --no-server-header --workers 1
 ```
 
 3. متغیرهای محیطی اجباری:
@@ -68,7 +74,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 | `ALLOW_DESTRUCTIVE_SEED` | `false` |
 
 4. بعد از بالا آمدن: `GET https://YOUR-API/api/v1/health` و `/api/v1/health/db` باید `ok` بدهند.
-5. **هرگز** روی این DB دستور `python -m app.db.seed` نزن.
+5. **هرگز** روی این DB دستور `python -m app.db.seed` یا `wipe_dev_data` نزن. روی `APP_ENV=production` حتی `ALLOW_DESTRUCTIVE_SEED=true` این دو را باز نمی‌کند.
 
 اگر لیارا Dockerfile می‌خواهد: از `backend/Dockerfile` همین ریپو استفاده کن (مسیر VPS و لیارا هر دو پوشش داده شده‌اند). اگر buildpack پایتون دارد، Dockerfile اجباری نیست.
 
@@ -99,16 +105,26 @@ npm run build
 
 ### ۵) اولین حساب‌ها روی سرور خالی (بدون seed فیک)
 
-Seed حجیم توسعه روی prod ممنوع است.
+Seed حجیم توسعه روی prod ممنوع است. از `backend/` (یا `docker compose exec api …`) این را یک‌بار بزن. رمزها را در env بگذار، نه در تاریخچهٔ شل، و نه `ChangeMe123`:
 
-1. **مدیر:** از `backend/` بزن  
-   `python -m app.db.bootstrap_manager --mobile 09… --name "…"`  
-   (رمز را interactice وارد کن؛ اگر مدیری از قبل باشد دستور رد می‌شود — درست است.)
-2. بعد با همان مدیر وارد شو و **یک منشی + یک مربی** بساز (یا اسکریپت idempotent «اطمینان از وجود» اگر سازنده اضافه کرد).
-3. **یک عضو** تست از پنل بساز؛ برای OTP موبایل واقعی خودت را بگذار.
-4. در دیپلوی‌های بعدی این چهار تا را **پاک نکن** و دوباره seed نزن — فقط دادهٔ واقعی اضافه می‌شود.
+```bash
+export SMOKE_MANAGER_PASSWORD='…'
+export SMOKE_RECEPTIONIST_PASSWORD='…'
+export SMOKE_TRAINER_PASSWORD='…'
+export SMOKE_MEMBER_PASSWORD='…'
+python -m app.db.ensure_smoke_accounts \
+  --manager-mobile 09XXXXXXXXX --manager-name "نام مدیر" \
+  --receptionist-mobile 09XXXXXXXXX --receptionist-name "نام منشی" \
+  --trainer-mobile 09XXXXXXXXX --trainer-name "نام مربی" \
+  --member-mobile 09XXXXXXXXX --member-first "نام" --member-last "نام‌خانوادگی"
+```
 
-بدون حداقل یک حساب مدیر، پنل کارکنان باز نمی‌شود.
+- اگر آن نقش از قبل باشد، همان ردیف دست نخورده می‌ماند و `bootstrap_manager` برای مدیر موجود صدا زده نمی‌شود.
+- اگر هر عضوی از قبل باشد، عضو دود ساخته نمی‌شود.
+- اجرای دوباره هیچ ردیفی اضافه نمی‌کند.
+- فقط مدیر، بدون سه تای دیگر: `python -m app.db.bootstrap_manager --mobile 09… --name "…"` (رمز مخفی پرسیده می‌شود؛ اگر مدیر هست خروج ۲ و بدون نوشتن).
+
+در دیپلوی‌های بعدی این حساب‌ها را پاک نکن و seed نزن. بدون حداقل یک مدیر، پنل کارکنان باز نمی‌شود.
 
 ---
 
@@ -132,6 +148,11 @@ export CORS_ORIGINS='https://app.example.com'
 
 ```bash
 docker compose up -d --build
+```
+
+کانتینر `api` با `python -m app.db.serve` بالا می‌آید: اول `alembic upgrade head`، بعد uvicorn. wipe و seed در این مسیر نیستند. اگر خواستی migration را جدا تکرار کنی (باز هم فقط افزایشی):
+
+```bash
 docker compose exec api alembic upgrade head
 ```
 
@@ -187,10 +208,10 @@ alembic upgrade head
 | محیط | Seed فیک حجیم | Wipe |
 |------|----------------|------|
 | لپ‌تاپ / DB خالی توسعه | OK — `python -m app.db.seed` (افزایشی) | `wipe_dev_data` فقط عمدی روی DB توسعه |
-| staging با دادهٔ دورریختنی | فقط آگاهانه | فقط با `ALLOW_DESTRUCTIVE_SEED=true` |
-| **production سرور اصلی** | **ممنوع** | **ممنوع** — فلگ destructive را روشن نکن |
+| staging با دادهٔ دورریختنی | فقط با `ALLOW_DESTRUCTIVE_SEED=true` | فقط با همان فلگ |
+| **production / prod** | **ممنوع** — فلگ هم بازش نمی‌کند | **ممنوع** — فلگ هم بازش نمی‌کند |
 
-اسکریپت‌ها در `APP_ENV=production|staging|prod` بدون آن فلگ خارج می‌شوند.  
+حساب دود روی سرور: `python -m app.db.ensure_smoke_accounts` (فقط INSERT).  
 قانون کامل صاحب: [production-data-policy.md](production-data-policy.md).
 
 ---

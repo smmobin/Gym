@@ -171,7 +171,7 @@ cd backend
 .\.venv\Scripts\python.exe -m app.db.wipe_dev_data
 ```
 
-روی production-like هر دو بدون `ALLOW_DESTRUCTIVE_SEED=true` مسدودند. در UI ارجاع به حساب دمو نیست؛ اگر seed زدی، حساب‌های نمونه داخل اسکریپت‌اند (`DEV_STAFF_PASSWORD` و موبایل‌های `09120000…`).
+روی لپ‌تاپ هر دو برای توسعه هستند. روی سرور (`APP_ENV=production` یا `prod`) seed و wipe **حتی با** `ALLOW_DESTRUCTIVE_SEED=true` اجرا نمی‌شوند. بعد از `alembic upgrade head`، اگر دیتابیس خالی است حداکثر چهار حساب دود را با `python -m app.db.ensure_smoke_accounts` بساز (فقط INSERT اگر آن نقش یا هیچ عضوی نباشد). دیپلوی بعدی فقط همان upgrade و ری‌استارت است؛ داده پاک نمی‌شود. جزئیات: [production-data-policy.md](production-data-policy.md) و [deploy.md](deploy.md). در UI ارجاع به حساب دمو نیست؛ اگر روی لپ‌تاپ seed زدی، حساب‌های نمونه داخل اسکریپت‌اند (`DEV_STAFF_PASSWORD` و موبایل‌های `09120000…`).
 
 **pytest هرگز به دیتابیس روزمرهٔ `gym_control` وصل نمی‌شود** — جزئیات و ساخت `gym_control_test`: [testing.md](testing.md).
 

@@ -29,10 +29,10 @@
 | مورد | وضعیت |
 |------|--------|
 | جداسازی ماکت Pages / محصول | OK |
-| Docker/`Dockerfile` بک‌اند + compose | موجود — طبق [deploy.md](deploy.md) |
-| مسدود بودن wipe روی prod-like | OK در کد |
-| `bootstrap_manager` برای اولین مدیر | OK |
-| اسکریپت «۴ حساب دود بدون wipe» اختصاصی | در صف سازنده اگر لازم شد |
-| سند سیاست داده prod | همین پوشه + production-data-policy |
+| Docker/`Dockerfile` بک‌اند + compose | استارت = `python -m app.db.serve` (فقط `alembic upgrade head` سپس uvicorn) |
+| مسدود بودن wipe/seed روی production | OK — حتی اگر `ALLOW_DESTRUCTIVE_SEED=true` |
+| `bootstrap_manager` برای اولین مدیر | OK — اگر مدیر هست خروج ۲ و بدون نوشتن |
+| `ensure_smoke_accounts` | OK — حداکثر ۱+۱+۱+۱؛ فقط INSERT؛ DELETE ندارد |
+| سند سیاست داده prod | [production-data-policy.md](production-data-policy.md) |
 
 اگر پوشهٔ جدید محصولی اضافه شد، یک خط به این جدول بزن.

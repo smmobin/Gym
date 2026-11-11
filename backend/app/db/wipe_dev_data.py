@@ -4,8 +4,8 @@ Clear fake/demo domain data for a fresh real-data start (local/dev).
 Usage (from backend/):
   .\\.venv\\Scripts\\python.exe -m app.db.wipe_dev_data
 
-Refuses production-like APP_ENV unless ALLOW_DESTRUCTIVE_SEED=true.
-Does not drop tables or reset alembic — only empties domain rows.
+Refuses APP_ENV=production/prod always, even if ALLOW_DESTRUCTIVE_SEED=true.
+Staging refuses unless that flag is set. Does not drop tables or reset alembic.
 """
 
 from __future__ import annotations
@@ -14,8 +14,8 @@ import sys
 
 from sqlalchemy import func, select
 
-from app.core.config import get_settings
 from app.core.db import SessionLocal, engine
+from app.db.data_guard import refuse_if_destructive
 from app.db.seed import clear_domain_data
 from app.models.member import Member
 from app.models.user import User
@@ -23,13 +23,7 @@ from app.models.user import User
 
 def wipe() -> dict[str, int]:
     """Empty domain tables. Returns counts before/after wipe (best-effort)."""
-    settings = get_settings()
-    if settings.is_production_like and not settings.allow_destructive_seed:
-        raise SystemExit(
-            "Refuse wipe: APP_ENV is production-like. "
-            "Wipe clears users/members and all domain data. "
-            "For a throwaway staging DB only, set ALLOW_DESTRUCTIVE_SEED=true."
-        )
+    refuse_if_destructive("wipe")
 
     with engine.connect() as conn:
         conn.exec_driver_sql("SELECT 1")

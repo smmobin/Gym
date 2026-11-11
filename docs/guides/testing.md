@@ -128,7 +128,8 @@ npm run build
 
 - منطق جدید در `backend/scripts/` (پارس `DATABASE_URL`، dry-run بکاپ/restore) → تست در `backend/tests/test_backup_scripts.py`
 - فلگ‌های production در `Settings` (`cookie_secure`، `secret_key_is_weak`) → `test_config_prod.py`
-- مسدودسازی seed در prod → `test_seed_guard.py`
+- مسدودسازی wipe/seed روی production (حتی با فلگ) و staging بدون فلگ → `test_data_guard.py` و `test_seed_guard.py` / `test_wipe_dev_data.py`
+- حساب دود insert-only و اجرای دوباره بدون ردیف تازه → `test_ensure_smoke_accounts.py`
 - تغییر فقط-مستندات در `docs/guides/deploy.md` / `backup.md` → تست اجباری نیست؛ در گزارش بگو docs
 
 ## گزارش به صاحب پروژه (قالب)

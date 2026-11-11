@@ -26,7 +26,7 @@
 | کانفیگ prod | SECRET ضعیف، CORS localhost، destructive seed، … جلوی استارت | `test_production_config_errors` |
 | XSS فرانت | escape در مسیرهای حساس | `frontend/tests/xss-escape.test.js` |
 | لاگ | redaction؛ بینندهٔ فایل فقط با توکن و خاموش در prod | `guides/logging.md` |
-| داده | wipe/seed مخرب روی prod-like بدون فلگ صریح رد می‌شود | `seed.py` / `wipe_dev_data.py` |
+| داده | `production`/`prod` حتی با `ALLOW_DESTRUCTIVE_SEED` هم wipe و seed را رد می‌کند؛ staging فقط با فلگ. `ensure_smoke_accounts` فقط INSERT | `test_data_guard.py`، `test_ensure_smoke_accounts.py` |
 
 ## هنوز کار صاحب / محیط (نه فقط کد)
 

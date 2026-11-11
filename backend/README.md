@@ -15,16 +15,15 @@ copy .env.example .env
 Edit `.env` and set `DATABASE_URL` with your local Postgres password  
 (from `C:\Users\tabat\.gym-dev\postgres.env` on this machine).
 
-## Migration + seed
+## Migration
 
 ```powershell
 cd backend
 .\.venv\Scripts\Activate.ps1
 alembic upgrade head
-python -m app.db.seed
 ```
 
-Seed فقط دادهٔ ساختگی توسعه است و جدول‌های دامنه را دوباره پر می‌کند. جزئیات: `docs/guides/getting-started.md`
+Seed ساختگی (`python -m app.db.seed`) فقط برای لپ‌تاپ توسعه است و جدول‌ها را پاک نمی‌کند؛ wipe دستور جداست (`wipe_dev_data`). روی production هر دو مسدودند. سرور خالی: `ensure_smoke_accounts`. جزئیات: `docs/guides/getting-started.md` و `docs/guides/deploy.md`.
 
 ## Run
 

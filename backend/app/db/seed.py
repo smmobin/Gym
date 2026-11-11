@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.core.db import SessionLocal, engine
 from app.core.jalali import TEHRAN
 from app.core.security import hash_password
+from app.db.data_guard import refuse_if_destructive
 from app.models import (
     AthleteNotification,
     AthleteSession,
@@ -73,6 +74,7 @@ SEED_MEMBER_NOTE = "دادهٔ ساختگی seed"
 
 def clear_domain_data(session: Session) -> None:
     """Wipe domain tables in FK-safe order (dev reset / wipe). Does not drop schema."""
+    refuse_if_destructive("wipe")
     for model in (
         ClassBooking,
         GroupClass,
@@ -107,6 +109,7 @@ def clear_domain_data(session: Session) -> None:
 
 def wipe_and_seed(session: Session | None = None) -> dict[str, int]:
     """Empty domain tables then seed. For tests / intentional reset — not the CLI default."""
+    refuse_if_destructive("wipe_and_seed")
     own_session = session is None
     session = session or SessionLocal()
     try:
@@ -538,6 +541,7 @@ def _ensure_activity_samples(
 
 def seed(session: Session | None = None) -> dict[str, int]:
     """Upsert fake seed data without deleting non-seed rows."""
+    refuse_if_destructive("seed")
     own_session = session is None
     session = session or SessionLocal()
     try:
@@ -1318,16 +1322,7 @@ def seed(session: Session | None = None) -> dict[str, int]:
 
 
 def main() -> None:
-    from app.core.config import get_settings
-
-    settings = get_settings()
-    if settings.is_production_like and not settings.allow_destructive_seed:
-        raise SystemExit(
-            "Refuse seed: APP_ENV is production-like. "
-            "Even incremental seed must not run on real member data by default. "
-            "For a throwaway staging DB only, set ALLOW_DESTRUCTIVE_SEED=true. "
-            "To empty a dev DB intentionally, use: python -m app.db.wipe_dev_data"
-        )
+    refuse_if_destructive("seed")
 
     with engine.connect() as conn:
         conn.exec_driver_sql("SELECT 1")

@@ -30,9 +30,9 @@ USER gym
 EXPOSE 8000
 
 # Health for orchestrators (compose / k8s / Liara custom)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD curl -fsS http://127.0.0.1:8000/api/v1/health || exit 1
 
 # Bind 0.0.0.0 so reverse proxy / Docker network can reach the API.
-# One worker: login rate limits are in-process memory.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--no-server-header", "--workers", "1"]
+# serve = alembic upgrade head, then one uvicorn worker. No seed and no wipe.
+CMD ["python", "-m", "app.db.serve"]

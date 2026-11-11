@@ -2,6 +2,8 @@
 # Frontend: build separately (npm run build) and serve via nginx / CDN / static host.
 # Never commit real .env — copy backend/.env.example and set secrets locally.
 # Required before `docker compose up`: export POSTGRES_PASSWORD, SECRET_KEY, CORS_ORIGINS.
+# api starts with python -m app.db.serve (alembic upgrade head, then uvicorn).
+# Do not add a demo load or a domain reset to this file.
 
 services:
   db:
@@ -42,6 +44,8 @@ services:
       # loopback-only, so only local processes can set X-Forwarded-For.
       FORWARDED_ALLOW_IPS: "*"
     # nginx on the host terminates TLS and proxies to this loopback port.
+    # Explicit so a compose reader sees the migrate-then-serve command.
+    command: ["python", "-m", "app.db.serve"]
     ports:
       - "127.0.0.1:8000:8000"
 
