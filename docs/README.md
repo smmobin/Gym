@@ -33,6 +33,9 @@
 | [guides/testing.md](guides/testing.md) | تست خودکار؛ فقط با تست سبز commit/push |
 | [guides/project-rules.md](guides/project-rules.md) | قوانین رسمی: DoD، مرز پروتوتایپ، پول، API، audit |
 | [guides/security.md](guides/security.md) | امنیت، OWASP، ابزارها و پلتفرم‌های اسکن |
+| [guides/security-hardening-status.md](guides/security-hardening-status.md) | وضعیت سخت‌گیری امنیت در کد + تست رگرسیون |
+| [guides/production-data-policy.md](guides/production-data-policy.md) | قانون قرمز: روی سرور wipe/seed فیک ممنوع؛ دیپلوی افزایشی |
+| [guides/repo-structure.md](guides/repo-structure.md) | نقشهٔ ساختار ریپو برای دیپلوی و Agentها |
 
 ## قرارداد نوشتن
 

@@ -105,6 +105,8 @@ npm run build
 - `trainers-roster.test.js` — با انتخاب مربی، لیست شاگردان همان مربی (`GET /trainers/{id}/members`)
 - `classes-save.test.js` / `pagination.test.js` — بعد از mutation کلاس: `emitLive` + `focusId` تا pager روی صفحهٔ همان ردیف بماند (BUG-007/008)
 - `activity.test.js` — فعالیت سامانهٔ مدیر: query بازه/جستجو/دسته، رندر جلالی + escape، گارد نقش، نام فایل خروجی `.log`
+- `xss-escape.test.js` — helper مشترک `assets/js/html.js` (`escapeHtml` / `safeHttpUrl`) + payload `<img onerror>` در صف آزمایشی، جدول اعضا، کمدها، هزینه‌ها و داشبورد منشی؛ هر رشتهٔ API/URL/ورودی کاربر که در `innerHTML` می‌رود باید از `escapeHtml` رد شود. لینک داشبورد منشی فقط `#`، مسیر `/…` یا همان origin است
+- `pay-return.test.js` — پیام بازگشت از درگاه فقط برای `pay` شناخته‌شده است و `detail` دلخواه آدرس را نشان نمی‌دهد
 
 ### قرارداد live بعد از mutation (لیست‌های صفحه‌بندی‌شده)
 

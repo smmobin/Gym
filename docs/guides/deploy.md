@@ -4,6 +4,8 @@
 
 **GitHub Pages** (`*.github.io/Gym`) فقط ماکت HTML ریشه است — لاگین و دیتابیس واقعی ندارد.
 
+**سیاست داده (قفل صاحب ۱۴۰۴-۰۸-۲۲):** روی سرور اصلی داده پاک/ریست نمی‌شود؛ دیپلوی فقط افزایشی است. جزئیات: [production-data-policy.md](production-data-policy.md). ساختار ریپو: [repo-structure.md](repo-structure.md). امنیت سخت‌شده: [security-hardening-status.md](security-hardening-status.md).
+
 ---
 
 ## چک‌لیست production (قبل از دادهٔ واقعی عضو)
@@ -15,7 +17,9 @@
 | Cookie `Secure` | با `APP_ENV=production` خودکار روشن می‌شود — نیاز به **HTTPS** |
 | `CORS_ORIGINS` | دامنهٔ واقعی HTTPS فرانت (نه localhost) |
 | `DATABASE_URL` | Postgres هاست؛ رمز قوی؛ فقط در پنل هاست / `.env` سرور |
-| Seed / wipe | **اجرا نشود** روی DB واقعی؛ `seed` و `wipe_dev_data` در prod مسدودند مگر `ALLOW_DESTRUCTIVE_SEED=true` |
+| Seed / wipe | **اجرا نشود** روی DB واقعی؛ `ALLOW_DESTRUCTIVE_SEED` همیشه `false` روی سرور اصلی |
+| دیپلوی بعدی | فقط کد + `alembic upgrade head` — **بدون** wipe و بدون seed فیک حجیم |
+| حساب تست | حداکثر ۱ مدیر + ۱ منشی + ۱ مربی + ۱ عضو؛ اگر از قبل هستند پاک نشوند |
 | UI | صفحهٔ لاگین/لندینگ نباید حساب دمو یا رمز نمونه نشان دهد؛ اولین مدیر با `bootstrap_manager` |
 | `/docs` | در production خاموش است |
 | بکاپ | حداقل یک dump موفق + یک‌بار تمرین restore — [backup.md](backup.md) |
@@ -93,12 +97,16 @@ npm run build
 - در پنل دامنه را وصل کن و گواهی TLS را روشن بگذار (معمولاً خودکار).
 - تا HTTPS فعال نشده، با `APP_ENV=production` کوکی‌های `Secure` در HTTP کار نمی‌کنند.
 
-### ۵) اولین کاربر مدیر روی سرور خالی
+### ۵) اولین حساب‌ها روی سرور خالی (بدون seed فیک)
 
-Seed روی prod ممنوع است. گزینه‌های امن:
+Seed حجیم توسعه روی prod ممنوع است.
 
-1. موقتاً روی یک DB خالی **فقط staging** seed بزن، بعد کاربر مدیر را نگه دار و بقیه را پاک کن؛ یا
-2. یک اسکریپت/دستور یک‌بارمصرف محلی بنویس که فقط یک `User` مدیر بسازد (خارج از این برش — در docs بعدی).
+1. **مدیر:** از `backend/` بزن  
+   `python -m app.db.bootstrap_manager --mobile 09… --name "…"`  
+   (رمز را interactice وارد کن؛ اگر مدیری از قبل باشد دستور رد می‌شود — درست است.)
+2. بعد با همان مدیر وارد شو و **یک منشی + یک مربی** بساز (یا اسکریپت idempotent «اطمینان از وجود» اگر سازنده اضافه کرد).
+3. **یک عضو** تست از پنل بساز؛ برای OTP موبایل واقعی خودت را بگذار.
+4. در دیپلوی‌های بعدی این چهار تا را **پاک نکن** و دوباره seed نزن — فقط دادهٔ واقعی اضافه می‌شود.
 
 بدون حداقل یک حساب مدیر، پنل کارکنان باز نمی‌شود.
 
@@ -174,15 +182,16 @@ alembic upgrade head
 
 ---
 
-## Seed — فقط توسعه
+## Seed / Wipe — فقط توسعه
 
-| محیط | Seed |
-|------|------|
-| لپ‌تاپ / DB خالی توسعه | OK — `python -m app.db.seed` |
-| staging با دادهٔ دورریختنی | فقط با `ALLOW_DESTRUCTIVE_SEED=true` |
-| production با عضو واقعی | **ممنوع** |
+| محیط | Seed فیک حجیم | Wipe |
+|------|----------------|------|
+| لپ‌تاپ / DB خالی توسعه | OK — `python -m app.db.seed` (افزایشی) | `wipe_dev_data` فقط عمدی روی DB توسعه |
+| staging با دادهٔ دورریختنی | فقط آگاهانه | فقط با `ALLOW_DESTRUCTIVE_SEED=true` |
+| **production سرور اصلی** | **ممنوع** | **ممنوع** — فلگ destructive را روشن نکن |
 
-اسکریپت در `APP_ENV=production|staging|prod` بدون آن فلگ خارج می‌شود.
+اسکریپت‌ها در `APP_ENV=production|staging|prod` بدون آن فلگ خارج می‌شوند.  
+قانون کامل صاحب: [production-data-policy.md](production-data-policy.md).
 
 ---
 
