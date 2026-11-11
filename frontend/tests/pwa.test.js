@@ -69,7 +69,7 @@ describe('PWA wiring (manifest + SW security)', () => {
       expect(html, page).toContain('/assets/js/pwa-register.js')
     }
     expect(read('index.html')).toContain('pwa-install-hint')
-    expect(read('login/index.html')).toContain('pwa-install-hint')
+    expect(read('login/index.html')).not.toContain('pwa-install-hint')
   })
 
   it('pwa-register uses virtual:pwa-register (autoUpdate path)', () => {
